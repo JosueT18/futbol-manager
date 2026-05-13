@@ -18,7 +18,8 @@ def create_team(team: TeamCreate):
 
     new_team = Team(
         name=team.name,
-        city=team.city
+        city=team.city,
+        tecnico=team.tecnico
     )
 
     db.add(new_team)

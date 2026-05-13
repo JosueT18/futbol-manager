@@ -3,7 +3,8 @@ import {
   Users,
   Shield,
   BarChart3,
-  LogIn
+  LogIn,
+  ClipboardList
 } from "lucide-react"
 
 import { Link } from "react-router-dom"
@@ -53,6 +54,15 @@ function Sidebar() {
   >
     <BarChart3 />
     Estadísticas
+  </Link>
+
+  <Link
+    to="/solicitudes"
+    className="flex items-center gap-3
+    hover:text-green-400 transition"
+  >
+    <ClipboardList />
+    Solicitudes
   </Link>
 
   <Link

@@ -11,6 +11,7 @@ import Equipos from "./pages/Equipos"
 import Jugadores from "./pages/Jugadores"
 import Estadisticas from "./pages/Estadisticas"
 import Login from "./pages/Login"
+import Solicitudes from "./pages/Solicitudes"
 
 import {
   AuthProvider,
@@ -79,6 +80,15 @@ function AppContent() {
               }
             />
 
+            <Route
+              path="/solicitudes"
+              element={
+                <ProtectedRoute>
+                  <Solicitudes />
+                </ProtectedRoute>
+              }
+            />
+            
           </Routes>
 
         </div>

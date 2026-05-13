@@ -6,6 +6,8 @@ function Equipos() {
 
   const [city, setCity] = useState("")
 
+  const [tecnico, setTecnico] = useState("")
+
   const [teams, setTeams] = useState([])
 
 
@@ -35,6 +37,7 @@ function Equipos() {
         body: JSON.stringify({
           name,
           city,
+          tecnico,
         }),
       }
     )
@@ -42,6 +45,8 @@ function Equipos() {
     setName("")
 
     setCity("")
+    
+    setTecnico("")
 
     loadTeams()
   }
@@ -83,6 +88,14 @@ function Equipos() {
             className="border p-3 rounded-lg"
           />
 
+          <input
+            type="text"
+            placeholder="Director Técnico"
+            value={tecnico}
+            onChange={(e) => setTecnico(e.target.value)}
+            className="border p-3 rounded-lg"
+          />
+
         </div>
 
         <button
@@ -114,6 +127,11 @@ function Equipos() {
               <p className="text-gray-600 mt-2">
                 📍 {team.city}
               </p>
+
+              <p className="text-gray-600 mt-2">
+                👔 {team.tecnico}
+              </p>               
+                              
 
             </div>
           ))

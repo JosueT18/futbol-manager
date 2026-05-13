@@ -12,3 +12,5 @@ class Team(Base):
     name = Column(String, nullable=False)
 
     city = Column(String, nullable=False)
+
+    tecnico = Column(String, nullable=False)
