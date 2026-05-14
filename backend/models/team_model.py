@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String
+from sqlalchemy.orm import relationship
 from database.connection import Base
-
 
 
 class Team(Base):
@@ -14,3 +14,8 @@ class Team(Base):
     city = Column(String, nullable=False)
 
     tecnico = Column(String, nullable=False)
+
+    players = relationship(
+        "Player",
+        back_populates="team"
+    )

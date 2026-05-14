@@ -1,110 +1,42 @@
 import { useEffect, useState } from "react"
+import Swal from "sweetalert2"
+import { useQuery } from "@tanstack/react-query"
+
+import {
+  getPlayers,
+  createPlayer as createPlayerApi,
+  deletePlayer as deletePlayerApi,
+  updatePlayer as updatePlayerApi,
+} from "../api/players"
+
+import Button from "../components/ui/Button"
+import Input from "../components/ui/Input"
+import Badge from "../components/ui/Badge"
+import Card from "../components/ui/Card"
+import PageHeader from "../components/ui/PageHeader"
+import TableContainer from "../components/ui/TableContainer"
 
 function Jugadores() {
 
   const [name, setName] = useState("")
-
   const [age, setAge] = useState("")
-
   const [position, setPosition] = useState("")
-
   const [number, setNumber] = useState("")
-
   const [teamId, setTeamId] = useState("")
-
-  const [players, setPlayers] = useState([])
 
   const [teams, setTeams] = useState([])
 
+  const [successMessage, setSuccessMessage] = useState("")
+  const [errorMessage, setErrorMessage] = useState("")
 
-  async function loadPlayers() {
-
-    const response = await fetch(
-      "http://127.0.0.1:8000/players"
-    )
-
-    const data = await response.json()
-
-    setPlayers(data)
-  }
-
-  async function deletePlayer(id: number) {
-
-  const confirmDelete = window.confirm(
-    "¿Eliminar jugador?"
-  )
-
-  if (!confirmDelete) {
-    return
-  }
-
-  try {
-
-    const response = await fetch(
-    `http://127.0.0.1:8000/players/${id}`,
-      {
-        method: "DELETE",
-      }
-    )
-
-    const data = await response.json()
-
-    console.log(data)
-
-    loadPlayers()
-
-  } catch (error) {
-
-    console.error(error)
-  }
-}
-
-async function updatePlayer(player: any) {
-
-  const newName = prompt(
-    "Nuevo nombre",
-    player.name
-  )
-
-  const newPosition = prompt(
-    "Nueva posición",
-    player.position
-  )
-
-  if (!newName || !newPosition) {
-    return
-  }
-
-  try {
-
-    const response = await fetch(
-      `http://127.0.0.1:8000/players/${player.id}`,
-      {
-        method: "PUT",
-
-        headers: {
-          "Content-Type": "application/json",
-        },
-
-        body: JSON.stringify({
-          name: newName,
-          position: newPosition,
-        }),
-      }
-    )
-
-    const data = await response.json()
-
-    console.log(data)
-
-    loadPlayers()
-
-  } catch (error) {
-
-    console.error(error)
-  }
-}
-
+  const {
+    data: players = [],
+    isLoading,
+    refetch,
+  } = useQuery({
+    queryKey: ["players"],
+    queryFn: getPlayers,
+  })
 
   async function loadTeams() {
 
@@ -117,100 +49,276 @@ async function updatePlayer(player: any) {
     setTeams(data)
   }
 
-
   async function createPlayer() {
 
-    await fetch(
-      "http://127.0.0.1:8000/players",
-      {
-        method: "POST",
+    try {
 
-        headers: {
-          "Content-Type": "application/json",
-        },
+      await createPlayerApi({
+        name,
+        age: Number(age),
+        position,
+        number: Number(number),
+        team_id: Number(teamId),
+      })
 
-        body: JSON.stringify({
-          name,
-          age: Number(age),
-          position,
-          number: Number(number),
-          team_id: Number(teamId),
-        }),
-      }
-    )
+      setSuccessMessage(
+        "Jugador creado correctamente"
+      )
 
-    setName("")
+      setErrorMessage("")
 
-    setAge("")
+      setName("")
+      setAge("")
+      setPosition("")
+      setNumber("")
+      setTeamId("")
 
-    setPosition("")
+      await refetch()
 
-    setNumber("")
+    } catch (error) {
 
-    setTeamId("")
+      console.error(error)
 
-    loadPlayers()
+      setErrorMessage(
+        "Error al crear jugador"
+      )
+    }
   }
 
+  async function deletePlayer(id: number) {
+
+    const result = await Swal.fire({
+      title: "¿Eliminar jugador?",
+      text: "Esta acción no se puede deshacer",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Sí, eliminar",
+      cancelButtonText: "Cancelar",
+    })
+
+    if (!result.isConfirmed) {
+      return
+    }
+
+    try {
+
+      await deletePlayerApi(id)
+
+      setSuccessMessage(
+        "Jugador eliminado correctamente"
+      )
+
+      setErrorMessage("")
+
+      await refetch()
+
+    } catch (error) {
+
+      console.error(error)
+
+      setErrorMessage(
+        "Error al eliminar jugador"
+      )
+    }
+  }
+
+  async function updatePlayer(player: any) {
+
+    const newName = prompt(
+      "Nuevo nombre",
+      player.name
+    )
+
+    const newPosition = prompt(
+      "Nueva posición",
+      player.position
+    )
+
+    if (!newName || !newPosition) {
+      return
+    }
+
+    try {
+
+      await updatePlayerApi(
+        player.id,
+        {
+          name: newName,
+          position: newPosition,
+        }
+      )
+
+      setSuccessMessage(
+        "Jugador actualizado correctamente"
+      )
+
+      setErrorMessage("")
+
+      await refetch()
+
+    } catch (error) {
+
+      console.error(error)
+
+      setErrorMessage(
+        "Error al actualizar jugador"
+      )
+    }
+  }
 
   useEffect(() => {
-
-    loadPlayers()
 
     loadTeams()
 
   }, [])
 
+  useEffect(() => {
+
+    if (successMessage) {
+
+      setTimeout(() => {
+
+        setSuccessMessage("")
+
+      }, 3000)
+    }
+
+  }, [successMessage])
+
+  useEffect(() => {
+
+    if (errorMessage) {
+
+      setTimeout(() => {
+
+        setErrorMessage("")
+
+      }, 3000)
+    }
+
+  }, [errorMessage])
 
   return (
 
-    <div className="p-10">
+    <div className="p-6">
 
-      <h1 className="text-4xl font-bold mb-8">
-        Jugadores
-      </h1>
+      {
+        successMessage && (
 
+          <div className="mb-5 bg-green-100 text-green-800 p-4 rounded-xl">
 
-      <div className="bg-white p-6 rounded-xl shadow-lg mb-10">
+            ✅ {successMessage}
+
+          </div>
+        )
+      }
+
+      {
+        errorMessage && (
+
+          <div className="mb-5 bg-red-100 text-red-800 p-4 rounded-xl">
+
+            ❌ {errorMessage}
+
+          </div>
+        )
+      }
+
+      <PageHeader
+        title="Jugadores"
+        subtitle="Administración de jugadores"
+      />
+
+      <Card>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-          <input
-            type="text"
+          <Input
             placeholder="Nombre"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="border p-3 rounded-lg"
           />
 
-          <input
+          <Input
             type="number"
             placeholder="Edad"
             value={age}
             onChange={(e) => setAge(e.target.value)}
-            className="border p-3 rounded-lg"
           />
 
-          <input
-            type="text"
-            placeholder="Posición"
+          <select
             value={position}
             onChange={(e) => setPosition(e.target.value)}
-            className="border p-3 rounded-lg"
-          />
+            className="
+              border border-gray-300
+              p-3
+              rounded-xl
+              text-sm
+              focus:border-black
+              focus:ring-2
+              focus:ring-black/10
+              outline-none
+            "
+          >
 
-          <input
+            <option value="">
+              Seleccionar posición
+            </option>
+
+            <option value="Arquero">
+              Arquero
+            </option>
+
+            <option value="Defensor Central">
+              Defensor Central
+            </option>
+
+            <option value="Lateral Derecho">
+              Lateral Derecho
+            </option>
+
+            <option value="Lateral Izquierdo">
+              Lateral Izquierdo
+            </option>
+
+            <option value="Mediocampista">
+              Mediocampista
+            </option>
+
+            <option value="Volante Ofensivo">
+              Volante Ofensivo
+            </option>
+
+            <option value="Extremo">
+              Extremo
+            </option>
+
+            <option value="Delantero">
+              Delantero
+            </option>
+
+          </select>
+
+          <Input
             type="number"
             placeholder="Número"
             value={number}
             onChange={(e) => setNumber(e.target.value)}
-            className="border p-3 rounded-lg"
           />
 
           <select
             value={teamId}
             onChange={(e) => setTeamId(e.target.value)}
-            className="border p-3 rounded-lg"
+            className="
+              border border-gray-300
+              p-3
+              rounded-xl
+              text-sm
+              focus:border-black
+              focus:ring-2
+              focus:ring-black/10
+              outline-none
+            "
           >
 
             <option value="">
@@ -233,79 +341,143 @@ async function updatePlayer(player: any) {
 
         </div>
 
+        <div className="mt-5">
 
-        <button
-          onClick={createPlayer}
-          className="mt-5 bg-black text-white px-6 py-3 rounded-lg hover:bg-gray-800"
-        >
+          <Button onClick={createPlayer}>
+            Crear Jugador
+          </Button>
 
-          Crear Jugador
+        </div>
 
-        </button>
+      </Card>
 
-      </div>
+      {
+        isLoading && (
 
+          <div className="my-5 bg-yellow-100 text-yellow-800 p-4 rounded-xl">
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            ⏳ Cargando jugadores...
 
-        {
-          players.map((player: any) => {
+          </div>
+        )
+      }
 
-            const team: any = teams.find(
-              (t: any) => t.id === player.team_id
-            )
+      <div className="mt-8">
 
-            return (
+        <TableContainer>
 
-              <div
-                key={player.id}
-                className="bg-white p-6 rounded-xl shadow-lg"
-              >
+          <table className="w-full">
 
-                <h2 className="text-2xl font-bold">
-                  ⚽ {player.name}
-                </h2>
+            <thead className="bg-gray-50 text-gray-600 text-sm">
 
-                <p className="mt-2">
-                  🏃 {player.position}
-                </p>
+              <tr>
 
-                <button
-                  onClick={() => updatePlayer(player)}
-                  className="mt-5 mr-3 bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700">
-                    Editar
-                </button>
+                <th className="text-left p-4">
+                  Nombre
+                </th>
 
-                <button
-                  onClick={()=> deletePlayer(player.id)}
-                  className="mt-5 bg-red-600 text-white px-5 py-2 rounded-lg hover:bg-red-700">
-                    Eliminar
-                </button>
+                <th className="text-left p-4">
+                  Posición
+                </th>
 
-                <p className="mt-2">
-                  👕 #{player.number}
-                </p>
+                <th className="text-left p-4">
+                  Número
+                </th>
 
-                <p className="mt-2">
-                  🎂 {player.age} años
-                </p>
+                <th className="text-left p-4">
+                  Edad
+                </th>
 
-                <p className="mt-2">
-                  🛡️ {team?.name}
-                </p>
+                <th className="text-left p-4">
+                  Equipo
+                </th>
 
-                <p className="mt-2 font-bold">
-                  {
-                    player.approved
-                      ? "✅ Aprobado"
-                      : "⏳ Pendiente aprobación"
-                  }
-                </p>
+                <th className="text-left p-4">
+                  Estado
+                </th>
 
-              </div>
-            )
-          })
-        }
+                <th className="text-left p-4">
+                  Acciones
+                </th>
+
+              </tr>
+
+            </thead>
+
+            <tbody>
+
+              {
+                players.map((player: any) => {
+
+                  const team: any = teams.find(
+                    (t: any) => t.id === player.team_id
+                  )
+
+                  return (
+
+                    <tr
+                      key={player.id}
+                      className="
+                        border-t
+                        hover:bg-gray-50
+                        transition
+                      "
+                    >
+
+                      <td className="p-4">
+                        ⚽ {player.name}
+                      </td>
+
+                      <td className="p-4">
+                        {player.position}
+                      </td>
+
+                      <td className="p-4">
+                        #{player.number}
+                      </td>
+
+                      <td className="p-4">
+                        {player.age}
+                      </td>
+
+                      <td className="p-4">
+                        {team?.name}
+                      </td>
+
+                      <td className="p-4">
+
+                        <Badge status={player.status} />
+
+                      </td>
+
+                      <td className="p-4 flex gap-3">
+
+                        <Button
+                          variant="secondary"
+                          onClick={() => updatePlayer(player)}
+                        >
+                          Editar
+                        </Button>
+
+                        <Button
+                          variant="danger"
+                          onClick={() => deletePlayer(player.id)}
+                        >
+                          Eliminar
+                        </Button>
+
+                      </td>
+
+                    </tr>
+                  )
+                })
+              }
+
+            </tbody>
+
+          </table>
+
+        </TableContainer>
 
       </div>
 

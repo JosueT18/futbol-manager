@@ -72,6 +72,41 @@ function Solicitudes() {
     }
   }
 
+  async function rejectPlayer(id: number) {
+
+  const reason = prompt(
+    "Motivo rechazo (opcional)"
+  )
+
+  try {
+
+    const response = await fetch(
+      `http://127.0.0.1:8000/players/${id}/reject`,
+      {
+        method: "PUT",
+
+        headers: {
+          "Content-Type": "application/json",
+        },
+
+        body: JSON.stringify({
+          reason: reason || "",
+        }),
+      }
+    )
+
+    const data = await response.json()
+
+    console.log(data)
+
+    loadPlayers()
+
+  } catch (error) {
+
+    console.error(error)
+  }
+}
+
 
   useEffect(() => {
 
@@ -129,6 +164,15 @@ function Solicitudes() {
                 >
 
                   Aprobar
+
+                </button>
+
+                <button
+                  onClick={() => rejectPlayer(player.id)}
+                  className="mt-5 bg-red-600 text-white px-5 py-2 rounded-lg hover:bg-red-700"
+                >
+                  
+                  Rechazar
 
                 </button>
 

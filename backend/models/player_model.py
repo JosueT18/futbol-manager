@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, Boolean
-
+from sqlalchemy.orm import relationship
 from database.connection import Base
 
 
@@ -17,6 +17,14 @@ class Player(Base):
 
     number = Column(Integer, nullable=False)
 
-    team_id = Column(Integer, ForeignKey("teams.id"))
-
     approved = Column(Boolean, default=False)
+
+    team_id = Column(
+        Integer,
+        ForeignKey("teams.id")
+    )
+
+    team = relationship(
+        "Team",
+        back_populates="players"
+    )

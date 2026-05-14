@@ -6,10 +6,13 @@ from database.connection import engine, Base
 from models.user_model import User
 from models.team_model import Team
 from models.player_model import Player
+from models.formation_model import Formation
+from models.formation_player_model import FormationPlayer
 
 from routes.user_routes import router as user_router
 from routes.team_routes import router as team_router
 from routes.player_routes import router as player_router
+from routes.formation_routes import router as formation_router
 
 Base.metadata.create_all(bind=engine)
 
@@ -18,6 +21,7 @@ app = FastAPI()
 app.include_router(user_router)
 app.include_router(team_router)
 app.include_router(player_router)
+app.include_router(formation_router)
 
 Base.metadata.create_all(bind=engine)
 

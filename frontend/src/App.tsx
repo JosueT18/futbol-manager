@@ -4,14 +4,15 @@ import {
   Route
 } from "react-router-dom"
 
-import Sidebar from "./components/Sidebar"
-
 import Home from "./pages/Home"
 import Equipos from "./pages/Equipos"
 import Jugadores from "./pages/Jugadores"
 import Estadisticas from "./pages/Estadisticas"
 import Login from "./pages/Login"
 import Solicitudes from "./pages/Solicitudes"
+import Formacion from "./pages/Formacion"
+
+import Layout from "./components/Layout"
 
 import {
   AuthProvider,
@@ -29,71 +30,92 @@ function AppContent() {
 
     <BrowserRouter>
 
-      <div className="flex">
+      <Routes>
 
-        {
-          isAuthenticated && <Sidebar />
-        }
+        <Route
+          path="/login"
+          element={<Login />}
+        />
 
-        <div className="flex-1">
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute>
 
-          <Routes>
+              <Layout>
+                <Home />
+              </Layout>
 
-            <Route
-              path="/login"
-              element={<Login />}
-            />
+            </ProtectedRoute>
+          }
+        />
 
-            <Route
-              path="/"
-              element={
-                <ProtectedRoute>
-                  <Home />
-                </ProtectedRoute>
-              }
-            />
+        <Route
+          path="/equipos"
+          element={
+            <ProtectedRoute>
 
-            <Route
-              path="/equipos"
-              element={
-                <ProtectedRoute>
-                  <Equipos />
-                </ProtectedRoute>
-              }
-            />
+              <Layout>
+                <Equipos />
+              </Layout>
 
-            <Route
-              path="/jugadores"
-              element={
-                <ProtectedRoute>
-                  <Jugadores />
-                </ProtectedRoute>
-              }
-            />
+            </ProtectedRoute>
+          }
+        />
 
-            <Route
-              path="/estadisticas"
-              element={
-                <ProtectedRoute>
-                  <Estadisticas />
-                </ProtectedRoute>
-              }
-            />
+        <Route
+          path="/jugadores"
+          element={
+            <ProtectedRoute>
 
-            <Route
-              path="/solicitudes"
-              element={
-                <ProtectedRoute>
-                  <Solicitudes />
-                </ProtectedRoute>
-              }
-            />
-            
-          </Routes>
+              <Layout>
+                <Jugadores />
+              </Layout>
 
-        </div>
+            </ProtectedRoute>
+          }
+        />
 
-      </div>
+        <Route
+          path="/formacion"
+          element={
+            <ProtectedRoute>
+
+              <Layout>
+                <Formacion />
+              </Layout>
+
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/estadisticas"
+          element={
+            <ProtectedRoute>
+
+              <Layout>
+                <Estadisticas />
+              </Layout>
+
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/solicitudes"
+          element={
+            <ProtectedRoute>
+
+              <Layout>
+                <Solicitudes />
+              </Layout>
+
+            </ProtectedRoute>
+          }
+        />
+
+      </Routes>
 
     </BrowserRouter>
   )
@@ -110,6 +132,6 @@ function App() {
 
     </AuthProvider>
   )
-}
+} 
 
 export default App

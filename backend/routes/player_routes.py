@@ -49,16 +49,22 @@ def approve_player(player_id: int):
 
     db = SessionLocal()
 
-    player = db.query(Player).filter(Player.id == player_id).first()
+    player = db.query(Player).filter(
+        Player.id == player_id
+    ).first()
 
     if not player:
-        return {"error": "Jugador no encontrado"}
+        return {
+            "error": "Jugador no encontrado"
+        }
 
     player.approved = True
 
-    db.commit()
+    player.status = "approved"
 
-    db.refresh(player)
+    player.rejection_reason = None
+
+    db.commit()
 
     return {
         "message": "Jugador aprobado"
@@ -110,4 +116,32 @@ def update_player(player_id: int, data: dict):
 
     return {
         "message": "Jugador actualizado"
+    }
+
+@router.put("/players/{player_id}/reject")
+def reject_player(player_id: int, data: dict):
+
+    db = SessionLocal()
+
+    player = db.query(Player).filter(
+        Player.id == player_id
+    ).first()
+
+    if not player:
+        return {
+            "error": "Jugador no encontrado"
+        }
+
+    player.approved = False
+
+    player.status = "rejected"
+
+    player.rejection_reason = data.get(
+        "reason"
+    )
+
+    db.commit()
+
+    return {
+        "message": "Jugador rechazado"
     }

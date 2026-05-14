@@ -1,87 +1,177 @@
 import {
-  Home,
+  LayoutDashboard,
+  ShieldCheck,
   Users,
-  Shield,
+  ClipboardList,
   BarChart3,
-  LogIn,
-  ClipboardList
+  LogOut,
+  Trophy,
 } from "lucide-react"
 
-import { Link } from "react-router-dom"
+import { NavLink } from "react-router-dom"
+
 import { useAuth } from "../auth/AuthContext"
 
 function Sidebar() {
 
   const { logout } = useAuth()
 
+  const menu = [
+
+    {
+      name: "Dashboard",
+      path: "/",
+      icon: LayoutDashboard,
+    },
+
+    {
+      name: "Equipos",
+      path: "/equipos",
+      icon: Trophy,
+    },
+
+    {
+      name: "Jugadores",
+      path: "/jugadores",
+      icon: Users,
+    },
+
+    {
+      name: "Solicitudes",
+      path: "/solicitudes",
+      icon: ClipboardList,
+    },
+
+    {
+      name: "Formación",
+      path: "/formacion",
+      icon: ShieldCheck,
+    },
+
+    {
+      name: "Estadísticas",
+      path: "/estadisticas",
+      icon: BarChart3,
+    },
+  ]
+
   return (
 
-    <div className="w-64 h-screen bg-black text-white p-5">
+    <aside
+      className="
+        w-72
+        min-h-screen
+        bg-white
+        border-r
+        border-gray-200
+        flex
+        flex-col
+        justify-between
+        px-5
+        py-6
+      "
+    >
 
-      <h1 className="text-3xl font-bold mb-10">
-        ⚽ Futbol Manager
-      </h1>
+      <div>
 
-      <nav className="flex flex-col gap-5 text-lg">
+        <div className="mb-10">
 
-  <Link
-    to="/"
-    className="flex items-center gap-3 hover:text-green-400 transition"
-  >
-    <Home />
-    Inicio
-  </Link>
+          <h1
+            className="
+              text-2xl
+              font-bold
+              text-black
+              tracking-tight
+            "
+          >
+            ⚽ Futbol Manager
+          </h1>
 
-  <Link
-    to="/jugadores"
-    className="flex items-center gap-3 hover:text-green-400 transition"
-  >
-    <Users />
-    Jugadores
-  </Link>
+          <p className="text-sm text-gray-500 mt-1">
+            Panel administrativo
+          </p>
 
-  <Link
-    to="/equipos"
-    className="flex items-center gap-3 hover:text-green-400 transition"
-  >
-    <Shield />
-    Equipos
-  </Link>
+        </div>
 
-  <Link
-    to="/estadisticas"
-    className="flex items-center gap-3 hover:text-green-400 transition"
-  >
-    <BarChart3 />
-    Estadísticas
-  </Link>
+        <nav className="flex flex-col gap-2">
 
-  <Link
-    to="/solicitudes"
-    className="flex items-center gap-3
-    hover:text-green-400 transition"
-  >
-    <ClipboardList />
-    Solicitudes
-  </Link>
+          {
+            menu.map((item) => {
 
-  <Link
-    to="/login"
-    className="flex items-center gap-3 hover:text-green-400 transition"
-  >
-    <LogIn />
-    Login
-  </Link>
+              const Icon = item.icon
 
-  <button 
-   onClick={logout}
-   className="flex items-center gap-3 hover:text-red-400 transition">
-     Salir
-   </button>
+              return (
 
-</nav>
+                <NavLink
+                  key={item.path}
+                  to={item.path}
+                  className={({ isActive }) =>
+                    `
+                      flex
+                      items-center
+                      gap-3
+                      px-4
+                      py-3
+                      rounded-xl
+                      text-sm
+                      font-medium
+                      transition-all
+                      duration-200
 
-    </div>
+                      ${
+                        isActive
+                          ? `
+                            bg-black
+                            text-white
+                            shadow-sm
+                          `
+                          : `
+                            text-gray-600
+                            hover:bg-gray-100
+                            hover:text-black
+                          `
+                      }
+                    `
+                  }
+                >
+
+                  <Icon size={18} />
+
+                  {item.name}
+
+                </NavLink>
+              )
+            })
+          }
+
+        </nav>
+
+      </div>
+
+      <button
+        onClick={logout}
+        className="
+          flex
+          items-center
+          gap-3
+          px-4
+          py-3
+          rounded-xl
+          text-sm
+          font-medium
+          text-red-500
+          hover:bg-red-50
+          transition
+        "
+      >
+
+        <LogOut size={18} />
+
+        Cerrar sesión
+
+      </button>
+
+    </aside>
   )
 }
 
