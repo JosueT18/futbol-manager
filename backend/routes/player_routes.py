@@ -1,8 +1,8 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
 from sqlalchemy.orm import Session
 
-from database.connection import SessionLocal
+from database.connection import get_db
 
 from models.player_model import Player
 
@@ -12,9 +12,10 @@ router = APIRouter()
 
 
 @router.post("/players")
-def create_player(player: PlayerCreate):
-
-    db: Session = SessionLocal()
+def create_player(
+    player: PlayerCreate,
+    db: Session = Depends(get_db)
+):
 
     new_player = Player(
         name=player.name,
@@ -36,18 +37,20 @@ def create_player(player: PlayerCreate):
 
 
 @router.get("/players")
-def get_players():
-
-    db: Session = SessionLocal()
+def get_players(
+    db: Session = Depends(get_db)
+):
 
     players = db.query(Player).all()
 
     return players
 
-@router.put("/players/{player_id}/approve")
-def approve_player(player_id: int):
 
-    db = SessionLocal()
+@router.put("/players/{player_id}/approve")
+def approve_player(
+    player_id: int,
+    db: Session = Depends(get_db)
+):
 
     player = db.query(Player).filter(
         Player.id == player_id
@@ -70,10 +73,12 @@ def approve_player(player_id: int):
         "message": "Jugador aprobado"
     }
 
-@router.delete("/players/{player_id}")
-def delete_player(player_id: int):
 
-    db = SessionLocal()
+@router.delete("/players/{player_id}")
+def delete_player(
+    player_id: int,
+    db: Session = Depends(get_db)
+):
 
     player = db.query(Player).filter(
         Player.id == player_id
@@ -92,10 +97,13 @@ def delete_player(player_id: int):
         "message": "Jugador eliminado"
     }
 
-@router.put("/players/{player_id}")
-def update_player(player_id: int, data: dict):
 
-    db = SessionLocal()
+@router.put("/players/{player_id}")
+def update_player(
+    player_id: int,
+    data: dict,
+    db: Session = Depends(get_db)
+):
 
     player = db.query(Player).filter(
         Player.id == player_id
@@ -108,6 +116,7 @@ def update_player(player_id: int, data: dict):
         }
 
     player.name = data.get("name")
+
     player.position = data.get("position")
 
     db.commit()
@@ -118,10 +127,13 @@ def update_player(player_id: int, data: dict):
         "message": "Jugador actualizado"
     }
 
-@router.put("/players/{player_id}/reject")
-def reject_player(player_id: int, data: dict):
 
-    db = SessionLocal()
+@router.put("/players/{player_id}/reject")
+def reject_player(
+    player_id: int,
+    data: dict,
+    db: Session = Depends(get_db)
+):
 
     player = db.query(Player).filter(
         Player.id == player_id

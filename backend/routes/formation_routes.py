@@ -1,6 +1,7 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
 
-from database.connection import SessionLocal
+from database.connection import get_db
 
 from models.formation_model import Formation
 from models.formation_player_model import FormationPlayer
@@ -11,9 +12,10 @@ router = APIRouter()
 
 
 @router.post("/formations")
-def create_formation(data: dict):
-
-    db = SessionLocal()
+def create_formation(
+    data: dict,
+    db: Session = Depends(get_db)
+):
 
     formation = Formation(
 
@@ -39,9 +41,9 @@ def create_formation(data: dict):
 
 
 @router.get("/formations")
-def get_formations():
-
-    db = SessionLocal()
+def get_formations(
+    db: Session = Depends(get_db)
+):
 
     formations = db.query(
         Formation
@@ -49,10 +51,12 @@ def get_formations():
 
     return formations
 
-@router.post("/formation-players")
-def add_player_to_formation(data: dict):
 
-    db = SessionLocal()
+@router.post("/formation-players")
+def add_player_to_formation(
+    data: dict,
+    db: Session = Depends(get_db)
+):
 
     formation = db.query(Formation).filter(
         Formation.id == data.get("formation_id")

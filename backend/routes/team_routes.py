@@ -1,17 +1,22 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Body, Depends
+
 from sqlalchemy.orm import Session
-from database.connection import SessionLocal
+
+from database.connection import get_db
+
 from models.team_model import Team
+
 from schemas.team_schema import TeamCreate
-from fastapi import APIRouter,Body
+
 
 router = APIRouter()
 
 
 @router.post("/teams")
-def create_team(team: TeamCreate):
-
-    db: Session = SessionLocal()
+def create_team(
+    team: TeamCreate,
+    db: Session = Depends(get_db)
+):
 
     new_team = Team(
         name=team.name,
@@ -31,18 +36,20 @@ def create_team(team: TeamCreate):
 
 
 @router.get("/teams")
-def get_teams():
-
-    db: Session = SessionLocal()
+def get_teams(
+    db: Session = Depends(get_db)
+):
 
     teams = db.query(Team).all()
 
     return teams
 
-@router.delete("/teams/{team_id}")
-def delete_team(team_id: int):
 
-    db = SessionLocal()
+@router.delete("/teams/{team_id}")
+def delete_team(
+    team_id: int,
+    db: Session = Depends(get_db)
+):
 
     team = db.query(Team).filter(
         Team.id == team_id
@@ -66,13 +73,13 @@ def delete_team(team_id: int):
         "message": "Equipo eliminado"
     }
 
+
 @router.put("/teams/{team_id}")
 def update_team(
     team_id: int,
-    data: dict = Body(...)
-    ):
-
-    db = SessionLocal()
+    data: dict = Body(...),
+    db: Session = Depends(get_db)
+):
 
     team = db.query(Team).filter(
         Team.id == team_id

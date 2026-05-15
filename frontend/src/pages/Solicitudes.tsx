@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react"
 
+
 function Solicitudes() {
 
   const [players, setPlayers] = useState([])
 
   const [teams, setTeams] = useState([])
+
+  
 
 
   async function loadPlayers() {
@@ -16,7 +19,6 @@ function Solicitudes() {
       )
 
       const data = await response.json()
-
       const pendingPlayers = data.filter(
         (player: any) => player.approved === false
       )
@@ -28,8 +30,6 @@ function Solicitudes() {
       console.error(error)
     }
   }
-
-
   async function loadTeams() {
 
     try {
@@ -47,8 +47,6 @@ function Solicitudes() {
       console.error(error)
     }
   }
-
-
   async function approvePlayer(id: number) {
 
     try {
@@ -70,16 +68,15 @@ function Solicitudes() {
 
       console.error(error)
     }
+  
+
   }
-
   async function rejectPlayer(id: number) {
-
   const reason = prompt(
     "Motivo rechazo (opcional)"
   )
 
   try {
-
     const response = await fetch(
       `http://127.0.0.1:8000/players/${id}/reject`,
       {
@@ -94,7 +91,8 @@ function Solicitudes() {
         }),
       }
     )
-
+    
+    
     const data = await response.json()
 
     console.log(data)
@@ -106,8 +104,6 @@ function Solicitudes() {
     console.error(error)
   }
 }
-
-
   useEffect(() => {
 
     loadPlayers()
@@ -115,8 +111,6 @@ function Solicitudes() {
     loadTeams()
 
   }, [])
-
-
   return (
 
     <div className="p-10">
@@ -124,8 +118,6 @@ function Solicitudes() {
       <h1 className="text-4xl font-bold mb-8">
         Solicitudes de Jugadores
       </h1>
-
-
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
         {
@@ -162,7 +154,6 @@ function Solicitudes() {
                   onClick={() => approvePlayer(player.id)}
                   className="mt-5 bg-green-600 text-white px-5 py-2 rounded-lg hover:bg-green-700"
                 >
-
                   Aprobar
 
                 </button>
@@ -170,8 +161,7 @@ function Solicitudes() {
                 <button
                   onClick={() => rejectPlayer(player.id)}
                   className="mt-5 bg-red-600 text-white px-5 py-2 rounded-lg hover:bg-red-700"
-                >
-                  
+                >                  
                   Rechazar
 
                 </button>
