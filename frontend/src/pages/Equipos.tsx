@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useState, useEffect } from "react"
 import Swal from "sweetalert2"
 import { useQuery } from "@tanstack/react-query"
 
@@ -12,7 +12,6 @@ import {
 import Button from "../components/ui/Button"
 import Input from "../components/ui/Input"
 import Card from "../components/ui/Card"
-import PageHeader from "../components/ui/PageHeader"
 import TableContainer from "../components/ui/TableContainer"
 
 function Equipos() {
@@ -20,10 +19,14 @@ function Equipos() {
   const [name, setName] = useState("")
   const [city, setCity] = useState("")
   const [tecnico, setTecnico] = useState("")
-
+  const [showForm, setShowForm] = useState(false)
+  const [openTeamId, setOpenTeamId] = useState<number | null>(null)
   const [successMessage, setSuccessMessage] = useState("")
   const [errorMessage, setErrorMessage] = useState("")
 
+  // =========================
+  // TEAMS
+  // =========================
   const {
     data: teams = [],
     isLoading,
@@ -33,7 +36,23 @@ function Equipos() {
     queryFn: getTeams,
   })
 
+  // =========================
+  // CREATE TEAM
+  // =========================
   async function createTeam() {
+
+    if (
+      !name ||
+      !city ||
+      !tecnico
+    ) {
+
+      setErrorMessage(
+        "Todos los campos son obligatorios"
+      )
+
+      return
+    }
 
     try {
 
@@ -53,6 +72,8 @@ function Equipos() {
       setCity("")
       setTecnico("")
 
+      setShowForm(false)
+
       await refetch()
 
     } catch (error) {
@@ -65,6 +86,9 @@ function Equipos() {
     }
   }
 
+  // =========================
+  // DELETE TEAM
+  // =========================
   async function deleteTeam(id: number) {
 
     const result = await Swal.fire({
@@ -97,11 +121,15 @@ function Equipos() {
       console.error(error)
 
       setErrorMessage(
-        error.message || "Error al eliminar equipo"
+        error.message ||
+        "Error al eliminar equipo"
       )
     }
   }
 
+  // =========================
+  // UPDATE TEAM
+  // =========================
   async function updateTeam(team: any) {
 
     const newName = prompt(
@@ -156,28 +184,38 @@ function Equipos() {
     }
   }
 
+  // =========================
+  // AUTO CLEAR SUCCESS
+  // =========================
   useEffect(() => {
 
     if (successMessage) {
 
-      setTimeout(() => {
+      const timer = setTimeout(() => {
 
         setSuccessMessage("")
 
       }, 3000)
+
+      return () => clearTimeout(timer)
     }
 
   }, [successMessage])
 
+  // =========================
+  // AUTO CLEAR ERROR
+  // =========================
   useEffect(() => {
 
     if (errorMessage) {
 
-      setTimeout(() => {
+      const timer = setTimeout(() => {
 
         setErrorMessage("")
 
       }, 3000)
+
+      return () => clearTimeout(timer)
     }
 
   }, [errorMessage])
@@ -186,6 +224,7 @@ function Equipos() {
 
     <div className="p-6">
 
+      {/* SUCCESS */}
       {
         successMessage && (
 
@@ -197,6 +236,7 @@ function Equipos() {
         )
       }
 
+      {/* ERROR */}
       {
         errorMessage && (
 
@@ -208,49 +248,78 @@ function Equipos() {
         )
       }
 
-      <PageHeader
-        title="Equipos"
-        subtitle="Administración de equipos"
-      />
+      {/* HEADER */}
+      <div className="flex items-center justify-between mb-6">
 
-      <Card>
+        <h1 className="text-4xl font-bold">
+          Equipos
+        </h1>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Button
+          onClick={() =>
+            setShowForm(!showForm)
+          }
+        >
+          {
+            showForm
+              ? "Cerrar"
+              : "+ Crear Equipo"
+          }
+        </Button>
 
-          <Input
-            placeholder="Nombre"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
+      </div>
 
-          <Input
-            placeholder="Ciudad"
-            value={city}
-            onChange={(e) => setCity(e.target.value)}
-          />
+      {/* FORM */}
+      {
+        showForm && (
 
-          <Input
-            placeholder="Director Técnico"
-            value={tecnico}
-            onChange={(e) => setTecnico(e.target.value)}
-          />
+          <Card>
 
-        </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 
-        <div className="mt-5">
+              <Input
+                placeholder="Nombre"
+                value={name}
+                onChange={(e) =>
+                  setName(e.target.value)
+                }
+              />
 
-          <Button onClick={createTeam}>
-            Crear Equipo
-          </Button>
+              <Input
+                placeholder="Ciudad"
+                value={city}
+                onChange={(e) =>
+                  setCity(e.target.value)
+                }
+              />
 
-        </div>
+              <Input
+                placeholder="Director Técnico"
+                value={tecnico}
+                onChange={(e) =>
+                  setTecnico(e.target.value)
+                }
+              />
 
-      </Card>
+            </div>
 
+            <div className="mt-5">
+
+              <Button onClick={createTeam}>
+                Crear Equipo
+              </Button>
+
+            </div>
+
+          </Card>
+        )
+      }
+
+      {/* LOADING */}
       {
         isLoading && (
 
-          <div className="mb-5 mt-5 bg-yellow-100 text-yellow-800 p-4 rounded-xl">
+          <div className="my-5 bg-yellow-100 text-yellow-800 p-4 rounded-xl">
 
             ⏳ Cargando equipos...
 
@@ -258,7 +327,15 @@ function Equipos() {
         )
       }
 
-      <div className="mt-8">
+      {/* TABLE */}
+      <div
+        className="
+          bg-white
+          rounded-2xl
+          shadow-sm
+          overflow-hidden
+        "
+      >
 
         <TableContainer>
 
@@ -268,19 +345,27 @@ function Equipos() {
 
               <tr>
 
-                <th className="text-left p-4">
+                <th className="text-left py-3 px-4">
                   Equipo
                 </th>
 
-                <th className="text-left p-4">
+                <th className="text-left py-3 px-4">
                   Ciudad
                 </th>
 
-                <th className="text-left p-4">
+                <th className="text-left py-3 px-4">
                   Técnico
                 </th>
 
-                <th className="text-left p-4">
+                <th className="text-left py-3 px-4">
+                  Jugadores
+                </th>
+
+                <th className="text-left py-3 px-4">
+                  Cantidad
+                </th>
+
+                <th className="text-left py-3 px-4">
                   Acciones
                 </th>
 
@@ -290,53 +375,243 @@ function Equipos() {
 
             <tbody>
 
-              {
-                teams.map((team: any) => (
+  {
+    teams.map((team: any) => (
 
-                  <tr
-                    key={team.id}
+      <>
+        {/* FILA PRINCIPAL */}
+        <tr
+          key={team.id}
+          className="
+            border-t
+            hover:bg-gray-50
+            transition-colors
+          "
+        >
+
+          {/* EQUIPO */}
+          <td className="py-4 px-4">
+
+            <button
+              onClick={() =>
+
+                setOpenTeamId(
+
+                  openTeamId === team.id
+                    ? null
+                    : team.id
+                )
+              }
+              className="
+                text-left
+                w-full
+              "
+            >
+
+              <div className="flex items-center gap-3">
+
+                <div
+                  className="
+                    w-11
+                    h-11
+                    rounded-full
+                    bg-blue-100
+                    flex
+                    items-center
+                    justify-center
+                    text-xl
+                  "
+                >
+                  ⚽
+                </div>
+
+                <div>
+
+                  <p
                     className="
-                      border-t
-                      hover:bg-gray-50
-                      transition
+                      text-lg
+                      font-bold
+                      text-gray-800
                     "
                   >
+                    {team.name}
+                  </p>
 
-                    <td className="p-4 font-medium text-gray-800">
-                      ⚽ {team.name}
-                    </td>
+                  <p
+                    className="
+                      text-xs
+                      text-gray-400
+                    "
+                  >
+                    {
+                      openTeamId === team.id
+                        ? "Ocultar jugadores"
+                        : "Click para ver jugadores"
+                    }
+                  </p>
 
-                    <td className="p-4 text-gray-600">
-                      📍 {team.city}
-                    </td>
+                </div>
 
-                    <td className="p-4 text-gray-600">
-                      👨‍🏫 {team.tecnico}
-                    </td>
+              </div>
 
-                    <td className="p-4 flex gap-3">
+            </button>
 
-                      <Button
-                        variant="secondary"
-                        onClick={() => updateTeam(team)}
-                      >
-                        Editar
-                      </Button>
+          </td>
 
-                      <Button
-                        variant="danger"
-                        onClick={() => deleteTeam(team.id)}
-                      >
-                        Eliminar
-                      </Button>
+          {/* CIUDAD */}
+          <td className="py-4 px-4">
+            📍 {team.city}
+          </td>
 
-                    </td>
+          {/* TECNICO */}
+          <td className="py-4 px-4">
+            👨‍🏫 {team.tecnico}
+          </td>
 
-                  </tr>
-                ))
+          {/* CANTIDAD */}
+          <td className="py-4 px-4">
+
+            <div
+              className="
+                bg-blue-100
+                text-blue-700
+                px-3
+                py-1
+                rounded-full
+                inline-block
+                font-semibold
+                text-sm
+              "
+            >
+              {team.players?.length || 0}
+            </div>
+
+          </td>
+
+          {/* ACCIONES */}
+          <td className="py-4 px-4 flex gap-3">
+
+            <Button
+              variant="secondary"
+              onClick={() =>
+                updateTeam(team)
               }
+            >
+              Editar
+            </Button>
 
-            </tbody>
+            <Button
+              variant="danger"
+              onClick={() =>
+                deleteTeam(team.id)
+              }
+            >
+              Eliminar
+            </Button>
+
+          </td>
+
+        </tr>
+
+        {/* JUGADORES EXPANDIDOS */}
+        {
+          openTeamId === team.id && (
+
+            <tr className="bg-gray-50">
+
+              <td
+                colSpan={5}
+                className="px-8 py-5"
+              >
+
+                {
+                  team.players?.length > 0
+                    ? (
+
+                      <div className="space-y-2">
+
+                        {
+                          team.players.map(
+                            (player: any) => (
+
+                              <div
+                                key={player.id}
+                                className="
+                                  flex
+                                  items-center
+                                  justify-between
+                                  bg-white
+                                  rounded-xl
+                                  px-4
+                                  py-2
+                                  shadow-sm
+                                  text-sm
+                                "
+                              >
+
+                                {/* IZQUIERDA */}
+                                <div className="flex items-center gap-3">
+
+                                  <span>
+                                    ⚽
+                                  </span>
+
+                                  <span className="font-medium">
+                                    {player.name}
+                                  </span>
+
+                                </div>
+
+                                {/* DERECHA */}
+                                <div
+                                  className="
+                                    flex
+                                    items-center
+                                    gap-5
+                                    text-gray-500
+                                  "
+                                >
+
+                                  <span>
+                                    {player.position}
+                                  </span>
+
+                                  <span>
+                                    #{player.number}
+                                  </span>
+
+                                  <span>
+                                    {player.age} años
+                                  </span>
+
+                                </div>
+
+                              </div>
+                            )
+                          )
+                        }
+
+                      </div>
+                    )
+                    : (
+
+                      <p className="text-gray-400 text-sm">
+                        Este equipo no tiene jugadores
+                      </p>
+                    )
+                }
+
+              </td>
+
+            </tr>
+          )
+        }
+
+      </>
+    ))
+  }
+
+</tbody>
 
           </table>
 

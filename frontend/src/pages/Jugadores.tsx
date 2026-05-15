@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useState, useEffect } from "react"
 import Swal from "sweetalert2"
 import { useQuery } from "@tanstack/react-query"
 
@@ -13,8 +13,8 @@ import Button from "../components/ui/Button"
 import Input from "../components/ui/Input"
 import Badge from "../components/ui/Badge"
 import Card from "../components/ui/Card"
-import PageHeader from "../components/ui/PageHeader"
 import TableContainer from "../components/ui/TableContainer"
+import Modal from "../components/ui/Modal"
 
 function Jugadores() {
 
@@ -23,12 +23,29 @@ function Jugadores() {
   const [position, setPosition] = useState("")
   const [number, setNumber] = useState("")
   const [teamId, setTeamId] = useState("")
+  const [showForm, setShowForm] = useState(false)
+
+  const [editModalOpen, setEditModalOpen] = useState(false)
+
+  const [selectedPlayer, setSelectedPlayer] = useState<any>(null)
+
+  const [editName, setEditName] = useState("")
+  const [editAge, setEditAge] = useState("")
+  const [editPosition, setEditPosition] = useState("")
+  const [editNumber, setEditNumber] = useState("")
+  const [editTeamId, setEditTeamId] = useState("")
+
+  const [search, setSearch] = useState("")
+  const [statusFilter, setStatusFilter] = useState("all")
 
   const [teams, setTeams] = useState([])
 
   const [successMessage, setSuccessMessage] = useState("")
   const [errorMessage, setErrorMessage] = useState("")
 
+  // =========================
+  // PLAYERS
+  // =========================
   const {
     data: players = [],
     isLoading,
@@ -38,18 +55,71 @@ function Jugadores() {
     queryFn: getPlayers,
   })
 
+  // =========================
+  // FILTERED PLAYERS
+  // =========================
+  const filteredPlayers = players.filter(
+    (player: any) => {
+
+      const matchesSearch =
+        player.name
+          .toLowerCase()
+          .includes(
+            search.toLowerCase()
+          )
+
+      const matchesStatus =
+        statusFilter === "all"
+        ||
+        player.status === statusFilter
+
+      return (
+        matchesSearch &&
+        matchesStatus
+      )
+    }
+  )
+
+  // =========================
+  // LOAD TEAMS
+  // =========================
   async function loadTeams() {
 
-    const response = await fetch(
-      "http://127.0.0.1:8000/teams"
-    )
+    try {
 
-    const data = await response.json()
+      const response = await fetch(
+        "http://127.0.0.1:8000/teams"
+      )
 
-    setTeams(data)
+      const data = await response.json()
+
+      setTeams(data)
+
+    } catch (error) {
+
+      console.error(error)
+    }
   }
 
+  // =========================
+  // CREATE PLAYER
+  // =========================
   async function createPlayer() {
+
+    if (
+      !name ||
+      !age ||
+      !position ||
+      !number ||
+      !teamId
+    ) {
+
+      setErrorMessage(
+        "Todos los campos son obligatorios"
+      )
+
+      return
+    }
 
     try {
 
@@ -73,6 +143,8 @@ function Jugadores() {
       setNumber("")
       setTeamId("")
 
+      setShowForm(false)
+
       await refetch()
 
     } catch (error) {
@@ -85,6 +157,9 @@ function Jugadores() {
     }
   }
 
+  // =========================
+  // DELETE PLAYER
+  // =========================
   async function deletePlayer(id: number) {
 
     const result = await Swal.fire({
@@ -122,29 +197,52 @@ function Jugadores() {
     }
   }
 
-  async function updatePlayer(player: any) {
+  // =========================
+  // OPEN EDIT MODAL
+  // =========================
+  function updatePlayer(player: any) {
 
-    const newName = prompt(
-      "Nuevo nombre",
-      player.name
-    )
+    setSelectedPlayer(player)
 
-    const newPosition = prompt(
-      "Nueva posición",
-      player.position
-    )
+    setEditName(player.name)
+    setEditAge(player.age.toString())
+    setEditPosition(player.position)
+    setEditNumber(player.number.toString())
+    setEditTeamId(player.team_id.toString())
 
-    if (!newName || !newPosition) {
+    setEditModalOpen(true)
+  }
+
+  // =========================
+  // SAVE PLAYER
+  // =========================
+  async function saveEditPlayer() {
+
+    if (
+      !editName ||
+      !editAge ||
+      !editPosition ||
+      !editNumber ||
+      !editTeamId
+    ) {
+
+      setErrorMessage(
+        "Todos los campos son obligatorios"
+      )
+
       return
     }
 
     try {
 
       await updatePlayerApi(
-        player.id,
+        selectedPlayer.id,
         {
-          name: newName,
-          position: newPosition,
+          name: editName,
+          age: Number(editAge),
+          position: editPosition,
+          number: Number(editNumber),
+          team_id: Number(editTeamId),
         }
       )
 
@@ -153,6 +251,8 @@ function Jugadores() {
       )
 
       setErrorMessage("")
+
+      setEditModalOpen(false)
 
       await refetch()
 
@@ -166,34 +266,47 @@ function Jugadores() {
     }
   }
 
+  // =========================
+  // LOAD INITIAL DATA
+  // =========================
   useEffect(() => {
 
     loadTeams()
 
   }, [])
 
+  // =========================
+  // AUTO CLEAR SUCCESS
+  // =========================
   useEffect(() => {
 
     if (successMessage) {
 
-      setTimeout(() => {
+      const timer = setTimeout(() => {
 
         setSuccessMessage("")
 
       }, 3000)
+
+      return () => clearTimeout(timer)
     }
 
   }, [successMessage])
 
+  // =========================
+  // AUTO CLEAR ERROR
+  // =========================
   useEffect(() => {
 
     if (errorMessage) {
 
-      setTimeout(() => {
+      const timer = setTimeout(() => {
 
         setErrorMessage("")
 
       }, 3000)
+
+      return () => clearTimeout(timer)
     }
 
   }, [errorMessage])
@@ -202,6 +315,7 @@ function Jugadores() {
 
     <div className="p-6">
 
+      {/* SUCCESS */}
       {
         successMessage && (
 
@@ -213,6 +327,7 @@ function Jugadores() {
         )
       }
 
+      {/* ERROR */}
       {
         errorMessage && (
 
@@ -224,40 +339,408 @@ function Jugadores() {
         )
       }
 
-      <PageHeader
-        title="Jugadores"
-        subtitle="Administración de jugadores"
-      />
+      {/* HEADER */}
+      <div className="flex items-center justify-between mb-6">
 
-      <Card>
+        <h1 className="text-4xl font-bold">
+          Jugadores
+        </h1>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Button
+          onClick={() =>
+            setShowForm(!showForm)
+          }
+        >
+
+          {
+            showForm
+              ? "Cerrar"
+              : "+ Crear Jugador"
+          }
+
+        </Button>
+
+      </div>
+
+      {/* FILTERS */}
+      <div
+        className="
+          flex
+          flex-col
+          md:flex-row
+          gap-4
+          mb-6
+        "
+      >
+
+        <Input
+          placeholder="Buscar jugador..."
+          value={search}
+          onChange={(e) =>
+            setSearch(e.target.value)
+          }
+        />
+
+        <select
+          value={statusFilter}
+          onChange={(e) =>
+            setStatusFilter(e.target.value)
+          }
+          className="
+            border
+            rounded-xl
+            px-4
+            py-3
+            bg-white
+          "
+        >
+
+          <option value="all">
+            Todos
+          </option>
+
+          <option value="pending">
+            Pendientes
+          </option>
+
+          <option value="approved">
+            Aprobados
+          </option>
+
+          <option value="rejected">
+            Rechazados
+          </option>
+
+        </select>
+
+      </div>
+
+      {/* CREATE FORM */}
+      {
+        showForm && (
+
+          <Card>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+              <Input
+                placeholder="Nombre"
+                value={name}
+                onChange={(e) =>
+                  setName(e.target.value)
+                }
+              />
+
+              <Input
+                type="number"
+                placeholder="Edad"
+                value={age}
+                onChange={(e) =>
+                  setAge(e.target.value)
+                }
+              />
+
+              <select
+                value={position}
+                onChange={(e) =>
+                  setPosition(e.target.value)
+                }
+                className="
+                  border
+                  p-3
+                  rounded-xl
+                "
+              >
+
+                <option value="">
+                  Seleccionar posición
+                </option>
+
+                <option value="Arquero">
+                  Arquero
+                </option>
+
+                <option value="Defensor Central">
+                  Defensor Central
+                </option>
+
+                <option value="Lateral Derecho">
+                  Lateral Derecho
+                </option>
+
+                <option value="Lateral Izquierdo">
+                  Lateral Izquierdo
+                </option>
+
+                <option value="Mediocampista">
+                  Mediocampista
+                </option>
+
+                <option value="Volante Ofensivo">
+                  Volante Ofensivo
+                </option>
+
+                <option value="Extremo">
+                  Extremo
+                </option>
+
+                <option value="Delantero">
+                  Delantero
+                </option>
+
+              </select>
+
+              <Input
+                type="number"
+                placeholder="Número"
+                value={number}
+                onChange={(e) =>
+                  setNumber(e.target.value)
+                }
+              />
+
+              <select
+                value={teamId}
+                onChange={(e) =>
+                  setTeamId(e.target.value)
+                }
+                className="
+                  border
+                  p-3
+                  rounded-xl
+                "
+              >
+
+                <option value="">
+                  Seleccionar equipo
+                </option>
+
+                {
+                  teams.map((team: any) => (
+
+                    <option
+                      key={team.id}
+                      value={team.id}
+                    >
+                      {team.name}
+                    </option>
+                  ))
+                }
+
+              </select>
+
+            </div>
+
+            <div className="mt-5">
+
+              <Button onClick={createPlayer}>
+                Crear Jugador
+              </Button>
+
+            </div>
+
+          </Card>
+        )
+      }
+
+      {/* LOADING */}
+      {
+        isLoading && (
+
+          <div className="my-5 bg-yellow-100 text-yellow-800 p-4 rounded-xl">
+
+            ⏳ Cargando jugadores...
+
+          </div>
+        )
+      }
+
+      {/* TABLE */}
+      <div
+        className="
+          bg-white
+          rounded-2xl
+          shadow-sm
+          overflow-hidden
+        "
+      >
+
+        <TableContainer>
+
+          <table className="w-full">
+
+            <thead className="bg-gray-50 text-gray-600 text-sm">
+
+              <tr>
+
+                <th className="text-left py-3 px-4">
+                  Nombre
+                </th>
+
+                <th className="text-left py-3 px-4">
+                  Posición
+                </th>
+
+                <th className="text-left py-3 px-4">
+                  Número
+                </th>
+
+                <th className="text-left py-3 px-4">
+                  Edad
+                </th>
+
+                <th className="text-left py-3 px-4">
+                  Equipo
+                </th>
+
+                <th className="text-left py-3 px-4">
+                  Estado
+                </th>
+
+                <th className="text-left py-3 px-4">
+                  Acciones
+                </th>
+
+              </tr>
+
+            </thead>
+
+            <tbody>
+
+              {
+                filteredPlayers.map((player: any) => {
+
+                  const team: any = teams.find(
+                    (t: any) =>
+                      t.id === player.team_id
+                  )
+
+                  return (
+
+                    <tr
+                      key={player.id}
+                      className="
+                        border-t
+                        hover:bg-gray-50
+                        transition-colors
+                      "
+                    >
+
+                      <td className="py-3 px-4">
+                        ⚽ {player.name}
+                      </td>
+
+                      <td className="py-3 px-4">
+                        {player.position}
+                      </td>
+
+                      <td className="py-3 px-4">
+                        #{player.number}
+                      </td>
+
+                      <td className="py-3 px-4">
+                        {player.age}
+                      </td>
+
+                      <td className="py-3 px-4">
+                        {team?.name}
+                      </td>
+
+                      <td className="py-3 px-4">
+
+                        <Badge
+                          status={player.status}
+                        />
+
+                        {
+                          player.status === "rejected" &&
+                          player.rejection_reason && (
+
+                            <p className="text-red-500 text-xs mt-1">
+
+                              Motivo:
+                              {" "}
+                              {player.rejection_reason}
+
+                            </p>
+                          )
+                        }
+
+                      </td>
+
+                      <td className="py-3 px-4 flex gap-3">
+
+                        <Button
+                          variant="secondary"
+                          onClick={() =>
+                            updatePlayer(player)
+                          }
+                        >
+                          Editar
+                        </Button>
+
+                        <Button
+                          variant="danger"
+                          onClick={() =>
+                            deletePlayer(player.id)
+                          }
+                        >
+                          Eliminar
+                        </Button>
+
+                      </td>
+
+                    </tr>
+                  )
+                })
+              }
+
+            </tbody>
+
+          </table>
+
+        </TableContainer>
+
+      </div>
+
+      {/* MODAL EDIT PLAYER */}
+      <Modal
+        open={editModalOpen}
+        onClose={() =>
+          setEditModalOpen(false)
+        }
+        title="Editar Jugador"
+      >
+
+        <div className="space-y-4">
 
           <Input
             placeholder="Nombre"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
+            value={editName}
+            onChange={(e) =>
+              setEditName(e.target.value)
+            }
           />
 
           <Input
             type="number"
             placeholder="Edad"
-            value={age}
-            onChange={(e) => setAge(e.target.value)}
+            value={editAge}
+            onChange={(e) =>
+              setEditAge(e.target.value)
+            }
           />
 
           <select
-            value={position}
-            onChange={(e) => setPosition(e.target.value)}
+            value={editPosition}
+            onChange={(e) =>
+              setEditPosition(e.target.value)
+            }
             className="
-              border border-gray-300
+              w-full
+              border
               p-3
               rounded-xl
-              text-sm
-              focus:border-black
-              focus:ring-2
-              focus:ring-black/10
-              outline-none
             "
           >
 
@@ -302,22 +785,22 @@ function Jugadores() {
           <Input
             type="number"
             placeholder="Número"
-            value={number}
-            onChange={(e) => setNumber(e.target.value)}
+            value={editNumber}
+            onChange={(e) =>
+              setEditNumber(e.target.value)
+            }
           />
 
           <select
-            value={teamId}
-            onChange={(e) => setTeamId(e.target.value)}
+            value={editTeamId}
+            onChange={(e) =>
+              setEditTeamId(e.target.value)
+            }
             className="
-              border border-gray-300
+              w-full
+              border
               p-3
               rounded-xl
-              text-sm
-              focus:border-black
-              focus:ring-2
-              focus:ring-black/10
-              outline-none
             "
           >
 
@@ -339,147 +822,28 @@ function Jugadores() {
 
           </select>
 
-        </div>
+          <div className="flex justify-end gap-3 pt-4">
 
-        <div className="mt-5">
+            <Button
+              variant="secondary"
+              onClick={() =>
+                setEditModalOpen(false)
+              }
+            >
+              Cancelar
+            </Button>
 
-          <Button onClick={createPlayer}>
-            Crear Jugador
-          </Button>
-
-        </div>
-
-      </Card>
-
-      {
-        isLoading && (
-
-          <div className="my-5 bg-yellow-100 text-yellow-800 p-4 rounded-xl">
-
-            ⏳ Cargando jugadores...
+            <Button
+              onClick={saveEditPlayer}
+            >
+              Guardar Cambios
+            </Button>
 
           </div>
-        )
-      }
 
-      <div className="mt-8">
+        </div>
 
-        <TableContainer>
-
-          <table className="w-full">
-
-            <thead className="bg-gray-50 text-gray-600 text-sm">
-
-              <tr>
-
-                <th className="text-left p-4">
-                  Nombre
-                </th>
-
-                <th className="text-left p-4">
-                  Posición
-                </th>
-
-                <th className="text-left p-4">
-                  Número
-                </th>
-
-                <th className="text-left p-4">
-                  Edad
-                </th>
-
-                <th className="text-left p-4">
-                  Equipo
-                </th>
-
-                <th className="text-left p-4">
-                  Estado
-                </th>
-
-                <th className="text-left p-4">
-                  Acciones
-                </th>
-
-              </tr>
-
-            </thead>
-
-            <tbody>
-
-              {
-                players.map((player: any) => {
-
-                  const team: any = teams.find(
-                    (t: any) => t.id === player.team_id
-                  )
-
-                  return (
-
-                    <tr
-                      key={player.id}
-                      className="
-                        border-t
-                        hover:bg-gray-50
-                        transition
-                      "
-                    >
-
-                      <td className="p-4">
-                        ⚽ {player.name}
-                      </td>
-
-                      <td className="p-4">
-                        {player.position}
-                      </td>
-
-                      <td className="p-4">
-                        #{player.number}
-                      </td>
-
-                      <td className="p-4">
-                        {player.age}
-                      </td>
-
-                      <td className="p-4">
-                        {team?.name}
-                      </td>
-
-                      <td className="p-4">
-
-                        <Badge status={player.status} />
-
-                      </td>
-
-                      <td className="p-4 flex gap-3">
-
-                        <Button
-                          variant="secondary"
-                          onClick={() => updatePlayer(player)}
-                        >
-                          Editar
-                        </Button>
-
-                        <Button
-                          variant="danger"
-                          onClick={() => deletePlayer(player.id)}
-                        >
-                          Eliminar
-                        </Button>
-
-                      </td>
-
-                    </tr>
-                  )
-                })
-              }
-
-            </tbody>
-
-          </table>
-
-        </TableContainer>
-
-      </div>
+      </Modal>
 
     </div>
   )

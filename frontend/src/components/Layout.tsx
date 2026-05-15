@@ -12,18 +12,6 @@ function Layout({
 
       <main className="flex-1 p-8 overflow-auto">
 
-        <div className="mb-8">
-
-          <h1 className="text-3xl font-bold text-gray-800">
-            Futbol Manager
-          </h1>
-
-          <p className="text-gray-500 mt-1">
-            Sistema de gestión deportiva
-          </p>
-
-        </div>
-
         {children}
 
       </main>

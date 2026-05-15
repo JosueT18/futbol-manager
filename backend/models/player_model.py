@@ -1,5 +1,6 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Boolean
+from sqlalchemy import Column, Integer, String, ForeignKey
 from sqlalchemy.orm import relationship
+
 from database.connection import Base
 
 
@@ -17,7 +18,17 @@ class Player(Base):
 
     number = Column(Integer, nullable=False)
 
-    approved = Column(Boolean, default=False)
+    # 🔥 ÚNICO ESTADO REAL
+    status = Column(
+        String,
+        default="pending"
+    )
+
+    # 🔥 motivo rechazo
+    rejection_reason = Column(
+        String,
+        nullable=True
+    )
 
     team_id = Column(
         Integer,

@@ -1,7 +1,7 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 class TeamCreate(BaseModel):
 
-    name: str
-    city: str
-    tecnico: str
+    name: str = Field(...,min_length=2)
+    city: str = Field(...,min_length=2)
+    tecnico: str = Field(...,min_length=2)

@@ -1,9 +1,9 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 class PlayerCreate(BaseModel):
 
-    name: str
-    age: int
-    position: str
-    number: int
-    team_id: int
+    name: str = Field(...,min_length=2)
+    age: int = Field(...,gt=0)
+    position: str = Field(...,min_length=2)
+    number: int = Field(...,gt=0)
+    team_id: int = Field(...,gt=0)

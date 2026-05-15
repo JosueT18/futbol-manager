@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Body, Depends
-
 from sqlalchemy.orm import Session
+from sqlalchemy.orm import joinedload
 
 from database.connection import get_db
 
@@ -40,7 +40,9 @@ def get_teams(
     db: Session = Depends(get_db)
 ):
 
-    teams = db.query(Team).all()
+    teams = db.query(Team).options(
+        joinedload(Team.players)
+    ).all()
 
     return teams
 
