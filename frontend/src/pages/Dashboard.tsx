@@ -1,23 +1,19 @@
 import { useQuery } from "@tanstack/react-query"
 
+import {
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+} from "recharts"
+
 function Dashboard() {
-
-  // =========================
-  // TEAMS
-  // =========================
-  const {
-    data: teams = [],
-  } = useQuery({
-    queryKey: ["teams"],
-    queryFn: async () => {
-
-      const response = await fetch(
-        "http://127.0.0.1:8000/teams"
-      )
-
-      return response.json()
-    },
-  })
 
   // =========================
   // PLAYERS
@@ -28,27 +24,82 @@ function Dashboard() {
     queryKey: ["players"],
     queryFn: async () => {
 
-      const response = await fetch(
+      const res = await fetch(
         "http://127.0.0.1:8000/players"
       )
 
-      return response.json()
+      return res.json()
     },
   })
 
   // =========================
-  // STATS
+  // TEAMS
   // =========================
-  const approvedPlayers = players.filter(
-    (p: any) => p.status === "approved"
-  )
+  const {
+    data: teams = [],
+  } = useQuery({
+    queryKey: ["teams"],
+    queryFn: async () => {
 
-  const pendingPlayers = players.filter(
-    (p: any) => p.status === "pending"
-  )
+      const res = await fetch(
+        "http://127.0.0.1:8000/teams"
+      )
 
-  const rejectedPlayers = players.filter(
-    (p: any) => p.status === "rejected"
+      return res.json()
+    },
+  })
+
+  // =========================
+  // METRICS
+  // =========================
+  const pendingPlayers =
+    players.filter(
+      (p: any) =>
+        p.status === "pending"
+    ).length
+
+  const approvedPlayers =
+    players.filter(
+      (p: any) =>
+        p.status === "approved"
+    ).length
+
+  const rejectedPlayers =
+    players.filter(
+      (p: any) =>
+        p.status === "rejected"
+    ).length
+
+  // =========================
+  // PIE CHART DATA
+  // =========================
+  const pieData = [
+    {
+      name: "Pendientes",
+      value: pendingPlayers,
+      color: "#facc15",
+    },
+    {
+      name: "Aprobados",
+      value: approvedPlayers,
+      color: "#22c55e",
+    },
+    {
+      name: "Rechazados",
+      value: rejectedPlayers,
+      color: "#ef4444",
+    },
+  ]
+
+  // =========================
+  // BAR CHART DATA
+  // =========================
+  const barData = teams.map(
+    (team: any) => ({
+      name: team.name,
+      jugadores:
+        team.players?.length || 0,
+    })
   )
 
   return (
@@ -58,7 +109,7 @@ function Dashboard() {
       {/* HEADER */}
       <div className="mb-8">
 
-        <h1 className="text-4xl font-bold text-gray-800">
+        <h1 className="text-4xl font-bold">
           Dashboard
         </h1>
 
@@ -68,180 +119,182 @@ function Dashboard() {
 
       </div>
 
-      {/* CARDS */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
+      {/* METRICS */}
+      <div
+        className="
+          grid
+          grid-cols-1
+          md:grid-cols-2
+          xl:grid-cols-5
+          gap-5
+          mb-8
+        "
+      >
 
-        {/* EQUIPOS */}
-        <div
-          className="
-            bg-white
-            rounded-2xl
-            p-6
-            shadow-sm
-            border border-gray-100
-          "
-        >
+        {/* TEAMS */}
+        <div className="bg-white rounded-2xl shadow-sm p-6">
 
           <p className="text-gray-500 text-sm">
             Equipos
           </p>
 
-          <h2 className="text-5xl font-bold mt-4 text-green-600">
+          <h2 className="text-5xl font-bold mt-3 text-green-600">
             {teams.length}
           </h2>
 
         </div>
 
-        {/* JUGADORES */}
-        <div
-          className="
-            bg-white
-            rounded-2xl
-            p-6
-            shadow-sm
-            border border-gray-100
-          "
-        >
+        {/* PLAYERS */}
+        <div className="bg-white rounded-2xl shadow-sm p-6">
 
           <p className="text-gray-500 text-sm">
             Jugadores
           </p>
 
-          <h2 className="text-5xl font-bold mt-4 text-blue-600">
+          <h2 className="text-5xl font-bold mt-3 text-blue-600">
             {players.length}
           </h2>
 
         </div>
 
-        {/* APROBADOS */}
-        <div
-          className="
-            bg-white
-            rounded-2xl
-            p-6
-            shadow-sm
-            border border-gray-100
-          "
-        >
-
-          <p className="text-gray-500 text-sm">
-            Aprobados
-          </p>
-
-          <h2 className="text-5xl font-bold mt-4 text-emerald-600">
-            {approvedPlayers.length}
-          </h2>
-
-        </div>
-
-        {/* PENDIENTES */}
-        <div
-          className="
-            bg-white
-            rounded-2xl
-            p-6
-            shadow-sm
-            border border-gray-100
-          "
-        >
+        {/* PENDING */}
+        <div className="bg-white rounded-2xl shadow-sm p-6">
 
           <p className="text-gray-500 text-sm">
             Pendientes
           </p>
 
-          <h2 className="text-5xl font-bold mt-4 text-yellow-500">
-            {pendingPlayers.length}
+          <h2 className="text-5xl font-bold mt-3 text-yellow-500">
+            {pendingPlayers}
+          </h2>
+
+        </div>
+
+        {/* APPROVED */}
+        <div className="bg-white rounded-2xl shadow-sm p-6">
+
+          <p className="text-gray-500 text-sm">
+            Aprobados
+          </p>
+
+          <h2 className="text-5xl font-bold mt-3 text-green-500">
+            {approvedPlayers}
+          </h2>
+
+        </div>
+
+        {/* REJECTED */}
+        <div className="bg-white rounded-2xl shadow-sm p-6">
+
+          <p className="text-gray-500 text-sm">
+            Rechazados
+          </p>
+
+          <h2 className="text-5xl font-bold mt-3 text-red-500">
+            {rejectedPlayers}
           </h2>
 
         </div>
 
       </div>
 
-      {/* SEGUNDA FILA */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-5 mt-6">
+      {/* CHARTS */}
+      <div
+        className="
+          grid
+          grid-cols-1
+          xl:grid-cols-2
+          gap-6
+        "
+      >
 
-        {/* RECHAZADOS */}
+        {/* PIE CHART */}
         <div
           className="
             bg-white
             rounded-2xl
-            p-6
             shadow-sm
-            border border-gray-100
+            p-6
           "
         >
 
-          <h2 className="text-xl font-semibold mb-4">
-            Jugadores Rechazados
+          <h2 className="text-2xl font-bold mb-6">
+            Estado de Jugadores
           </h2>
 
-          <p className="text-6xl font-bold text-red-500">
-            {rejectedPlayers.length}
-          </p>
+          <div className="h-[350px]">
+
+            <ResponsiveContainer>
+
+              <PieChart>
+
+                <Pie
+                  data={pieData}
+                  dataKey="value"
+                  nameKey="name"
+                  outerRadius={120}
+                  label
+                >
+
+                  {
+                    pieData.map((entry, index) => (
+
+                      <Cell
+                        key={index}
+                        fill={entry.color}
+                      />
+                    ))
+                  }
+
+                </Pie>
+
+                <Tooltip />
+
+              </PieChart>
+
+            </ResponsiveContainer>
+
+          </div>
 
         </div>
 
-        {/* ÚLTIMOS JUGADORES */}
+        {/* BAR CHART */}
         <div
           className="
             bg-white
             rounded-2xl
-            p-6
             shadow-sm
-            border border-gray-100
+            p-6
           "
         >
 
-          <h2 className="text-xl font-semibold mb-4">
-            Últimos Jugadores
+          <h2 className="text-2xl font-bold mb-6">
+            Jugadores por Equipo
           </h2>
 
-          <div className="space-y-3">
+          <div className="h-[350px]">
 
-            {
-              players
-                .slice(-5)
-                .reverse()
-                .map((player: any) => (
+            <ResponsiveContainer>
 
-                  <div
-                    key={player.id}
-                    className="
-                      flex
-                      items-center
-                      justify-between
-                      border-b
-                      pb-2
-                    "
-                  >
+              <BarChart data={barData}>
 
-                    <div>
+                <CartesianGrid strokeDasharray="3 3" />
 
-                      <p className="font-medium">
-                        ⚽ {player.name}
-                      </p>
+                <XAxis dataKey="name" />
 
-                      <p className="text-sm text-gray-500">
-                        {player.position}
-                      </p>
+                <YAxis />
 
-                    </div>
+                <Tooltip />
 
-                    <span
-                      className="
-                        text-xs
-                        bg-gray-100
-                        px-3
-                        py-1
-                        rounded-full
-                      "
-                    >
-                      {player.status}
-                    </span>
+                <Bar
+                  dataKey="jugadores"
+                  fill="#3b82f6"
+                  radius={[8, 8, 0, 0]}
+                />
 
-                  </div>
-                ))
-            }
+              </BarChart>
+
+            </ResponsiveContainer>
 
           </div>
 

@@ -6,6 +6,7 @@ import {
   BarChart3,
   LogOut,
   Trophy,
+  ChevronRight,
 } from "lucide-react"
 
 import { NavLink } from "react-router-dom"
@@ -69,30 +70,65 @@ function Sidebar() {
         justify-between
         px-5
         py-6
+        shadow-sm
       "
     >
 
+      {/* TOP */}
       <div>
 
+        {/* LOGO */}
         <div className="mb-10">
 
-          <h1
+          <div
             className="
-              text-2xl
-              font-bold
-              text-black
-              tracking-tight
+              flex
+              items-center
+              gap-3
             "
           >
-            ⚽ Futbol Manager
-          </h1>
 
-          <p className="text-sm text-gray-500 mt-1">
-            Panel administrativo
-          </p>
+            <div
+              className="
+                w-12
+                h-12
+                rounded-2xl
+                bg-black
+                text-white
+                flex
+                items-center
+                justify-center
+                text-xl
+                shadow-sm
+              "
+            >
+              ⚽
+            </div>
+
+            <div>
+
+              <h1
+                className="
+                  text-2xl
+                  font-bold
+                  text-black
+                  tracking-tight
+                "
+              >
+                Futbol Manager
+              </h1>
+
+              <p className="text-sm text-gray-500">
+                Panel administrativo
+              </p>
+
+            </div>
+
+          </div>
 
         </div>
 
+        {/* MENU */}
         <nav className="flex flex-col gap-2">
 
           {
@@ -107,12 +143,13 @@ function Sidebar() {
                   to={item.path}
                   className={({ isActive }) =>
                     `
+                      group
                       flex
                       items-center
-                      gap-3
+                      justify-between
                       px-4
                       py-3
-                      rounded-xl
+                      rounded-2xl
                       text-sm
                       font-medium
                       transition-all
@@ -135,9 +172,30 @@ function Sidebar() {
                   }
                 >
 
-                  <Icon size={18} />
+                  {/* LEFT */}
+                  <div
+                    className="
+                      flex
+                      items-center
+                      gap-3
+                    "
+                  >
 
-                  {item.name}
+                    <Icon size={18} />
+
+                    {item.name}
+
+                  </div>
+
+                  {/* RIGHT ICON */}
+                  <ChevronRight
+                    size={16}
+                    className="
+                      opacity-0
+                      group-hover:opacity-100
+                      transition
+                    "
+                  />
 
                 </NavLink>
               )
@@ -148,28 +206,58 @@ function Sidebar() {
 
       </div>
 
-      <button
-        onClick={logout}
-        className="
-          flex
-          items-center
-          gap-3
-          px-4
-          py-3
-          rounded-xl
-          text-sm
-          font-medium
-          text-red-500
-          hover:bg-red-50
-          transition
-        "
-      >
+      {/* FOOTER */}
+      <div className="space-y-4">
 
-        <LogOut size={18} />
+        {/* USER BOX */}
+        <div
+          className="
+            bg-gray-50
+            border
+            rounded-2xl
+            p-4
+          "
+        >
 
-        Cerrar sesión
+          <p className="text-sm text-gray-500">
+            Sesión activa
+          </p>
 
-      </button>
+          <p className="font-semibold mt-1">
+            Administrador
+          </p>
+
+        </div>
+
+        {/* LOGOUT */}
+        <button
+          onClick={logout}
+          className="
+            w-full
+            flex
+            items-center
+            justify-center
+            gap-3
+            px-4
+            py-3
+            rounded-2xl
+            text-sm
+            font-medium
+            text-red-500
+            hover:bg-red-50
+            transition
+            border
+            border-red-100
+          "
+        >
+
+          <LogOut size={18} />
+
+          Cerrar sesión
+
+        </button>
+
+      </div>
 
     </aside>
   )

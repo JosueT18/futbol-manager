@@ -19,3 +19,22 @@ class Team(Base):
         "Player",
         back_populates="team"
     )
+    #=========
+    # STATS
+    #=========
+    pj = Column(
+        Integer,default=0
+    )
+
+    pg = Column(
+        Integer,default=0
+    )
+    pe = Column(
+        Integer,default=0
+    )
+    pp = Column(
+        Integer,default=0
+    )
+    point = Column(
+        Integer,default=0
+    ) 

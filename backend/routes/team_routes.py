@@ -21,7 +21,12 @@ def create_team(
     new_team = Team(
         name=team.name,
         city=team.city,
-        tecnico=team.tecnico
+        tecnico=team.tecnico,
+        pj=team.pj,
+        pg=team.pg,
+        pe=team.pe,
+        pp=team.pp,
+        points=team.points
     )
 
     db.add(new_team)

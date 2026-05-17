@@ -23,6 +23,7 @@ function Jugadores() {
   const [position, setPosition] = useState("")
   const [number, setNumber] = useState("")
   const [teamId, setTeamId] = useState("")
+
   const [showForm, setShowForm] = useState(false)
 
   const [editModalOpen, setEditModalOpen] = useState(false)
@@ -35,6 +36,12 @@ function Jugadores() {
   const [editNumber, setEditNumber] = useState("")
   const [editTeamId, setEditTeamId] = useState("")
 
+  // ESTADISTICAS
+  const [editGoals, setEditGoals] = useState("")
+  const [editYellowCards, setEditYellowCards] = useState("")
+  const [editRedCards, setEditRedCards] = useState("")
+
+  // FILTROS
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
 
@@ -56,7 +63,7 @@ function Jugadores() {
   })
 
   // =========================
-  // FILTERED PLAYERS
+  // FILTER PLAYERS
   // =========================
   const filteredPlayers = players.filter(
     (player: any) => {
@@ -198,7 +205,7 @@ function Jugadores() {
   }
 
   // =========================
-  // OPEN EDIT MODAL
+  // OPEN MODAL
   // =========================
   function updatePlayer(player: any) {
 
@@ -209,6 +216,18 @@ function Jugadores() {
     setEditPosition(player.position)
     setEditNumber(player.number.toString())
     setEditTeamId(player.team_id.toString())
+
+    setEditGoals(
+      player.goals?.toString() || "0"
+    )
+
+    setEditYellowCards(
+      player.yellow_cards?.toString() || "0"
+    )
+
+    setEditRedCards(
+      player.red_cards?.toString() || "0"
+    )
 
     setEditModalOpen(true)
   }
@@ -243,6 +262,10 @@ function Jugadores() {
           position: editPosition,
           number: Number(editNumber),
           team_id: Number(editTeamId),
+
+          goals: Number(editGoals),
+          yellow_cards: Number(editYellowCards),
+          red_cards: Number(editRedCards),
         }
       )
 
@@ -267,7 +290,7 @@ function Jugadores() {
   }
 
   // =========================
-  // LOAD INITIAL DATA
+  // INITIAL LOAD
   // =========================
   useEffect(() => {
 
@@ -351,13 +374,11 @@ function Jugadores() {
             setShowForm(!showForm)
           }
         >
-
           {
             showForm
               ? "Cerrar"
               : "+ Crear Jugador"
           }
-
         </Button>
 
       </div>
@@ -543,18 +564,6 @@ function Jugadores() {
         )
       }
 
-      {/* LOADING */}
-      {
-        isLoading && (
-
-          <div className="my-5 bg-yellow-100 text-yellow-800 p-4 rounded-xl">
-
-            ⏳ Cargando jugadores...
-
-          </div>
-        )
-      }
-
       {/* TABLE */}
       <div
         className="
@@ -635,7 +644,7 @@ function Jugadores() {
                       </td>
 
                       <td className="py-3 px-4">
-                        #{player.number}
+                        {player.number}
                       </td>
 
                       <td className="py-3 px-4">
@@ -651,20 +660,6 @@ function Jugadores() {
                         <Badge
                           status={player.status}
                         />
-
-                        {
-                          player.status === "rejected" &&
-                          player.rejection_reason && (
-
-                            <p className="text-red-500 text-xs mt-1">
-
-                              Motivo:
-                              {" "}
-                              {player.rejection_reason}
-
-                            </p>
-                          )
-                        }
 
                       </td>
 
@@ -703,7 +698,7 @@ function Jugadores() {
 
       </div>
 
-      {/* MODAL EDIT PLAYER */}
+      {/* MODAL */}
       <Modal
         open={editModalOpen}
         onClose={() =>
@@ -821,6 +816,38 @@ function Jugadores() {
             }
 
           </select>
+
+          {/* ESTADISTICAS */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+            <Input
+              type="number"
+              placeholder="Goles"
+              value={editGoals}
+              onChange={(e) =>
+                setEditGoals(e.target.value)
+              }
+            />
+
+            <Input
+              type="number"
+              placeholder="Amarillas"
+              value={editYellowCards}
+              onChange={(e) =>
+                setEditYellowCards(e.target.value)
+              }
+            />
+
+            <Input
+              type="number"
+              placeholder="Rojas"
+              value={editRedCards}
+              onChange={(e) =>
+                setEditRedCards(e.target.value)
+              }
+            />
+
+          </div>
 
           <div className="flex justify-end gap-3 pt-4">
 

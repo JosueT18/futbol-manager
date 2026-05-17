@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { Fragment, useState, useEffect } from "react"
 import Swal from "sweetalert2"
 import { useQuery } from "@tanstack/react-query"
 
@@ -20,9 +20,15 @@ function Equipos() {
   const [city, setCity] = useState("")
   const [tecnico, setTecnico] = useState("")
   const [showForm, setShowForm] = useState(false)
-  const [openTeamId, setOpenTeamId] = useState<number | null>(null)
-  const [successMessage, setSuccessMessage] = useState("")
-  const [errorMessage, setErrorMessage] = useState("")
+
+  const [openTeamId, setOpenTeamId] =
+    useState<number | null>(null)
+
+  const [successMessage, setSuccessMessage] =
+    useState("")
+
+  const [errorMessage, setErrorMessage] =
+    useState("")
 
   // =========================
   // TEAMS
@@ -228,10 +234,16 @@ function Equipos() {
       {
         successMessage && (
 
-          <div className="mb-5 bg-green-100 text-green-800 p-4 rounded-xl">
-
+          <div
+            className="
+              mb-5
+              bg-green-100
+              text-green-800
+              p-4
+              rounded-xl
+            "
+          >
             ✅ {successMessage}
-
           </div>
         )
       }
@@ -240,16 +252,29 @@ function Equipos() {
       {
         errorMessage && (
 
-          <div className="mb-5 bg-red-100 text-red-800 p-4 rounded-xl">
-
+          <div
+            className="
+              mb-5
+              bg-red-100
+              text-red-800
+              p-4
+              rounded-xl
+            "
+          >
             ❌ {errorMessage}
-
           </div>
         )
       }
 
       {/* HEADER */}
-      <div className="flex items-center justify-between mb-6">
+      <div
+        className="
+          flex
+          items-center
+          justify-between
+          mb-6
+        "
+      >
 
         <h1 className="text-4xl font-bold">
           Equipos
@@ -275,7 +300,14 @@ function Equipos() {
 
           <Card>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div
+              className="
+                grid
+                grid-cols-1
+                md:grid-cols-3
+                gap-4
+              "
+            >
 
               <Input
                 placeholder="Nombre"
@@ -319,10 +351,16 @@ function Equipos() {
       {
         isLoading && (
 
-          <div className="my-5 bg-yellow-100 text-yellow-800 p-4 rounded-xl">
-
+          <div
+            className="
+              my-5
+              bg-yellow-100
+              text-yellow-800
+              p-4
+              rounded-xl
+            "
+          >
             ⏳ Cargando equipos...
-
           </div>
         )
       }
@@ -341,7 +379,13 @@ function Equipos() {
 
           <table className="w-full">
 
-            <thead className="bg-gray-50 text-gray-600 text-sm">
+            <thead
+              className="
+                bg-gray-50
+                text-gray-600
+                text-sm
+              "
+            >
 
               <tr>
 
@@ -358,10 +402,6 @@ function Equipos() {
                 </th>
 
                 <th className="text-left py-3 px-4">
-                  Jugadores
-                </th>
-
-                <th className="text-left py-3 px-4">
                   Cantidad
                 </th>
 
@@ -375,243 +415,284 @@ function Equipos() {
 
             <tbody>
 
-  {
-    teams.map((team: any) => (
+              {
+                teams.map((team: any) => (
 
-      <>
-        {/* FILA PRINCIPAL */}
-        <tr
-          key={team.id}
-          className="
-            border-t
-            hover:bg-gray-50
-            transition-colors
-          "
-        >
+                  <Fragment key={team.id}>
 
-          {/* EQUIPO */}
-          <td className="py-4 px-4">
+                    {/* FILA PRINCIPAL */}
+                    <tr
+                      className="
+                        border-t
+                        hover:bg-gray-50
+                        transition-colors
+                      "
+                    >
 
-            <button
-              onClick={() =>
+                      {/* EQUIPO */}
+                      <td className="py-4 px-4">
 
-                setOpenTeamId(
+                        <button
+                          onClick={() =>
 
-                  openTeamId === team.id
-                    ? null
-                    : team.id
-                )
-              }
-              className="
-                text-left
-                w-full
-              "
-            >
+                            setOpenTeamId(
 
-              <div className="flex items-center gap-3">
+                              openTeamId === team.id
+                                ? null
+                                : team.id
+                            )
+                          }
+                          className="
+                            text-left
+                            w-full
+                          "
+                        >
 
-                <div
-                  className="
-                    w-11
-                    h-11
-                    rounded-full
-                    bg-blue-100
-                    flex
-                    items-center
-                    justify-center
-                    text-xl
-                  "
-                >
-                  ⚽
-                </div>
+                          <div
+                            className="
+                              flex
+                              items-center
+                              gap-3
+                            "
+                          >
 
-                <div>
+                            <div
+                              className="
+                                w-11
+                                h-11
+                                rounded-full
+                                bg-blue-100
+                                flex
+                                items-center
+                                justify-center
+                                text-xl
+                              "
+                            >
+                              ⚽
+                            </div>
 
-                  <p
-                    className="
-                      text-lg
-                      font-bold
-                      text-gray-800
-                    "
-                  >
-                    {team.name}
-                  </p>
+                            <div>
 
-                  <p
-                    className="
-                      text-xs
-                      text-gray-400
-                    "
-                  >
-                    {
-                      openTeamId === team.id
-                        ? "Ocultar jugadores"
-                        : "Click para ver jugadores"
-                    }
-                  </p>
-
-                </div>
-
-              </div>
-
-            </button>
-
-          </td>
-
-          {/* CIUDAD */}
-          <td className="py-4 px-4">
-            📍 {team.city}
-          </td>
-
-          {/* TECNICO */}
-          <td className="py-4 px-4">
-            👨‍🏫 {team.tecnico}
-          </td>
-
-          {/* CANTIDAD */}
-          <td className="py-4 px-4">
-
-            <div
-              className="
-                bg-blue-100
-                text-blue-700
-                px-3
-                py-1
-                rounded-full
-                inline-block
-                font-semibold
-                text-sm
-              "
-            >
-              {team.players?.length || 0}
-            </div>
-
-          </td>
-
-          {/* ACCIONES */}
-          <td className="py-4 px-4 flex gap-3">
-
-            <Button
-              variant="secondary"
-              onClick={() =>
-                updateTeam(team)
-              }
-            >
-              Editar
-            </Button>
-
-            <Button
-              variant="danger"
-              onClick={() =>
-                deleteTeam(team.id)
-              }
-            >
-              Eliminar
-            </Button>
-
-          </td>
-
-        </tr>
-
-        {/* JUGADORES EXPANDIDOS */}
-        {
-          openTeamId === team.id && (
-
-            <tr className="bg-gray-50">
-
-              <td
-                colSpan={5}
-                className="px-8 py-5"
-              >
-
-                {
-                  team.players?.length > 0
-                    ? (
-
-                      <div className="space-y-2">
-
-                        {
-                          team.players.map(
-                            (player: any) => (
-
-                              <div
-                                key={player.id}
+                              <p
                                 className="
-                                  flex
-                                  items-center
-                                  justify-between
-                                  bg-white
-                                  rounded-xl
-                                  px-4
-                                  py-2
-                                  shadow-sm
-                                  text-sm
+                                  text-lg
+                                  font-bold
+                                  text-gray-800
                                 "
                               >
+                                {team.name}
+                              </p>
 
-                                {/* IZQUIERDA */}
-                                <div className="flex items-center gap-3">
+                              <p
+                                className="
+                                  text-xs
+                                  text-gray-400
+                                "
+                              >
+                                {
+                                  openTeamId === team.id
+                                    ? "Ocultar jugadores"
+                                    : "Click para ver jugadores"
+                                }
+                              </p>
 
-                                  <span>
-                                    ⚽
-                                  </span>
+                            </div>
 
-                                  <span className="font-medium">
-                                    {player.name}
-                                  </span>
+                          </div>
 
-                                </div>
+                        </button>
 
-                                {/* DERECHA */}
-                                <div
-                                  className="
-                                    flex
-                                    items-center
-                                    gap-5
-                                    text-gray-500
-                                  "
-                                >
+                      </td>
 
-                                  <span>
-                                    {player.position}
-                                  </span>
+                      {/* CIUDAD */}
+                      <td className="py-4 px-4">
+                        📍 {team.city}
+                      </td>
 
-                                  <span>
-                                    #{player.number}
-                                  </span>
+                      {/* TECNICO */}
+                      <td className="py-4 px-4">
+                        👨‍🏫 {team.tecnico}
+                      </td>
 
-                                  <span>
-                                    {player.age} años
-                                  </span>
+                      {/* CANTIDAD */}
+                      <td className="py-4 px-4">
 
-                                </div>
+                        <div
+                          className="
+                            bg-blue-100
+                            text-blue-700
+                            px-3
+                            py-1
+                            rounded-full
+                            inline-block
+                            font-semibold
+                            text-sm
+                          "
+                        >
+                          {team.players?.length || 0}
+                        </div>
 
-                              </div>
-                            )
-                          )
-                        }
+                      </td>
 
-                      </div>
-                    )
-                    : (
+                      {/* ACCIONES */}
+                      <td
+                        className="
+                          py-4
+                          px-4
+                        "
+                      >
 
-                      <p className="text-gray-400 text-sm">
-                        Este equipo no tiene jugadores
-                      </p>
-                    )
-                }
+                        <div className="flex gap-2">
 
-              </td>
+                          <Button
+                            variant="secondary"
+                            onClick={() =>
+                              updateTeam(team)
+                            }
+                          >
+                            Editar
+                          </Button>
 
-            </tr>
-          )
-        }
+                          <Button
+                            variant="danger"
+                            onClick={() =>
+                              deleteTeam(team.id)
+                            }
+                          >
+                            Eliminar
+                          </Button>
 
-      </>
-    ))
-  }
+                        </div>
 
-</tbody>
+                      </td>
+
+                    </tr>
+
+                    {/* JUGADORES */}
+                    {
+                      openTeamId === team.id && (
+
+                        <tr className="bg-gray-50">
+
+                          <td
+                            colSpan={5}
+                            className="
+                              px-8
+                              py-5
+                            "
+                          >
+
+                            {
+                              team.players?.length > 0
+                                ? (
+
+                                  <div className="space-y-2">
+
+                                    {
+                                      team.players.map(
+                                        (player: any) => (
+
+                                          <div
+                                            key={player.id}
+                                            className="
+                                              flex
+                                              items-center
+                                              justify-between
+                                              bg-white
+                                              rounded-xl
+                                              px-4
+                                              py-2
+                                              shadow-sm
+                                              text-sm
+                                            "
+                                          >
+
+                                            {/* IZQUIERDA */}
+                                            <div
+                                              className="
+                                                flex
+                                                items-center
+                                                gap-3
+                                              "
+                                            >
+
+                                              <span>
+                                                ⚽
+                                              </span>
+
+                                              <span
+                                                className="
+                                                  font-medium
+                                                  text-sm
+                                                "
+                                              >
+                                                {player.name}
+                                              </span>
+
+                                            </div>
+
+                                            {/* DERECHA */}
+                                            <div
+                                              className="
+                                                flex
+                                                items-center
+                                                gap-5
+                                                text-gray-500
+                                                text-xs
+                                              "
+                                            >
+
+                                              <span>
+                                                {
+                                                  player.position
+                                                }
+                                              </span>
+
+                                              <span>                                                
+                                                {
+                                                  player.number
+                                                }
+                                              </span>
+
+                                              <span>
+                                                {
+                                                  player.age
+                                                } años
+                                              </span>
+
+                                            </div>
+
+                                          </div>
+                                        )
+                                      )
+                                    }
+
+                                  </div>
+                                )
+                                : (
+
+                                  <p
+                                    className="
+                                      text-gray-400
+                                      text-sm
+                                    "
+                                  >
+                                    Este equipo no tiene jugadores
+                                  </p>
+                                )
+                            }
+
+                          </td>
+
+                        </tr>
+                      )
+                    }
+
+                  </Fragment>
+                ))
+              }
+
+            </tbody>
 
           </table>
 

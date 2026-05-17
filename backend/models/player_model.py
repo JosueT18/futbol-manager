@@ -39,3 +39,17 @@ class Player(Base):
         "Team",
         back_populates="players"
     )
+    #===========
+    # STATS
+    #===========
+    goals = Column(
+        Integer, default=0
+    )
+
+    yellow_cards = Column(
+        Integer,default=0
+    )
+
+    red_cards = Column(
+        Integer,default=0
+    )

@@ -23,7 +23,11 @@ def create_player(
         position=player.position,
         number=player.number,
         team_id=player.team_id,
-        status = "pending"
+        status = "pending",
+
+        goals=player.goals,
+        yellow_cards=player.yellow_cards,
+        red_cards=player.red_cards
     )
 
     db.add(new_player)

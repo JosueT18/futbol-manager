@@ -12,6 +12,7 @@ import Login from "./pages/Login"
 import Solicitudes from "./pages/Solicitudes"
 import Formacion from "./pages/Formacion"
 
+
 import Layout from "./components/Layout"
 
 import {
