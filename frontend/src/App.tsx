@@ -11,6 +11,7 @@ import Estadisticas from "./pages/Estadisticas"
 import Login from "./pages/Login"
 import Solicitudes from "./pages/Solicitudes"
 import Formacion from "./pages/Formacion"
+import Partidos from "./pages/Partidos"
 
 
 import Layout from "./components/Layout"
@@ -85,6 +86,18 @@ function AppContent() {
               <Layout>
                 <Formacion />
               </Layout>
+
+            </ProtectedRoute>
+          }
+        />
+          <Route
+            path="/partidos"
+            element={
+            <ProtectedRoute>
+
+            <Layout>
+              <Partidos />
+            </Layout>
 
             </ProtectedRoute>
           }

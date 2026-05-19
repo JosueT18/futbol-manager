@@ -1,152 +1,624 @@
 import { useEffect, useState } from "react"
 
+import { getTeams } from "../api/teams"
+
+import { getPlayers } from "../api/players"
+
+import {
+  createFormation,
+} from "../api/formations"
+
+import Card from "../components/ui/Card"
+
+import Button from "../components/ui/Button"
+
+
 function Formacion() {
 
-  const [players, setPlayers] = useState([])
+  // =========================
+  // STATES
+  // =========================
+  const [teams, setTeams] =
+    useState<any[]>([])
 
-  const [selectedPlayers, setSelectedPlayers] = useState<number[]>([])
+  const [players, setPlayers] =
+    useState<any[]>([])
 
+  const [teamId, setTeamId] =
+    useState("")
 
-  async function loadPlayers() {
+  const [formationName, setFormationName] =
+    useState("")
+
+  const [matchType, setMatchType] =
+    useState(11)
+
+  const [tactic, setTactic] =
+    useState("4-3-3")
+
+  const [selectedPlayer, setSelectedPlayer] =
+    useState<any>(null)
+
+  const [positions, setPositions] =
+    useState<any[]>([])
+
+  // =========================
+  // LOAD DATA
+  // =========================
+  useEffect(() => {
+
+    loadData()
+
+  }, [])
+
+  async function loadData() {
+
+    const teamsData =
+      await getTeams()
+
+    const playersData =
+      await getPlayers()
+
+    setTeams(teamsData)
+
+    setPlayers(
+
+      playersData.filter(
+        (p: any) =>
+          p.status === "approved"
+      )
+    )
+  }
+
+  // =========================
+  // TEAM PLAYERS
+  // =========================
+  const teamPlayers =
+    players.filter(
+      (p: any) =>
+        p.team_id === Number(teamId)
+    )
+
+  // =========================
+  // ADD PLAYER
+  // =========================
+  function addPlayer(player: any) {
+
+    const exists =
+      positions.find(
+        (p: any) =>
+          p.player.id === player.id
+      )
+
+    if (exists) {
+      return
+    }
+
+    setPositions([
+      ...positions,
+
+      {
+        player,
+        x: 300,
+        y: 300,
+        role: "Titular",
+      },
+    ])
+  }
+
+  // =========================
+  // SELECT PLAYER
+  // =========================
+  function selectPlayer(player: any) {
+
+    setSelectedPlayer(player)
+  }
+
+  // =========================
+  // FIELD CLICK
+  // =========================
+  function handleFieldClick(
+    event: any
+  ) {
+
+    if (!selectedPlayer) {
+      return
+    }
+
+    const field =
+      event.currentTarget
+
+    const rect =
+      field.getBoundingClientRect()
+
+    const x =
+      event.clientX
+      -
+      rect.left
+      -
+      30
+
+    const y =
+      event.clientY
+      -
+      rect.top
+      -
+      30
+
+    setPositions((prev: any) =>
+      prev.map((p: any) => {
+
+        if (
+          p.player.id
+          ===
+          selectedPlayer.id
+        ) {
+
+          return {
+
+            ...p,
+
+            x,
+
+            y,
+          }
+        }
+
+        return p
+      })
+    )
+
+    setSelectedPlayer(null)
+  }
+
+  // =========================
+  // CHANGE ROLE
+  // =========================
+  function toggleRole(
+    playerId: number
+  ) {
+
+    setPositions((prev: any) =>
+      prev.map((p: any) => {
+
+        if (
+          p.player.id === playerId
+        ) {
+
+          return {
+
+            ...p,
+
+            role:
+              p.role === "Titular"
+                ? "Suplente"
+                : "Titular",
+          }
+        }
+
+        return p
+      })
+    )
+  }
+
+  // =========================
+  // REMOVE PLAYER
+  // =========================
+  function removePlayer(
+    playerId: number
+  ) {
+
+    setPositions((prev: any) =>
+      prev.filter(
+        (p: any) =>
+          p.player.id !== playerId
+      )
+    )
+  }
+
+  // =========================
+  // SAVE FORMATION
+  // =========================
+  async function saveFormation() {
 
     try {
 
-      const response = await fetch(
-        "http://127.0.0.1:8000/players"
+      await createFormation({
+
+        name: formationName,
+
+        tactic,
+
+        match_type: matchType,
+
+        team_id: Number(teamId),
+
+        players: positions.map(
+          (p: any) => ({
+
+            player_id:
+              p.player.id,
+
+            position_x:
+              p.x,
+
+            position_y:
+              p.y,
+
+            role:
+              p.role,
+          })
+        ),
+      })
+
+      alert(
+        "Formación guardada correctamente"
       )
-
-      const data = await response.json()
-
-      const approvedPlayers = data.filter(
-        (player: any) => player.approved === true
-      )
-
-      setPlayers(approvedPlayers)
 
     } catch (error) {
 
       console.error(error)
-    }
-  }
 
-
-  function togglePlayer(id: number) {
-
-    if (selectedPlayers.includes(id)) {
-
-      setSelectedPlayers(
-        selectedPlayers.filter(
-          playerId => playerId !== id
-        )
-      )
-
-    } else {
-
-      setSelectedPlayers([
-        ...selectedPlayers,
-        id
-      ])
-    }
-  }
-
-  async function saveFormation() {
-
-  try {
-
-    for (const playerId of selectedPlayers) {
-
-      await fetch(
-        "http://127.0.0.1:8000/formation-players",
-        {
-          method: "POST",
-
-          headers: {
-            "Content-Type": "application/json",
-          },
-
-          body: JSON.stringify({
-
-            formation_id: 1,
-
-            player_id: playerId,
-
-            is_starter: true,
-
-            position: "Titular"
-          }),
-        }
+      alert(
+        "Error al guardar"
       )
     }
-
-    alert("Formación guardada")
-
-  } catch (error) {
-
-    console.error(error)
   }
-}
-
-
-  useEffect(() => {
-
-    loadPlayers()
-
-  }, [])
-
 
   return (
 
-    <div className="p-10">
+    <div className="p-6 space-y-6">
 
-      <h1 className="text-4xl font-bold mb-8">
-        Formación
-      </h1>
+      {/* HEADER */}
+      <div>
 
-      <button
-      onClick={saveFormation}
-        className="mb-8 bg-black text-white px-6 py-3 rounded-lg hover:bg-gray-800"
-      >
-        Guardar Formacion
-        </button>  
+        <h1 className="text-4xl font-bold">
+          Formación
+        </h1>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <p className="text-gray-500 mt-2">
+          Gestión táctica profesional
+        </p>
 
-        {
-          players.map((player: any) => (
+      </div>
 
+      {/* CONFIG */}
+      <Card>
+
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+
+          <input
+            type="text"
+            placeholder="Nombre formación"
+            value={formationName}
+            onChange={(e) =>
+              setFormationName(
+                e.target.value
+              )
+            }
+            className="
+              border
+              p-3
+              rounded-xl
+            "
+          />
+
+          {/* TEAM */}
+          <select
+            value={teamId}
+            onChange={(e) =>
+              setTeamId(
+                e.target.value
+              )
+            }
+            className="
+              border
+              p-3
+              rounded-xl
+            "
+          >
+
+            <option value="">
+              Seleccionar equipo
+            </option>
+
+            {
+              teams.map(
+                (team: any) => (
+
+                  <option
+                    key={team.id}
+                    value={team.id}
+                  >
+                    {team.name}
+                  </option>
+                )
+              )
+            }
+
+          </select>
+
+          {/* MATCH TYPE */}
+          <select
+            value={matchType}
+            onChange={(e) =>
+              setMatchType(
+                Number(
+                  e.target.value
+                )
+              )
+            }
+            className="
+              border
+              p-3
+              rounded-xl
+            "
+          >
+
+            <option value={11}>
+              Fútbol 11
+            </option>
+
+            <option value={9}>
+              Fútbol 9
+            </option>
+
+            <option value={7}>
+              Fútbol 7
+            </option>
+
+            <option value={5}>
+              Fútbol 5
+            </option>
+
+          </select>
+
+          {/* TACTIC */}
+          <input
+            type="text"
+            value={tactic}
+            onChange={(e) =>
+              setTactic(
+                e.target.value
+              )
+            }
+            placeholder="4-3-3"
+            className="
+              border
+              p-3
+              rounded-xl
+            "
+          />
+
+        </div>
+
+      </Card>
+
+      {/* MAIN */}
+      <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+
+        {/* PLAYERS */}
+        <Card>
+
+          <h2 className="text-2xl font-bold mb-4">
+            Jugadores
+          </h2>
+
+          <div className="space-y-3">
+
+            {
+              teamPlayers.map(
+                (player: any) => (
+
+                  <div
+                    key={player.id}
+                    className="
+                      flex
+                      items-center
+                      justify-between
+                      bg-gray-50
+                      rounded-xl
+                      p-3
+                    "
+                  >
+
+                    <div>
+
+                      <p className="font-semibold">
+                        {player.name}
+                      </p>
+
+                      <p className="text-sm text-gray-500">
+                        {player.position}
+                      </p>
+
+                    </div>
+
+                    <Button
+                      onClick={() =>
+                        addPlayer(player)
+                      }
+                    >
+                      +
+                    </Button>
+
+                  </div>
+                )
+              )
+            }
+
+          </div>
+
+        </Card>
+
+        {/* FIELD */}
+        <div className="xl:col-span-3">
+
+          <div
+            onClick={handleFieldClick}
+            className="
+              relative
+              bg-green-700
+              rounded-3xl
+              h-[800px]
+              overflow-hidden
+              border-8
+              border-white
+              shadow-xl
+            "
+          >
+
+            {/* LINE */}
             <div
-              key={player.id}
-              className="bg-white p-6 rounded-xl shadow-lg"
+              className="
+                absolute
+                left-1/2
+                top-0
+                bottom-0
+                w-1
+                bg-white
+              "
+            />
+
+            {/* CENTER */}
+            <div
+              className="
+                absolute
+                left-1/2
+                top-1/2
+                w-40
+                h-40
+                border-4
+                border-white
+                rounded-full
+                -translate-x-1/2
+                -translate-y-1/2
+              "
+            />
+
+            {/* PLAYERS */}
+            {
+              positions.map(
+                (item: any) => (
+
+                  <div
+                    key={item.player.id}
+
+                    onClick={(e) => {
+
+                      e.stopPropagation()
+
+                      selectPlayer(
+                        item.player
+                      )
+                    }}
+
+                    className={`
+                      absolute
+                      w-16
+                      h-16
+                      rounded-full
+                      flex
+                      flex-col
+                      items-center
+                      justify-center
+                      text-white
+                      text-xs
+                      font-bold
+                      cursor-pointer
+                      border-2
+                      border-white
+                      shadow-lg
+
+                      ${
+                        selectedPlayer?.id
+                        ===
+                        item.player.id
+                          ? "bg-yellow-500"
+                          : item.role === "Titular"
+                          ? "bg-blue-600"
+                          : "bg-gray-600"
+                      }
+                    `}
+
+                    style={{
+                      left: item.x,
+                      top: item.y,
+                    }}
+                  >
+
+                    <span>
+                      {item.player.number}
+                    </span>
+
+                    <span className="truncate w-full text-center px-1">
+                      {item.player.name}
+                    </span>
+
+                    <button
+                      onClick={(e) => {
+
+                        e.stopPropagation()
+
+                        toggleRole(
+                          item.player.id
+                        )
+                      }}
+                      className="
+                        absolute
+                        -bottom-6
+                        text-[10px]
+                        bg-black/70
+                        px-2
+                        rounded-full
+                      "
+                    >
+                      {item.role}
+                    </button>
+
+                    <button
+                      onClick={(e) => {
+
+                        e.stopPropagation()
+
+                        removePlayer(
+                          item.player.id
+                        )
+                      }}
+                      className="
+                        absolute
+                        -top-2
+                        -right-2
+                        w-5
+                        h-5
+                        rounded-full
+                        bg-red-500
+                        text-white
+                        text-[10px]
+                      "
+                    >
+                      X
+                    </button>
+
+                  </div>
+                )
+              )
+            }
+
+          </div>
+
+          {/* SAVE */}
+          <div className="mt-5 flex justify-end">
+
+            <Button
+              onClick={saveFormation}
             >
+              Guardar Formación
+            </Button>
 
-              <h2 className="text-2xl font-bold">
-                ⚽ {player.name}
-              </h2>
+          </div>
 
-              <p className="mt-2">
-                🏃 {player.position}
-              </p>
-
-              <button
-                onClick={() => togglePlayer(player.id)}
-                className={`mt-5 px-5 py-2 rounded-lg text-white ${
-                  selectedPlayers.includes(player.id)
-                    ? "bg-green-600"
-                    : "bg-gray-500"
-                }`}
-              >
-
-                {
-                  selectedPlayers.includes(player.id)
-                    ? "Titular"
-                    : "Suplente"
-                }
-
-              </button>
-
-            </div>
-          ))
-        }
+        </div>
 
       </div>
 

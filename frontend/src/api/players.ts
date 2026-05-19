@@ -49,14 +49,13 @@ export async function updatePlayer(
 ) {
 
   const response = await fetch(
-    `${API_URL}/players/${id}`,
+    `http://127.0.0.1:8000/players/${id}`,
     {
       method: "PUT",
-
       headers: {
-        "Content-Type": "application/json",
+        "Content-Type":
+          "application/json",
       },
-
       body: JSON.stringify(data),
     }
   )

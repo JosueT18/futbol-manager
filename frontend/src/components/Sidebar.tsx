@@ -7,6 +7,7 @@ import {
   LogOut,
   Trophy,
   ChevronRight,
+  CalendarDays,
 } from "lucide-react"
 
 import { NavLink } from "react-router-dom"
@@ -47,6 +48,12 @@ function Sidebar() {
       name: "Formación",
       path: "/formacion",
       icon: ShieldCheck,
+    },
+
+    {
+      name: "Partidos",
+      path: "/partidos",
+      icon: CalendarDays,
     },
 
     {

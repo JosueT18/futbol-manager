@@ -529,7 +529,10 @@ function Equipos() {
                             text-sm
                           "
                         >
-                          {team.players?.length || 0}
+                          {team.players?.filter(
+                            (player: any) =>
+                              player.status === "approved"
+                              ).length || 0}
                         </div>
 
                       </td>
@@ -583,13 +586,20 @@ function Equipos() {
                           >
 
                             {
-                              team.players?.length > 0
+                              team.players?.filter(
+                              (player: any) =>
+                                player.status === "approved"
+                                ).length || 0
                                 ? (
 
                                   <div className="space-y-2">
 
                                     {
-                                      team.players.map(
+                                      team.players
+                                        ?.filter(
+                                        (player: any) =>
+                                          player.status === "approved"  )
+                                          .map(
                                         (player: any) => (
 
                                           <div

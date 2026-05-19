@@ -56,19 +56,19 @@ function Dashboard() {
     players.filter(
       (p: any) =>
         p.status === "pending"
-    ).length
+    )
 
   const approvedPlayers =
     players.filter(
       (p: any) =>
         p.status === "approved"
-    ).length
+    )
 
   const rejectedPlayers =
     players.filter(
       (p: any) =>
         p.status === "rejected"
-    ).length
+    )
 
   // =========================
   // PIE CHART DATA
@@ -76,17 +76,17 @@ function Dashboard() {
   const pieData = [
     {
       name: "Pendientes",
-      value: pendingPlayers,
+      value: pendingPlayers.length,
       color: "#facc15",
     },
     {
       name: "Aprobados",
-      value: approvedPlayers,
+      value: approvedPlayers.length,
       color: "#22c55e",
     },
     {
       name: "Rechazados",
-      value: rejectedPlayers,
+      value: rejectedPlayers.length,
       color: "#ef4444",
     },
   ]
@@ -96,9 +96,14 @@ function Dashboard() {
   // =========================
   const barData = teams.map(
     (team: any) => ({
+
       name: team.name,
+
       jugadores:
-        team.players?.length || 0,
+        team.players?.filter(
+          (player: any) =>
+            player.status === "approved"
+        ).length || 0,
     })
   )
 
@@ -148,11 +153,11 @@ function Dashboard() {
         <div className="bg-white rounded-2xl shadow-sm p-6">
 
           <p className="text-gray-500 text-sm">
-            Jugadores
+            Jugadores Aprobados
           </p>
 
           <h2 className="text-5xl font-bold mt-3 text-blue-600">
-            {players.length}
+            {approvedPlayers.length}
           </h2>
 
         </div>
@@ -165,7 +170,7 @@ function Dashboard() {
           </p>
 
           <h2 className="text-5xl font-bold mt-3 text-yellow-500">
-            {pendingPlayers}
+            {pendingPlayers.length}
           </h2>
 
         </div>
@@ -178,7 +183,7 @@ function Dashboard() {
           </p>
 
           <h2 className="text-5xl font-bold mt-3 text-green-500">
-            {approvedPlayers}
+            {approvedPlayers.length}
           </h2>
 
         </div>
@@ -191,7 +196,7 @@ function Dashboard() {
           </p>
 
           <h2 className="text-5xl font-bold mt-3 text-red-500">
-            {rejectedPlayers}
+            {rejectedPlayers.length}
           </h2>
 
         </div>
@@ -269,7 +274,7 @@ function Dashboard() {
         >
 
           <h2 className="text-2xl font-bold mb-6">
-            Jugadores por Equipo
+            Jugadores Aprobados por Equipo
           </h2>
 
           <div className="h-[350px]">
@@ -297,6 +302,95 @@ function Dashboard() {
             </ResponsiveContainer>
 
           </div>
+
+        </div>
+
+      </div>
+
+      {/* REJECTED PLAYERS */}
+      <div className="mt-8">
+
+        <div
+          className="
+            bg-white
+            rounded-2xl
+            shadow-sm
+            p-6
+          "
+        >
+
+          <h2 className="text-2xl font-bold mb-5 text-red-500">
+            Jugadores Rechazados
+          </h2>
+
+          {
+            rejectedPlayers.length > 0
+              ? (
+
+                <div className="space-y-3">
+
+                  {
+                    rejectedPlayers.map(
+                      (player: any) => (
+
+                        <div
+                          key={player.id}
+                          className="
+                            border
+                            border-red-100
+                            bg-red-50
+                            rounded-xl
+                            p-4
+                          "
+                        >
+
+                          <div className="flex justify-between items-center">
+
+                            <div>
+
+                              <p className="font-semibold text-gray-800">
+                                ⚽ {player.name}
+                              </p>
+
+                              <p className="text-sm text-gray-500">
+                                {player.position}
+                              </p>
+
+                            </div>
+
+                            <div
+                              className="
+                                text-sm
+                                text-red-600
+                                font-medium
+                              "
+                            >
+
+                              Motivo:
+                              {" "}
+                              {
+                                player.rejection_reason
+                                || "Sin motivo"
+                              }
+
+                            </div>
+
+                          </div>
+
+                        </div>
+                      )
+                    )
+                  }
+
+                </div>
+              )
+              : (
+
+                <p className="text-gray-400">
+                  No hay jugadores rechazados
+                </p>
+              )
+          }
 
         </div>
 

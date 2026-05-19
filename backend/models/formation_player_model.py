@@ -1,10 +1,11 @@
 from sqlalchemy import (
     Column,
     Integer,
-    Boolean,
-    ForeignKey,
-    String
+    String,
+    ForeignKey
 )
+
+from sqlalchemy.orm import relationship
 
 from database.connection import Base
 
@@ -13,7 +14,11 @@ class FormationPlayer(Base):
 
     __tablename__ = "formation_players"
 
-    id = Column(Integer, primary_key=True)
+    id = Column(
+        Integer,
+        primary_key=True,
+        index=True
+    )
 
     formation_id = Column(
         Integer,
@@ -25,6 +30,19 @@ class FormationPlayer(Base):
         ForeignKey("players.id")
     )
 
-    is_starter = Column(Boolean)
+    position_x = Column(
+        Integer,
+        default=0
+    )
 
-    position = Column(String)
+    position_y = Column(
+        Integer,
+        default=0
+    )
+
+    role = Column(String)
+
+    formation = relationship(
+        "Formation",
+        back_populates="players"
+    )

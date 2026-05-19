@@ -53,3 +53,5 @@ class Player(Base):
     red_cards = Column(
         Integer,default=0
     )
+
+    matches_played = Column(Integer, default=0)

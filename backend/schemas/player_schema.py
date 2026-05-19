@@ -13,3 +13,4 @@ class PlayerCreate(BaseModel):
     goals: int = 0
     yellow_cards: int = 0
     red_cards: int = 0
+    matches_played: int = 0

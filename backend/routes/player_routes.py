@@ -135,8 +135,50 @@ def update_player(player_id: int, data: dict, db: Session = Depends(get_db)):
     if not player:
         return {"error": "Jugador no encontrado"}
 
-    player.name = data.get("name", player.name)
-    player.position = data.get("position", player.position)
+    player.name = data.get(
+    "name",
+    player.name
+    )
+
+    player.age = data.get(
+    "age",
+    player.age
+    )
+
+    player.position = data.get(
+    "position",
+    player.position
+    )
+
+    player.number = data.get(
+    "number",
+    player.number
+    )
+
+    player.team_id = data.get(
+    "team_id",
+    player.team_id
+    )
+
+    player.goals = data.get(
+    "goals",
+    player.goals
+    )
+
+    player.yellow_cards = data.get(
+    "yellow_cards",
+    player.yellow_cards
+    )
+
+    player.red_cards = data.get(
+    "red_cards",
+    player.red_cards
+    )
+
+    player.matches_played = data.get(
+        "matches_played",
+        player.matches_played
+    )
 
     db.commit()
     db.refresh(player)

@@ -18,40 +18,62 @@ import Modal from "../components/ui/Modal"
 
 function Jugadores() {
 
+  // =========================
+  // CREATE STATES
+  // =========================
   const [name, setName] = useState("")
   const [age, setAge] = useState("")
   const [position, setPosition] = useState("")
   const [number, setNumber] = useState("")
   const [teamId, setTeamId] = useState("")
 
+  // =========================
+  // UI STATES
+  // =========================
   const [showForm, setShowForm] = useState(false)
-
   const [editModalOpen, setEditModalOpen] = useState(false)
 
+  // =========================
+  // SELECTED PLAYER
+  // =========================
   const [selectedPlayer, setSelectedPlayer] = useState<any>(null)
 
+  // =========================
+  // EDIT STATES
+  // =========================
   const [editName, setEditName] = useState("")
   const [editAge, setEditAge] = useState("")
   const [editPosition, setEditPosition] = useState("")
   const [editNumber, setEditNumber] = useState("")
   const [editTeamId, setEditTeamId] = useState("")
 
-  // ESTADISTICAS
+  // =========================
+  // PLAYER STATS
+  // =========================
   const [editGoals, setEditGoals] = useState("")
   const [editYellowCards, setEditYellowCards] = useState("")
   const [editRedCards, setEditRedCards] = useState("")
+  const [editMatchesPlayed, setEditMatchesPlayed] = useState("")
 
-  // FILTROS
+  // =========================
+  // FILTERS
+  // =========================
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
 
-  const [teams, setTeams] = useState([])
+  // =========================
+  // DATA
+  // =========================
+  const [teams, setTeams] = useState<any[]>([])
 
+  // =========================
+  // ALERTS
+  // =========================
   const [successMessage, setSuccessMessage] = useState("")
   const [errorMessage, setErrorMessage] = useState("")
 
   // =========================
-  // PLAYERS
+  // PLAYERS QUERY
   // =========================
   const {
     data: players = [],
@@ -71,9 +93,7 @@ function Jugadores() {
       const matchesSearch =
         player.name
           .toLowerCase()
-          .includes(
-            search.toLowerCase()
-          )
+          .includes(search.toLowerCase())
 
       const matchesStatus =
         statusFilter === "all"
@@ -205,7 +225,7 @@ function Jugadores() {
   }
 
   // =========================
-  // OPEN MODAL
+  // OPEN EDIT MODAL
   // =========================
   function updatePlayer(player: any) {
 
@@ -227,6 +247,10 @@ function Jugadores() {
 
     setEditRedCards(
       player.red_cards?.toString() || "0"
+    )
+
+    setEditMatchesPlayed(
+      player.matches_played?.toString() || "0"
     )
 
     setEditModalOpen(true)
@@ -266,6 +290,7 @@ function Jugadores() {
           goals: Number(editGoals),
           yellow_cards: Number(editYellowCards),
           red_cards: Number(editRedCards),
+          matches_played: Number(editMatchesPlayed),
         }
       )
 
@@ -343,9 +368,7 @@ function Jugadores() {
         successMessage && (
 
           <div className="mb-5 bg-green-100 text-green-800 p-4 rounded-xl">
-
             ✅ {successMessage}
-
           </div>
         )
       }
@@ -355,9 +378,7 @@ function Jugadores() {
         errorMessage && (
 
           <div className="mb-5 bg-red-100 text-red-800 p-4 rounded-xl">
-
             ❌ {errorMessage}
-
           </div>
         )
       }
@@ -365,9 +386,17 @@ function Jugadores() {
       {/* HEADER */}
       <div className="flex items-center justify-between mb-6">
 
-        <h1 className="text-4xl font-bold">
-          Jugadores
-        </h1>
+        <div>
+
+          <h1 className="text-4xl font-bold">
+            Jugadores
+          </h1>
+
+          <p className="text-gray-500 mt-1">
+            Gestión completa de jugadores y estadísticas
+          </p>
+
+        </div>
 
         <Button
           onClick={() =>
@@ -386,53 +415,65 @@ function Jugadores() {
       {/* FILTERS */}
       <div
         className="
-          flex
-          flex-col
-          md:flex-row
-          gap-4
+          bg-white
+          rounded-2xl
+          shadow-sm
+          p-5
           mb-6
         "
       >
 
-        <Input
-          placeholder="Buscar jugador..."
-          value={search}
-          onChange={(e) =>
-            setSearch(e.target.value)
-          }
-        />
-
-        <select
-          value={statusFilter}
-          onChange={(e) =>
-            setStatusFilter(e.target.value)
-          }
+        <div
           className="
-            border
-            rounded-xl
-            px-4
-            py-3
-            bg-white
+            flex
+            flex-col
+            md:flex-row
+            gap-4
           "
         >
 
-          <option value="all">
-            Todos
-          </option>
+          <Input
+            placeholder="Buscar jugador..."
+            value={search}
+            onChange={(e) =>
+              setSearch(e.target.value)
+            }
+          />
 
-          <option value="pending">
-            Pendientes
-          </option>
+          <select
+            value={statusFilter}
+            onChange={(e) =>
+              setStatusFilter(e.target.value)
+            }
+            className="
+              border
+              rounded-xl
+              px-4
+              py-3
+              bg-white
+              min-w-[220px]
+            "
+          >
 
-          <option value="approved">
-            Aprobados
-          </option>
+            <option value="all">
+              Todos los estados
+            </option>
 
-          <option value="rejected">
-            Rechazados
-          </option>
+            <option value="pending">
+              Pendientes
+            </option>
 
-        </select>
+            <option value="approved">
+              Aprobados
+            </option>
+
+            <option value="rejected">
+              Rechazados
+            </option>
+
+          </select>
+
+        </div>
 
       </div>
 
@@ -441,6 +482,10 @@ function Jugadores() {
         showForm && (
 
           <Card>
+
+            <h2 className="text-2xl font-bold mb-5">
+              Nuevo Jugador
+            </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
@@ -564,6 +609,16 @@ function Jugadores() {
         )
       }
 
+      {/* LOADING */}
+      {
+        isLoading && (
+
+          <div className="my-5 bg-yellow-100 text-yellow-800 p-4 rounded-xl">
+            ⏳ Cargando jugadores...
+          </div>
+        )
+      }
+
       {/* TABLE */}
       <div
         className="
@@ -582,31 +637,47 @@ function Jugadores() {
 
               <tr>
 
-                <th className="text-left py-3 px-4">
+                <th className="text-left py-4 px-4">
                   Nombre
                 </th>
 
-                <th className="text-left py-3 px-4">
+                <th className="text-left py-4 px-4">
                   Posición
                 </th>
 
-                <th className="text-left py-3 px-4">
+                <th className="text-left py-4 px-4">
                   Número
                 </th>
 
-                <th className="text-left py-3 px-4">
+                <th className="text-left py-4 px-4">
                   Edad
                 </th>
 
-                <th className="text-left py-3 px-4">
+                <th className="text-left py-4 px-4">
                   Equipo
                 </th>
 
-                <th className="text-left py-3 px-4">
+                <th className="text-center py-4 px-4">
+                  PJ
+                </th>
+
+                <th className="text-center py-4 px-4">
+                  ⚽
+                </th>
+
+                <th className="text-center py-4 px-4">
+                  🟨
+                </th>
+
+                <th className="text-center py-4 px-4">
+                  🟥
+                </th>
+
+                <th className="text-center py-4 px-4">
                   Estado
                 </th>
 
-                <th className="text-left py-3 px-4">
+                <th className="text-center py-4 px-4">
                   Acciones
                 </th>
 
@@ -635,53 +706,84 @@ function Jugadores() {
                       "
                     >
 
-                      <td className="py-3 px-4">
+                      <td className="py-4 px-4 font-semibold">
                         ⚽ {player.name}
                       </td>
 
-                      <td className="py-3 px-4">
+                      <td className="py-4 px-4">
                         {player.position}
                       </td>
 
-                      <td className="py-3 px-4">
+                      <td className="py-4 px-4">
                         {player.number}
                       </td>
 
-                      <td className="py-3 px-4">
+                      <td className="py-4 px-4">
                         {player.age}
                       </td>
 
-                      <td className="py-3 px-4">
+                      <td className="py-4 px-4">
                         {team?.name}
                       </td>
 
-                      <td className="py-3 px-4">
+                      <td className="py-4 px-4 text-center font-medium">
+                        {player.matches_played || 0}
+                      </td>
+
+                      <td className="py-4 px-4 text-center font-bold text-green-600">
+                        {player.goals || 0}
+                      </td>
+
+                      <td className="py-4 px-4 text-center font-bold text-yellow-500">
+                        {player.yellow_cards || 0}
+                      </td>
+
+                      <td className="py-4 px-4 text-center font-bold text-red-500">
+                        {player.red_cards || 0}
+                      </td>
+
+                      <td className="py-4 px-4 text-center">
 
                         <Badge
                           status={player.status}
                         />
 
+                        {
+                          player.status === "rejected"
+                          &&
+                          player.rejection_reason && (
+
+                            <p className="text-xs text-red-500 mt-2">
+                              {player.rejection_reason}
+                            </p>
+                          )
+                        }
+
                       </td>
 
-                      <td className="py-3 px-4 flex gap-3">
+                      <td className="py-4 px-4">
 
-                        <Button
-                          variant="secondary"
-                          onClick={() =>
-                            updatePlayer(player)
-                          }
-                        >
-                          Editar
-                        </Button>
+                        <div className="flex justify-center gap-2">
 
-                        <Button
-                          variant="danger"
-                          onClick={() =>
-                            deletePlayer(player.id)
-                          }
-                        >
-                          Eliminar
-                        </Button>
+                          <Button
+                            variant="secondary"
+                            onClick={() =>
+                              updatePlayer(player)
+                            }
+                          >
+                            Editar
+                          </Button>
+
+                          <Button
+                            variant="danger"
+                            onClick={() =>
+                              deletePlayer(player.id)
+                            }
+                          >
+                            Eliminar
+                          </Button>
+
+                        </div>
 
                       </td>
 
@@ -698,7 +800,7 @@ function Jugadores() {
 
       </div>
 
-      {/* MODAL */}
+      {/* EDIT MODAL */}
       <Modal
         open={editModalOpen}
         onClose={() =>
@@ -707,7 +809,7 @@ function Jugadores() {
         title="Editar Jugador"
       >
 
-        <div className="space-y-4">
+        <div className="space-y-5">
 
           <Input
             placeholder="Nombre"
@@ -717,14 +819,27 @@ function Jugadores() {
             }
           />
 
-          <Input
-            type="number"
-            placeholder="Edad"
-            value={editAge}
-            onChange={(e) =>
-              setEditAge(e.target.value)
-            }
-          />
+          <div className="grid grid-cols-2 gap-4">
+
+            <Input
+              type="number"
+              placeholder="Edad"
+              value={editAge}
+              onChange={(e) =>
+                setEditAge(e.target.value)
+              }
+            />
+
+            <Input
+              type="number"
+              placeholder="Número"
+              value={editNumber}
+              onChange={(e) =>
+                setEditNumber(e.target.value)
+              }
+            />
+
+          </div>
 
           <select
             value={editPosition}
@@ -777,15 +892,6 @@ function Jugadores() {
 
           </select>
 
-          <Input
-            type="number"
-            placeholder="Número"
-            value={editNumber}
-            onChange={(e) =>
-              setEditNumber(e.target.value)
-            }
-          />
-
           <select
             value={editTeamId}
             onChange={(e) =>
@@ -817,35 +923,52 @@ function Jugadores() {
 
           </select>
 
-          {/* ESTADISTICAS */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* STATS */}
+          <div className="border-t pt-5">
 
-            <Input
-              type="number"
-              placeholder="Goles"
-              value={editGoals}
-              onChange={(e) =>
-                setEditGoals(e.target.value)
-              }
-            />
+            <h3 className="font-semibold mb-4 text-gray-700">
+              Estadísticas del Jugador
+            </h3>
 
-            <Input
-              type="number"
-              placeholder="Amarillas"
-              value={editYellowCards}
-              onChange={(e) =>
-                setEditYellowCards(e.target.value)
-              }
-            />
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
 
-            <Input
-              type="number"
-              placeholder="Rojas"
-              value={editRedCards}
-              onChange={(e) =>
-                setEditRedCards(e.target.value)
-              }
-            />
+              <Input
+                type="number"
+                placeholder="PJ"
+                value={editMatchesPlayed}
+                onChange={(e) =>
+                  setEditMatchesPlayed(e.target.value)
+                }
+              />
+
+              <Input
+                type="number"
+                placeholder="Goles"
+                value={editGoals}
+                onChange={(e) =>
+                  setEditGoals(e.target.value)
+                }
+              />
+
+              <Input
+                type="number"
+                placeholder="Amarillas"
+                value={editYellowCards}
+                onChange={(e) =>
+                  setEditYellowCards(e.target.value)
+                }
+              />
+
+              <Input
+                type="number"
+                placeholder="Rojas"
+                value={editRedCards}
+                onChange={(e) =>
+                  setEditRedCards(e.target.value)
+                }
+              />
+
+            </div>
 
           </div>
 

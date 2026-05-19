@@ -6,13 +6,37 @@ function Layout({
 
   return (
 
-    <div className="flex bg-gray-100 min-h-screen">
+    <div
+      className="
+        flex
+        min-h-screen
+        bg-gray-100
+      "
+    >
 
+      {/* SIDEBAR */}
       <Sidebar />
 
-      <main className="flex-1 p-8 overflow-auto">
+      {/* MAIN CONTENT */}
+      <main
+        className="
+          flex-1
+          overflow-auto
+          p-6
+          md:p-8
+        "
+      >
 
-        {children}
+        <div
+          className="
+            max-w-[1800px]
+            mx-auto
+          "
+        >
+
+          {children}
+
+        </div>
 
       </main>
 

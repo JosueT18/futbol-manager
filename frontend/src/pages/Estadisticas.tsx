@@ -1,25 +1,65 @@
+import { useState } from "react"
+
 import { useQuery } from "@tanstack/react-query"
 
 import {
-  Trophy,
-  Goal,
-  ShieldAlert,
-  ShieldX,
-  Users,
-} from "lucide-react"
+  getPlayers,
+  updatePlayer,
+} from "../api/players"
+
+import {
+  getTeams,
+  updateTeam,
+} from "../api/teams"
 
 import Card from "../components/ui/Card"
-
-import { getPlayers } from "../api/players"
-import { getTeams } from "../api/teams"
+import Button from "../components/ui/Button"
+import Modal from "../components/ui/Modal"
+import Input from "../components/ui/Input"
 
 function Estadisticas() {
+
+  // =========================
+  // STATES
+  // =========================
+  const [teamModalOpen, setTeamModalOpen] =
+    useState(false)
+
+  const [playerModalOpen, setPlayerModalOpen] =
+    useState(false)
+
+  const [selectedTeam, setSelectedTeam] =
+    useState<any>(null)
+
+  const [selectedPlayer, setSelectedPlayer] =
+    useState<any>(null)
+
+  // TEAM STATS
+  const [pj, setPj] = useState("")
+  const [pg, setPg] = useState("")
+  const [pe, setPe] = useState("")
+  const [pp, setPp] = useState("")
+  const [gf, setGf] = useState("")
+  const [gc, setGc] = useState("")
+  const [points, setPoints] = useState("")
+
+  // PLAYER STATS
+  const [goals, setGoals] = useState("")
+  const [yellowCards, setYellowCards] =
+    useState("")
+
+  const [redCards, setRedCards] =
+    useState("")
+
+  const [matchesPlayed, setMatchesPlayed] =
+    useState("")
 
   // =========================
   // PLAYERS
   // =========================
   const {
     data: players = [],
+    refetch: refetchPlayers,
   } = useQuery({
     queryKey: ["players"],
     queryFn: getPlayers,
@@ -30,53 +70,138 @@ function Estadisticas() {
   // =========================
   const {
     data: teams = [],
+    refetch: refetchTeams,
   } = useQuery({
     queryKey: ["teams"],
     queryFn: getTeams,
   })
 
   // =========================
-  // TOP GOLEADORES
+  // APPROVED PLAYERS
   // =========================
-  const topScorers = [...players]
-    .sort(
-      (a: any, b: any) =>
-        (b.goals || 0) -
-        (a.goals || 0)
+  const approvedPlayers =
+    players.filter(
+      (player: any) =>
+        player.status === "approved"
     )
-    .slice(0, 5)
 
   // =========================
-  // TOP AMARILLAS
-  // =========================
-  const topYellowCards = [...players]
-    .sort(
-      (a: any, b: any) =>
-        (b.yellow_cards || 0) -
-        (a.yellow_cards || 0)
-    )
-    .slice(0, 5)
-
-  // =========================
-  // TOP ROJAS
-  // =========================
-  const topRedCards = [...players]
-    .sort(
-      (a: any, b: any) =>
-        (b.red_cards || 0) -
-        (a.red_cards || 0)
-    )
-    .slice(0, 5)
-
-  // =========================
-  // TABLA POSICIONES
+  // SORTS
   // =========================
   const standings = [...teams]
     .sort(
       (a: any, b: any) =>
-        (b.points || 0) -
+        (b.points || 0)
+        -
         (a.points || 0)
     )
+
+  const topScorers = [...approvedPlayers]
+    .sort(
+      (a: any, b: any) =>
+        (b.goals || 0)
+        -
+        (a.goals || 0)
+    )
+
+  // =========================
+  // OPEN TEAM MODAL
+  // =========================
+  function openTeamModal(team: any) {
+
+    setSelectedTeam(team)
+
+    setPj(team.pj?.toString() || "0")
+    setPg(team.pg?.toString() || "0")
+    setPe(team.pe?.toString() || "0")
+    setPp(team.pp?.toString() || "0")
+
+    setGf(team.gf?.toString() || "0")
+    setGc(team.gc?.toString() || "0")
+
+    setPoints(
+      team.points?.toString() || "0"
+    )
+
+    setTeamModalOpen(true)
+  }
+
+  // =========================
+  // SAVE TEAM STATS
+  // =========================
+  async function saveTeamStats() {
+
+    await updateTeam(
+      selectedTeam.id,
+      {
+        pj: Number(pj),
+        pg: Number(pg),
+        pe: Number(pe),
+        pp: Number(pp),
+
+        gf: Number(gf),
+        gc: Number(gc),
+
+        points: Number(points),
+      }
+    )
+
+    setTeamModalOpen(false)
+
+    await refetchTeams()
+  }
+
+  // =========================
+  // OPEN PLAYER MODAL
+  // =========================
+  function openPlayerModal(player: any) {
+
+    setSelectedPlayer(player)
+
+    setGoals(
+      player.goals?.toString() || "0"
+    )
+
+    setYellowCards(
+      player.yellow_cards?.toString() || "0"
+    )
+
+    setRedCards(
+      player.red_cards?.toString() || "0"
+    )
+
+    setMatchesPlayed(
+      player.matches_played?.toString() || "0"
+    )
+
+    setPlayerModalOpen(true)
+  }
+
+  // =========================
+  // SAVE PLAYER STATS
+  // =========================
+  async function savePlayerStats() {
+
+    await updatePlayer(
+      selectedPlayer.id,
+      {
+        goals: Number(goals),
+
+        yellow_cards:
+          Number(yellowCards),
+
+        red_cards:
+          Number(redCards),
+
+        matches_played:
+          Number(matchesPlayed),
+      }
+    )
+
+    setPlayerModalOpen(false)
+
+    await refetchPlayers()
+  }
 
   return (
 
@@ -90,387 +215,22 @@ function Estadisticas() {
         </h1>
 
         <p className="text-gray-500 mt-2">
-          Resumen general de jugadores y equipos
+          Gestión de estadísticas
         </p>
-
-      </div>
-
-      {/* CARDS */}
-      <div
-        className="
-          grid
-          grid-cols-1
-          md:grid-cols-4
-          gap-5
-        "
-      >
-
-        <Card>
-
-          <div className="flex items-center justify-between">
-
-            <div>
-
-              <p className="text-gray-500 text-sm">
-                Jugadores
-              </p>
-
-              <h2 className="text-3xl font-bold mt-2">
-                {players.length}
-              </h2>
-
-            </div>
-
-            <Users
-              className="text-blue-500"
-              size={34}
-            />
-
-          </div>
-
-        </Card>
-
-        <Card>
-
-          <div className="flex items-center justify-between">
-
-            <div>
-
-              <p className="text-gray-500 text-sm">
-                Equipos
-              </p>
-
-              <h2 className="text-3xl font-bold mt-2">
-                {teams.length}
-              </h2>
-
-            </div>
-
-            <Trophy
-              className="text-yellow-500"
-              size={34}
-            />
-
-          </div>
-
-        </Card>
-
-        <Card>
-
-          <div className="flex items-center justify-between">
-
-            <div>
-
-              <p className="text-gray-500 text-sm">
-                Goles Totales
-              </p>
-
-              <h2 className="text-3xl font-bold mt-2">
-
-                {
-                  players.reduce(
-                    (
-                      total: number,
-                      player: any
-                    ) =>
-                      total +
-                      (player.goals || 0),
-                    0
-                  )
-                }
-
-              </h2>
-
-            </div>
-
-            <Goal
-              className="text-green-500"
-              size={34}
-            />
-
-          </div>
-
-        </Card>
-
-        <Card>
-
-          <div className="flex items-center justify-between">
-
-            <div>
-
-              <p className="text-gray-500 text-sm">
-                Tarjetas Rojas
-              </p>
-
-              <h2 className="text-3xl font-bold mt-2">
-
-                {
-                  players.reduce(
-                    (
-                      total: number,
-                      player: any
-                    ) =>
-                      total +
-                      (player.red_cards || 0),
-                    0
-                  )
-                }
-
-              </h2>
-
-            </div>
-
-            <ShieldX
-              className="text-red-500"
-              size={34}
-            />
-
-          </div>
-
-        </Card>
-
-      </div>
-
-      {/* TOPS */}
-      <div
-        className="
-          grid
-          grid-cols-1
-          lg:grid-cols-3
-          gap-6
-        "
-      >
-
-        {/* GOLEADORES */}
-        <Card>
-
-          <div className="flex items-center gap-2 mb-5">
-
-            <Goal
-              className="text-green-500"
-              size={22}
-            />
-
-            <h2 className="text-xl font-bold">
-              Top Goleadores
-            </h2>
-
-          </div>
-
-          <div className="space-y-3">
-
-            {
-              topScorers.map(
-                (
-                  player: any,
-                  index: number
-                ) => (
-
-                  <div
-                    key={player.id}
-                    className="
-                      flex
-                      items-center
-                      justify-between
-                      bg-gray-50
-                      rounded-xl
-                      px-4
-                      py-3
-                    "
-                  >
-
-                    <div>
-
-                      <p className="font-semibold">
-                        {index + 1}. {player.name}
-                      </p>
-
-                      <p className="text-sm text-gray-500">
-                        {player.position}
-                      </p>
-
-                    </div>
-
-                    <div
-                      className="
-                        bg-green-100
-                        text-green-700
-                        px-3
-                        py-1
-                        rounded-full
-                        text-sm
-                        font-bold
-                      "
-                    >
-                      {player.goals || 0} goles
-                    </div>
-
-                  </div>
-                )
-              )
-            }
-
-          </div>
-
-        </Card>
-
-        {/* AMARILLAS */}
-        <Card>
-
-          <div className="flex items-center gap-2 mb-5">
-
-            <ShieldAlert
-              className="text-yellow-500"
-              size={22}
-            />
-
-            <h2 className="text-xl font-bold">
-              Más Amarillas
-            </h2>
-
-          </div>
-
-          <div className="space-y-3">
-
-            {
-              topYellowCards.map(
-                (
-                  player: any,
-                  index: number
-                ) => (
-
-                  <div
-                    key={player.id}
-                    className="
-                      flex
-                      items-center
-                      justify-between
-                      bg-gray-50
-                      rounded-xl
-                      px-4
-                      py-3
-                    "
-                  >
-
-                    <div>
-
-                      <p className="font-semibold">
-                        {index + 1}. {player.name}
-                      </p>
-
-                      <p className="text-sm text-gray-500">
-                        {player.position}
-                      </p>
-
-                    </div>
-
-                    <div
-                      className="
-                        bg-yellow-100
-                        text-yellow-700
-                        px-3
-                        py-1
-                        rounded-full
-                        text-sm
-                        font-bold
-                      "
-                    >
-                      {player.yellow_cards || 0}
-                    </div>
-
-                  </div>
-                )
-              )
-            }
-
-          </div>
-
-        </Card>
-
-        {/* ROJAS */}
-        <Card>
-
-          <div className="flex items-center gap-2 mb-5">
-
-            <ShieldX
-              className="text-red-500"
-              size={22}
-            />
-
-            <h2 className="text-xl font-bold">
-              Más Rojas
-            </h2>
-
-          </div>
-
-          <div className="space-y-3">
-
-            {
-              topRedCards.map(
-                (
-                  player: any,
-                  index: number
-                ) => (
-
-                  <div
-                    key={player.id}
-                    className="
-                      flex
-                      items-center
-                      justify-between
-                      bg-gray-50
-                      rounded-xl
-                      px-4
-                      py-3
-                    "
-                  >
-
-                    <div>
-
-                      <p className="font-semibold">
-                        {index + 1}. {player.name}
-                      </p>
-
-                      <p className="text-sm text-gray-500">
-                        {player.position}
-                      </p>
-
-                    </div>
-
-                    <div
-                      className="
-                        bg-red-100
-                        text-red-700
-                        px-3
-                        py-1
-                        rounded-full
-                        text-sm
-                        font-bold
-                      "
-                    >
-                      {player.red_cards || 0}
-                    </div>
-
-                  </div>
-                )
-              )
-            }
-
-          </div>
-
-        </Card>
 
       </div>
 
       {/* TABLA POSICIONES */}
       <Card>
 
-        <div className="flex items-center gap-2 mb-6">
-
-          <Trophy
-            className="text-yellow-500"
-            size={24}
-          />
+        <div
+          className="
+            flex
+            items-center
+            justify-between
+            mb-5
+          "
+        >
 
           <h2 className="text-2xl font-bold">
             Tabla de Posiciones
@@ -487,37 +247,49 @@ function Estadisticas() {
               <tr
                 className="
                   bg-gray-100
-                  text-gray-600
                   text-sm
+                  text-gray-600
                 "
               >
 
-                <th className="text-left px-4 py-3">
-                  #
-                </th>
-
-                <th className="text-left px-4 py-3">
+                <th className="px-4 py-3 text-left">
                   Equipo
                 </th>
 
-                <th className="text-center px-4 py-3">
+                <th className="px-4 py-3 text-center">
                   PJ
                 </th>
 
-                <th className="text-center px-4 py-3">
+                <th className="px-4 py-3 text-center">
                   PG
                 </th>
 
-                <th className="text-center px-4 py-3">
+                <th className="px-4 py-3 text-center">
                   PE
                 </th>
 
-                <th className="text-center px-4 py-3">
+                <th className="px-4 py-3 text-center">
                   PP
                 </th>
 
-                <th className="text-center px-4 py-3">
+                <th className="px-4 py-3 text-center">
+                  GF
+                </th>
+
+                <th className="px-4 py-3 text-center">
+                  GC
+                </th>
+
+                <th className="px-4 py-3 text-center">
+                  DG
+                </th>
+
+                <th className="px-4 py-3 text-center">
                   PTS
+                </th>
+
+                <th className="px-4 py-3 text-center">
+                  Acción
                 </th>
 
               </tr>
@@ -528,53 +300,207 @@ function Estadisticas() {
 
               {
                 standings.map(
-                  (
-                    team: any,
-                    index: number
-                  ) => (
+                  (team: any) => {
+
+                    const dg =
+                      (team.gf || 0)
+                      -
+                      (team.gc || 0)
+
+                    return (
+
+                      <tr
+                        key={team.id}
+                        className="
+                          border-t
+                          hover:bg-gray-50
+                        "
+                      >
+
+                        <td className="px-4 py-4 font-semibold">
+                          ⚽ {team.name}
+                        </td>
+
+                        <td className="text-center">
+                          {team.pj || 0}
+                        </td>
+
+                        <td className="text-center">
+                          {team.pg || 0}
+                        </td>
+
+                        <td className="text-center">
+                          {team.pe || 0}
+                        </td>
+
+                        <td className="text-center">
+                          {team.pp || 0}
+                        </td>
+
+                        <td className="text-center">
+                          {team.gf || 0}
+                        </td>
+
+                        <td className="text-center">
+                          {team.gc || 0}
+                        </td>
+
+                        <td className="text-center font-semibold">
+                          {dg}
+                        </td>
+
+                        <td
+                          className="
+                            text-center
+                            font-bold
+                            text-blue-600
+                          "
+                        >
+                          {team.points || 0}
+                        </td>
+
+                        <td className="text-center">
+
+                          <Button
+                            variant="secondary"
+                            onClick={() =>
+                              openTeamModal(team)
+                            }
+                          >
+                            Editar
+                          </Button>
+
+                        </td>
+
+                      </tr>
+                    )
+                  }
+                )
+              }
+
+            </tbody>
+
+          </table>
+
+        </div>
+
+      </Card>
+
+      {/* ESTADISTICAS JUGADORES */}
+      <Card>
+
+        <div
+          className="
+            flex
+            items-center
+            justify-between
+            mb-5
+          "
+        >
+
+          <h2 className="text-2xl font-bold">
+            Estadísticas Jugadores
+          </h2>
+
+        </div>
+
+        <div className="overflow-x-auto">
+
+          <table className="w-full">
+
+            <thead>
+
+              <tr
+                className="
+                  bg-gray-100
+                  text-sm
+                  text-gray-600
+                "
+              >
+
+                <th className="px-4 py-3 text-left">
+                  Jugador
+                </th>
+
+                <th className="px-4 py-3 text-center">
+                  Posición
+                </th>
+
+                <th className="px-4 py-3 text-center">
+                  PJ
+                </th>
+
+                <th className="px-4 py-3 text-center">
+                  Goles
+                </th>
+
+                <th className="px-4 py-3 text-center">
+                  Amarillas
+                </th>
+
+                <th className="px-4 py-3 text-center">
+                  Rojas
+                </th>
+
+                <th className="px-4 py-3 text-center">
+                  Acción
+                </th>
+
+              </tr>
+
+            </thead>
+
+            <tbody>
+
+              {
+                approvedPlayers.map(
+                  (player: any) => (
 
                     <tr
-                      key={team.id}
+                      key={player.id}
                       className="
                         border-t
                         hover:bg-gray-50
                       "
                     >
 
-                      <td className="px-4 py-4 font-bold">
-                        {index + 1}
-                      </td>
-
                       <td className="px-4 py-4 font-semibold">
-                        ⚽ {team.name}
+                        ⚽ {player.name}
                       </td>
 
-                      <td className="px-4 py-4 text-center">
-                        {team.pj || 0}
+                      <td className="text-center">
+                        {player.position}
                       </td>
 
-                      <td className="px-4 py-4 text-center">
-                        {team.pg || 0}
+                      <td className="text-center">
+                        {
+                          player.matches_played || 0
+                        }
                       </td>
 
-                      <td className="px-4 py-4 text-center">
-                        {team.pe || 0}
+                      <td className="text-center font-bold text-green-600">
+                        {player.goals || 0}
                       </td>
 
-                      <td className="px-4 py-4 text-center">
-                        {team.pp || 0}
+                      <td className="text-center">
+                        {player.yellow_cards || 0}
                       </td>
 
-                      <td
-                        className="
-                          px-4
-                          py-4
-                          text-center
-                          font-bold
-                          text-blue-600
-                        "
-                      >
-                        {team.points || 0}
+                      <td className="text-center">
+                        {player.red_cards || 0}
+                      </td>
+
+                      <td className="text-center">
+
+                        <Button
+                          variant="secondary"
+                          onClick={() =>
+                            openPlayerModal(player)
+                          }
+                        >
+                          Editar
+                        </Button>
+
                       </td>
 
                     </tr>
@@ -589,6 +515,275 @@ function Estadisticas() {
         </div>
 
       </Card>
+
+      {/* GOLEADORES */}
+      <Card>
+
+        <div
+          className="
+            flex
+            items-center
+            justify-between
+            mb-5
+          "
+        >
+
+          <h2 className="text-2xl font-bold">
+            Ranking de Goleadores
+          </h2>
+
+        </div>
+
+        <div className="space-y-3">
+
+          {
+            topScorers
+              .slice(0, 10)
+              .map(
+                (
+                  player: any,
+                  index: number
+                ) => (
+
+                  <div
+                    key={player.id}
+                    className="
+                      flex
+                      items-center
+                      justify-between
+                      bg-gray-50
+                      rounded-xl
+                      px-4
+                      py-3
+                    "
+                  >
+
+                    <div className="flex items-center gap-4">
+
+                      <div
+                        className="
+                          w-9
+                          h-9
+                          rounded-full
+                          bg-yellow-100
+                          text-yellow-700
+                          flex
+                          items-center
+                          justify-center
+                          font-bold
+                        "
+                      >
+                        {index + 1}
+                      </div>
+
+                      <div>
+
+                        <p className="font-semibold">
+                          ⚽ {player.name}
+                        </p>
+
+                        <p className="text-sm text-gray-500">
+                          {player.position}
+                        </p>
+
+                      </div>
+
+                    </div>
+
+                    <div
+                      className="
+                        bg-green-100
+                        text-green-700
+                        px-4
+                        py-2
+                        rounded-full
+                        font-bold
+                      "
+                    >
+                      {player.goals || 0} goles
+                    </div>
+
+                  </div>
+                )
+              )
+          }
+
+        </div>
+
+      </Card>
+
+      {/* TEAM MODAL */}
+      <Modal
+        open={teamModalOpen}
+        onClose={() =>
+          setTeamModalOpen(false)
+        }
+        title="Editar Estadísticas Equipo"
+      >
+
+        <div className="space-y-4">
+
+          <Input
+            type="number"
+            placeholder="PJ"
+            value={pj}
+            onChange={(e) =>
+              setPj(e.target.value)
+            }
+          />
+
+          <Input
+            type="number"
+            placeholder="PG"
+            value={pg}
+            onChange={(e) =>
+              setPg(e.target.value)
+            }
+          />
+
+          <Input
+            type="number"
+            placeholder="PE"
+            value={pe}
+            onChange={(e) =>
+              setPe(e.target.value)
+            }
+          />
+
+          <Input
+            type="number"
+            placeholder="PP"
+            value={pp}
+            onChange={(e) =>
+              setPp(e.target.value)
+            }
+          />
+
+          <Input
+            type="number"
+            placeholder="Goles a favor"
+            value={gf}
+            onChange={(e) =>
+              setGf(e.target.value)
+            }
+          />
+
+          <Input
+            type="number"
+            placeholder="Goles en contra"
+            value={gc}
+            onChange={(e) =>
+              setGc(e.target.value)
+            }
+          />
+
+          <Input
+            type="number"
+            placeholder="Puntos"
+            value={points}
+            onChange={(e) =>
+              setPoints(e.target.value)
+            }
+          />
+
+          <div className="flex justify-end gap-3 pt-3">
+
+            <Button
+              variant="secondary"
+              onClick={() =>
+                setTeamModalOpen(false)
+              }
+            >
+              Cancelar
+            </Button>
+
+            <Button
+              onClick={saveTeamStats}
+            >
+              Guardar
+            </Button>
+
+          </div>
+
+        </div>
+
+      </Modal>
+
+      {/* PLAYER MODAL */}
+      <Modal
+        open={playerModalOpen}
+        onClose={() =>
+          setPlayerModalOpen(false)
+        }
+        title="Editar Estadísticas Jugador"
+      >
+
+        <div className="space-y-4">
+
+          <Input
+            type="number"
+            placeholder="Partidos Jugados"
+            value={matchesPlayed}
+            onChange={(e) =>
+              setMatchesPlayed(
+                e.target.value
+              )
+            }
+          />
+
+          <Input
+            type="number"
+            placeholder="Goles"
+            value={goals}
+            onChange={(e) =>
+              setGoals(e.target.value)
+            }
+          />
+
+          <Input
+            type="number"
+            placeholder="Amarillas"
+            value={yellowCards}
+            onChange={(e) =>
+              setYellowCards(
+                e.target.value
+              )
+            }
+          />
+
+          <Input
+            type="number"
+            placeholder="Rojas"
+            value={redCards}
+            onChange={(e) =>
+              setRedCards(
+                e.target.value
+              )
+            }
+          />
+
+          <div className="flex justify-end gap-3 pt-3">
+
+            <Button
+              variant="secondary"
+              onClick={() =>
+                setPlayerModalOpen(false)
+              }
+            >
+              Cancelar
+            </Button>
+
+            <Button
+              onClick={savePlayerStats}
+            >
+              Guardar
+            </Button>
+
+          </div>
+
+        </div>
+
+      </Modal>
 
     </div>
   )

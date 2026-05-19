@@ -55,14 +55,13 @@ export async function updateTeam(
 ) {
 
   const response = await fetch(
-    `${API_URL}/teams/${id}`,
+    `http://127.0.0.1:8000/teams/${id}`,
     {
       method: "PUT",
-
       headers: {
-        "Content-Type": "application/json",
+        "Content-Type":
+          "application/json",
       },
-
       body: JSON.stringify(data),
     }
   )

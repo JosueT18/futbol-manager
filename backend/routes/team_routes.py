@@ -45,9 +45,15 @@ def get_teams(
     db: Session = Depends(get_db)
 ):
 
-    teams = db.query(Team).options(
-        joinedload(Team.players)
-    ).all()
+    teams = db.query(Team).all()
+
+    for team in teams:
+
+        team.players = [
+            player
+            for player in team.players
+            if player.status == "approved"
+        ]
 
     return teams
 
@@ -97,11 +103,47 @@ def update_team(
             "error": "Equipo no encontrado"
         }
 
-    team.name = data.get("name")
+    team.name = data.get(
+    "name",
+    team.name
+    )
 
-    team.city = data.get("city")
+    team.city = data.get(
+    "city",
+    team.city
+    )
 
-    team.tecnico = data.get("tecnico")
+    team.tecnico = data.get(
+    "tecnico",
+    team.tecnico
+    )
+
+    team.pj = data.get(
+    "pj",
+    team.pj
+    )
+
+    team.pg = data.get(
+    "pg",
+    team.pg
+    )
+
+    team.pe = data.get(
+    "pe",
+    team.pe
+    )
+
+    team.pp = data.get(
+    "pp",
+    team.pp
+    )
+
+# CALCULAR PUNTOS
+    team.points = (
+    (team.pg * 3)
+    +
+    team.pe
+    )
 
     db.commit()
 

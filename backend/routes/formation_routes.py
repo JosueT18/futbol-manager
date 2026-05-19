@@ -1,46 +1,101 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter
+from fastapi import Depends
+from fastapi import HTTPException
+
 from sqlalchemy.orm import Session
 
-from database.connection import get_db
+from database.connection import SessionLocal
 
 from models.formation_model import Formation
 from models.formation_player_model import FormationPlayer
-from models.player_model import Player
 
+from schemas.formation_schema import (
+    FormationCreate,
+    FormationResponse
+)
 
 router = APIRouter()
 
 
-@router.post("/formations")
+# =========================
+# DB
+# =========================
+def get_db():
+
+    db = SessionLocal()
+
+    try:
+
+        yield db
+
+    finally:
+
+        db.close()
+
+
+# =========================
+# CREATE FORMATION
+# =========================
+@router.post(
+    "/formations",
+    response_model=FormationResponse
+)
 def create_formation(
-    data: dict,
+    formation: FormationCreate,
     db: Session = Depends(get_db)
 ):
 
-    formation = Formation(
+    new_formation = Formation(
 
-        name=data.get("name"),
+        name=formation.name,
 
-        players_per_team=data.get(
-            "players_per_team"
-        ),
+        tactic=formation.tactic,
 
-        team_id=data.get("team_id")
+        match_type=formation.match_type,
+
+        team_id=formation.team_id
     )
 
-    db.add(formation)
+    db.add(new_formation)
 
     db.commit()
 
-    db.refresh(formation)
+    db.refresh(new_formation)
 
-    return {
-        "message": "Formación creada",
-        "formation_id": formation.id
-    }
+    # =========================
+    # PLAYERS
+    # =========================
+    for player in formation.players:
+
+        formation_player = FormationPlayer(
+
+            formation_id=new_formation.id,
+
+            player_id=player.player_id,
+
+            position_x=player.position_x,
+
+            position_y=player.position_y,
+
+            role=player.role
+        )
+
+        db.add(formation_player)
+
+    db.commit()
+
+    db.refresh(new_formation)
+
+    return new_formation
 
 
-@router.get("/formations")
+# =========================
+# GET FORMATIONS
+# =========================
+@router.get(
+    "/formations",
+    response_model=list[FormationResponse]
+)
 def get_formations(
     db: Session = Depends(get_db)
 ):
@@ -52,52 +107,140 @@ def get_formations(
     return formations
 
 
-@router.post("/formation-players")
-def add_player_to_formation(
-    data: dict,
+# =========================
+# GET FORMATION
+# =========================
+@router.get(
+    "/formations/{formation_id}",
+    response_model=FormationResponse
+)
+def get_formation(
+    formation_id: int,
     db: Session = Depends(get_db)
 ):
 
-    formation = db.query(Formation).filter(
-        Formation.id == data.get("formation_id")
-    ).first()
-
-    player = db.query(Player).filter(
-        Player.id == data.get("player_id")
+    formation = db.query(
+        Formation
+    ).filter(
+        Formation.id == formation_id
     ).first()
 
     if not formation:
-        return {
-            "error": "Formación no encontrada"
-        }
 
-    if not player:
-        return {
-            "error": "Jugador no encontrado"
-        }
+        raise HTTPException(
+            status_code=404,
+            detail="Formación no encontrada"
+        )
 
-    if player.team_id != formation.team_id:
-        return {
-            "error": "El jugador no pertenece al equipo"
-        }
+    return formation
 
-    formation_player = FormationPlayer(
 
-        formation_id=data.get("formation_id"),
+# =========================
+# UPDATE FORMATION
+# =========================
+@router.put(
+    "/formations/{formation_id}",
+    response_model=FormationResponse
+)
+def update_formation(
+    formation_id: int,
+    formation_data: FormationCreate,
+    db: Session = Depends(get_db)
+):
 
-        player_id=data.get("player_id"),
+    formation = db.query(
+        Formation
+    ).filter(
+        Formation.id == formation_id
+    ).first()
 
-        is_starter=data.get("is_starter"),
+    if not formation:
 
-        position=data.get("position")
+        raise HTTPException(
+            status_code=404,
+            detail="Formación no encontrada"
+        )
+
+    # =========================
+    # UPDATE FORMATION
+    # =========================
+    formation.name = formation_data.name
+
+    formation.tactic = formation_data.tactic
+
+    formation.match_type = (
+        formation_data.match_type
     )
 
-    db.add(formation_player)
+    formation.team_id = formation_data.team_id
+
+    # =========================
+    # DELETE OLD PLAYERS
+    # =========================
+    db.query(
+        FormationPlayer
+    ).filter(
+        FormationPlayer.formation_id
+        ==
+        formation.id
+    ).delete()
+
+    # =========================
+    # ADD NEW PLAYERS
+    # =========================
+    for player in formation_data.players:
+
+        new_player = FormationPlayer(
+
+            formation_id=formation.id,
+
+            player_id=player.player_id,
+
+            position_x=player.position_x,
+
+            position_y=player.position_y,
+
+            role=player.role
+        )
+
+        db.add(new_player)
 
     db.commit()
 
-    db.refresh(formation_player)
+    db.refresh(formation)
+
+    return formation
+
+
+# =========================
+# DELETE FORMATION
+# =========================
+@router.delete(
+    "/formations/{formation_id}"
+)
+def delete_formation(
+    formation_id: int,
+    db: Session = Depends(get_db)
+):
+
+    formation = db.query(
+        Formation
+    ).filter(
+        Formation.id == formation_id
+    ).first()
+
+    if not formation:
+
+        raise HTTPException(
+            status_code=404,
+            detail="Formación no encontrada"
+        )
+
+    db.delete(formation)
+
+    db.commit()
 
     return {
-        "message": "Jugador agregado a formación"
+        "message":
+        "Formación eliminada correctamente"
     }
