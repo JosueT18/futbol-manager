@@ -1,5 +1,7 @@
 import { Fragment, useState, useEffect } from "react"
+
 import Swal from "sweetalert2"
+
 import { useQuery } from "@tanstack/react-query"
 
 import {
@@ -14,12 +16,16 @@ import Input from "../components/ui/Input"
 import Card from "../components/ui/Card"
 import TableContainer from "../components/ui/TableContainer"
 
+
 function Equipos() {
 
   const [name, setName] = useState("")
   const [city, setCity] = useState("")
   const [tecnico, setTecnico] = useState("")
-  const [showForm, setShowForm] = useState(false)
+  const [logo, setLogo] = useState("")
+
+  const [showForm, setShowForm] =
+    useState(false)
 
   const [openTeamId, setOpenTeamId] =
     useState<number | null>(null)
@@ -29,6 +35,53 @@ function Equipos() {
 
   const [errorMessage, setErrorMessage] =
     useState("")
+
+
+  // =========================
+  // UPLOAD LOGO
+  // =========================
+  async function uploadLogo(
+    file: File
+  ) {
+
+    try {
+
+      const formData =
+        new FormData()
+
+      formData.append(
+        "file",
+        file
+      )
+
+      const response =
+        await fetch(
+          "http://localhost:8000/teams/upload-logo",
+          {
+            method: "POST",
+            body: formData,
+          }
+        )
+
+      const data =
+        await response.json()
+
+      console.log(data)
+
+      setLogo(
+        data.logo
+      )
+
+    } catch (error) {
+
+      console.error(error)
+
+      setErrorMessage(
+        "Error al subir logo"
+      )
+    }
+  }
+
 
   // =========================
   // TEAMS
@@ -41,6 +94,7 @@ function Equipos() {
     queryKey: ["teams"],
     queryFn: getTeams,
   })
+
 
   // =========================
   // CREATE TEAM
@@ -63,9 +117,14 @@ function Equipos() {
     try {
 
       await createTeamApi({
+
         name,
+
         city,
+
         tecnico,
+
+        logo,
       })
 
       setSuccessMessage(
@@ -77,6 +136,7 @@ function Equipos() {
       setName("")
       setCity("")
       setTecnico("")
+      setLogo("")
 
       setShowForm(false)
 
@@ -92,18 +152,28 @@ function Equipos() {
     }
   }
 
+
   // =========================
   // DELETE TEAM
   // =========================
   async function deleteTeam(id: number) {
 
     const result = await Swal.fire({
+
       title: "¿Eliminar equipo?",
-      text: "Esta acción no se puede deshacer",
+
+      text:
+        "Esta acción no se puede deshacer",
+
       icon: "warning",
+
       showCancelButton: true,
-      confirmButtonText: "Sí, eliminar",
-      cancelButtonText: "Cancelar",
+
+      confirmButtonText:
+        "Sí, eliminar",
+
+      cancelButtonText:
+        "Cancelar",
     })
 
     if (!result.isConfirmed) {
@@ -132,6 +202,7 @@ function Equipos() {
       )
     }
   }
+
 
   // =========================
   // UPDATE TEAM
@@ -166,9 +237,14 @@ function Equipos() {
       await updateTeamApi(
         team.id,
         {
+
           name: newName,
+
           city: newCity,
+
           tecnico: newTecnico,
+
+          logo: team.logo,
         }
       )
 
@@ -190,6 +266,7 @@ function Equipos() {
     }
   }
 
+
   // =========================
   // AUTO CLEAR SUCCESS
   // =========================
@@ -208,6 +285,7 @@ function Equipos() {
 
   }, [successMessage])
 
+
   // =========================
   // AUTO CLEAR ERROR
   // =========================
@@ -225,6 +303,7 @@ function Equipos() {
     }
 
   }, [errorMessage])
+
 
   return (
 
@@ -248,6 +327,7 @@ function Equipos() {
         )
       }
 
+
       {/* ERROR */}
       {
         errorMessage && (
@@ -265,6 +345,7 @@ function Equipos() {
           </div>
         )
       }
+
 
       {/* HEADER */}
       <div
@@ -285,14 +366,17 @@ function Equipos() {
             setShowForm(!showForm)
           }
         >
+
           {
             showForm
               ? "Cerrar"
               : "+ Crear Equipo"
           }
+
         </Button>
 
       </div>
+
 
       {/* FORM */}
       {
@@ -304,7 +388,7 @@ function Equipos() {
               className="
                 grid
                 grid-cols-1
-                md:grid-cols-3
+                md:grid-cols-2
                 gap-4
               "
             >
@@ -333,7 +417,77 @@ function Equipos() {
                 }
               />
 
+              {/* UPLOAD */}
+              <div>
+
+                <label
+                  className="
+                    block
+                    text-sm
+                    font-medium
+                    mb-2
+                  "
+                >
+                  Escudo
+                </label>
+
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+
+                    const file =
+                      e.target.files?.[0]
+
+                    if (file) {
+
+                      uploadLogo(file)
+                    }
+                  }}
+                  className="
+                    w-full
+                    border
+                    rounded-xl
+                    p-2
+                    bg-white
+                  "
+                />
+
+              </div>
+
             </div>
+
+
+            {/* PREVIEW */}
+            {
+              logo && (
+
+                <div
+                  className="
+                    mt-5
+                    flex
+                    justify-center
+                  "
+                >
+
+                  <img
+                    src={`http://localhost:8000${logo}`}
+                    alt="logo"
+                    className="
+                      w-24
+                      h-24
+                      object-cover
+                      rounded-full
+                      border-4
+                      border-gray-200
+                      shadow-md
+                    "
+                  />
+
+                </div>
+              )
+            }
+
 
             <div className="mt-5">
 
@@ -346,6 +500,7 @@ function Equipos() {
           </Card>
         )
       }
+
 
       {/* LOADING */}
       {
@@ -364,6 +519,7 @@ function Equipos() {
           </div>
         )
       }
+
 
       {/* TABLE */}
       <div
@@ -413,6 +569,7 @@ function Equipos() {
 
             </thead>
 
+
             <tbody>
 
               {
@@ -420,7 +577,6 @@ function Equipos() {
 
                   <Fragment key={team.id}>
 
-                    {/* FILA PRINCIPAL */}
                     <tr
                       className="
                         border-t
@@ -429,7 +585,7 @@ function Equipos() {
                       "
                     >
 
-                      {/* EQUIPO */}
+                      {/* TEAM */}
                       <td className="py-4 px-4">
 
                         <button
@@ -456,19 +612,42 @@ function Equipos() {
                             "
                           >
 
+                            {/* LOGO */}
                             <div
                               className="
-                                w-11
-                                h-11
+                                w-14
+                                h-14
                                 rounded-full
-                                bg-blue-100
+                                overflow-hidden
+                                border
+                                bg-gray-100
                                 flex
                                 items-center
                                 justify-center
-                                text-xl
                               "
                             >
-                              ⚽
+
+                              {
+                                team.logo ? (
+
+                                  <img
+                                    src={`http://localhost:8000${team.logo}`}
+                                    alt={team.name}
+                                    className="
+                                      w-full
+                                      h-full
+                                      object-cover
+                                    "
+                                  />
+
+                                ) : (
+
+                                  <span className="text-2xl">
+                                    ⚽
+                                  </span>
+                                )
+                              }
+
                             </div>
 
                             <div>
@@ -483,19 +662,6 @@ function Equipos() {
                                 {team.name}
                               </p>
 
-                              <p
-                                className="
-                                  text-xs
-                                  text-gray-400
-                                "
-                              >
-                                {
-                                  openTeamId === team.id
-                                    ? "Ocultar jugadores"
-                                    : "Click para ver jugadores"
-                                }
-                              </p>
-
                             </div>
 
                           </div>
@@ -504,17 +670,20 @@ function Equipos() {
 
                       </td>
 
-                      {/* CIUDAD */}
+
+                      {/* CITY */}
                       <td className="py-4 px-4">
                         📍 {team.city}
                       </td>
+
 
                       {/* TECNICO */}
                       <td className="py-4 px-4">
                         👨‍🏫 {team.tecnico}
                       </td>
 
-                      {/* CANTIDAD */}
+
+                      {/* COUNT */}
                       <td className="py-4 px-4">
 
                         <div
@@ -529,21 +698,21 @@ function Equipos() {
                             text-sm
                           "
                         >
-                          {team.players?.filter(
-                            (player: any) =>
-                              player.status === "approved"
-                              ).length || 0}
+
+                          {
+                            team.players?.filter(
+                              (player: any) =>
+                                player.status === "approved"
+                            ).length || 0
+                          }
+
                         </div>
 
                       </td>
 
-                      {/* ACCIONES */}
-                      <td
-                        className="
-                          py-4
-                          px-4
-                        "
-                      >
+
+                      {/* ACTIONS */}
+                      <td className="py-4 px-4">
 
                         <div className="flex gap-2">
 
@@ -570,133 +739,6 @@ function Equipos() {
                       </td>
 
                     </tr>
-
-                    {/* JUGADORES */}
-                    {
-                      openTeamId === team.id && (
-
-                        <tr className="bg-gray-50">
-
-                          <td
-                            colSpan={5}
-                            className="
-                              px-8
-                              py-5
-                            "
-                          >
-
-                            {
-                              team.players?.filter(
-                              (player: any) =>
-                                player.status === "approved"
-                                ).length || 0
-                                ? (
-
-                                  <div className="space-y-2">
-
-                                    {
-                                      team.players
-                                        ?.filter(
-                                        (player: any) =>
-                                          player.status === "approved"  )
-                                          .map(
-                                        (player: any) => (
-
-                                          <div
-                                            key={player.id}
-                                            className="
-                                              flex
-                                              items-center
-                                              justify-between
-                                              bg-white
-                                              rounded-xl
-                                              px-4
-                                              py-2
-                                              shadow-sm
-                                              text-sm
-                                            "
-                                          >
-
-                                            {/* IZQUIERDA */}
-                                            <div
-                                              className="
-                                                flex
-                                                items-center
-                                                gap-3
-                                              "
-                                            >
-
-                                              <span>
-                                                ⚽
-                                              </span>
-
-                                              <span
-                                                className="
-                                                  font-medium
-                                                  text-sm
-                                                "
-                                              >
-                                                {player.name}
-                                              </span>
-
-                                            </div>
-
-                                            {/* DERECHA */}
-                                            <div
-                                              className="
-                                                flex
-                                                items-center
-                                                gap-5
-                                                text-gray-500
-                                                text-xs
-                                              "
-                                            >
-
-                                              <span>
-                                                {
-                                                  player.position
-                                                }
-                                              </span>
-
-                                              <span>                                                
-                                                {
-                                                  player.number
-                                                }
-                                              </span>
-
-                                              <span>
-                                                {
-                                                  player.age
-                                                } años
-                                              </span>
-
-                                            </div>
-
-                                          </div>
-                                        )
-                                      )
-                                    }
-
-                                  </div>
-                                )
-                                : (
-
-                                  <p
-                                    className="
-                                      text-gray-400
-                                      text-sm
-                                    "
-                                  >
-                                    Este equipo no tiene jugadores
-                                  </p>
-                                )
-                            }
-
-                          </td>
-
-                        </tr>
-                      )
-                    }
 
                   </Fragment>
                 ))

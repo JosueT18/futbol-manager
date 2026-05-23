@@ -13,11 +13,14 @@ from schemas.match_schema import (
     MatchUpdate
 )
 
-router = APIRouter()
+router = APIRouter(
+    prefix="/matches",
+    tags=["Matches"]
+)
 
 
 # =========================
-# GET DB
+# DB
 # =========================
 def get_db():
 
@@ -33,22 +36,44 @@ def get_db():
 
 
 # =========================
-# GET MATCHES
+# GET ALL MATCHES
 # =========================
-@router.get("/matches")
+@router.get("/")
 def get_matches():
 
     db: Session = SessionLocal()
 
-    matches = db.query(Match).all()
+    matches = (
+        db.query(Match)
+        .all()
+    )
 
     return matches
 
 
 # =========================
+# GET MATCH
+# =========================
+@router.get("/{match_id}")
+def get_match(match_id: int):
+
+    db: Session = SessionLocal()
+
+    match = (
+        db.query(Match)
+        .filter(
+            Match.id == match_id
+        )
+        .first()
+    )
+
+    return match
+
+
+# =========================
 # CREATE MATCH
 # =========================
-@router.post("/matches")
+@router.post("/")
 def create_match(
     match: MatchCreate
 ):
@@ -63,14 +88,20 @@ def create_match(
         away_team_id=
         match.away_team_id,
 
+        home_score=
+        match.home_score,
+
+        away_score=
+        match.away_score,
+
+        date=
+        match.date,
+
         stadium=
         match.stadium,
 
-        tournament=
-        match.tournament,
-
-        match_date=
-        match.match_date,
+        status=
+        match.status,
     )
 
     db.add(new_match)
@@ -83,19 +114,23 @@ def create_match(
 
 
 # =========================
-# UPDATE MATCH RESULT
+# UPDATE MATCH
 # =========================
-@router.put("/matches/{match_id}")
+@router.put("/{match_id}")
 def update_match(
     match_id: int,
-    data: MatchUpdate
+    match_data: MatchUpdate
 ):
 
     db: Session = SessionLocal()
 
-    match = db.query(Match).filter(
-        Match.id == match_id
-    ).first()
+    match = (
+        db.query(Match)
+        .filter(
+            Match.id == match_id
+        )
+        .first()
+    )
 
     if not match:
 
@@ -103,82 +138,95 @@ def update_match(
             "error": "Partido no encontrado"
         }
 
-    # =========================
-    # UPDATE MATCH
-    # =========================
-    match.home_score = data.home_score
+    update_data = (
+        match_data.dict(
+            exclude_unset=True
+        )
+    )
 
-    match.away_score = data.away_score
+    for key, value in update_data.items():
 
-    match.status = data.status
-
-    # =========================
-    # TEAMS
-    # =========================
-    home_team = db.query(Team).filter(
-        Team.id == match.home_team_id
-    ).first()
-
-    away_team = db.query(Team).filter(
-        Team.id == match.away_team_id
-    ).first()
-
-    # =========================
-    # UPDATE PJ
-    # =========================
-    home_team.pj += 1
-
-    away_team.pj += 1
-
-    # =========================
-    # WINNER
-    # =========================
-    if data.home_score > data.away_score:
-
-        home_team.pg += 1
-
-        away_team.pp += 1
-
-        home_team.points += 3
-
-    elif data.home_score < data.away_score:
-
-        away_team.pg += 1
-
-        home_team.pp += 1
-
-        away_team.points += 3
-
-    else:
-
-        home_team.pe += 1
-
-        away_team.pe += 1
-
-        home_team.points += 1
-
-        away_team.points += 1
+        setattr(
+            match,
+            key,
+            value
+        )
 
     db.commit()
 
-    return {
-        "message": "Partido actualizado correctamente"
-    }
+    db.refresh(match)
+
+    # =========================
+    # UPDATE TEAM STATS
+    # =========================
+    if match.status == "finished":
+
+        home_team = (
+            db.query(Team)
+            .filter(
+                Team.id ==
+                match.home_team_id
+            )
+            .first()
+        )
+
+        away_team = (
+            db.query(Team)
+            .filter(
+                Team.id ==
+                match.away_team_id
+            )
+            .first()
+        )
+
+        # PJ
+        home_team.pj += 1
+        away_team.pj += 1
+
+        # RESULT
+        if (
+            match.home_score >
+            match.away_score
+        ):
+
+            home_team.pg += 1
+            away_team.pp += 1
+
+        elif (
+            match.home_score <
+            match.away_score
+        ):
+
+            away_team.pg += 1
+            home_team.pp += 1
+
+        else:
+
+            home_team.pe += 1
+            away_team.pe += 1
+
+        db.commit()
+
+    return match
 
 
 # =========================
 # DELETE MATCH
 # =========================
-@router.delete("/matches/{match_id}")
+@router.delete("/{match_id}")
 def delete_match(
     match_id: int
 ):
 
     db: Session = SessionLocal()
 
-    match = db.query(Match).filter(
-        Match.id == match_id
-    ).first()
+    match = (
+        db.query(Match)
+        .filter(
+            Match.id == match_id
+        )
+        .first()
+    )
 
     if not match:
 
@@ -191,5 +239,6 @@ def delete_match(
     db.commit()
 
     return {
-        "message": "Partido eliminado"
+        "message":
+        "Partido eliminado"
     }

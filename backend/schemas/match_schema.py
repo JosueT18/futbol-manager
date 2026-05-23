@@ -1,7 +1,5 @@
 from pydantic import BaseModel
 
-from datetime import datetime
-
 from typing import Optional
 
 
@@ -14,11 +12,15 @@ class MatchCreate(BaseModel):
 
     away_team_id: int
 
+    home_score: int = 0
+
+    away_score: int = 0
+
+    date: str
+
     stadium: Optional[str] = None
 
-    tournament: Optional[str] = None
-
-    match_date: Optional[datetime] = None
+    status: str = "scheduled"
 
 
 # =========================
@@ -26,36 +28,16 @@ class MatchCreate(BaseModel):
 # =========================
 class MatchUpdate(BaseModel):
 
-    home_score: int
+    home_team_id: Optional[int] = None
 
-    away_score: int
+    away_team_id: Optional[int] = None
 
-    status: str
+    home_score: Optional[int] = None
 
+    away_score: Optional[int] = None
 
-# =========================
-# RESPONSE
-# =========================
-class MatchResponse(BaseModel):
+    date: Optional[str] = None
 
-    id: int
+    stadium: Optional[str] = None
 
-    home_team_id: int
-
-    away_team_id: int
-
-    home_score: int
-
-    away_score: int
-
-    status: str
-
-    stadium: Optional[str]
-
-    tournament: Optional[str]
-
-    match_date: Optional[datetime]
-
-    class Config:
-
-        from_attributes = True
+    status: Optional[str] = None

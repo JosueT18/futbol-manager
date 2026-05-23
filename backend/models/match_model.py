@@ -3,12 +3,9 @@ from sqlalchemy import (
     Integer,
     String,
     ForeignKey,
-    DateTime
 )
 
 from sqlalchemy.orm import relationship
-
-from datetime import datetime
 
 from database.connection import Base
 
@@ -42,23 +39,18 @@ class Match(Base):
         default=0
     )
 
+    date = Column(String)
+
     stadium = Column(String)
 
     status = Column(
         String,
-        default="pending"
+        default="scheduled"
     )
 
-    match_type = Column(
-        String,
-        default="league"
-    )
-
-    played_at = Column(
-        DateTime,
-        default=datetime.utcnow
-    )
-
+    # =========================
+    # RELATIONS
+    # =========================
     home_team = relationship(
         "Team",
         foreign_keys=[home_team_id]
@@ -67,10 +59,4 @@ class Match(Base):
     away_team = relationship(
         "Team",
         foreign_keys=[away_team_id]
-    )
-
-    events = relationship(
-        "MatchEvent",
-        back_populates="match",
-        cascade="all, delete"
     )

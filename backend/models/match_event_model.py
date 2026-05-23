@@ -39,9 +39,10 @@ class MatchEvent(Base):
     )
 
     match = relationship(
-        "Match",
-        back_populates="events"
+       "Match",
+      back_populates="events"
     )
+      
 
     player = relationship(
         "Player"

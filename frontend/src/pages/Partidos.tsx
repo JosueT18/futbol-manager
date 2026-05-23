@@ -1,59 +1,44 @@
 import { useEffect, useState } from "react"
 
 import {
-  getTeams
-} from "../api/teams"
-
-import {
   getMatches,
   createMatch,
   updateMatch,
   deleteMatch,
 } from "../api/matches"
 
+import {
+  getTeams,
+} from "../api/teams"
+
 import Card from "../components/ui/Card"
 import Button from "../components/ui/Button"
-import Modal from "../components/ui/Modal"
-import Input from "../components/ui/Input"
-
 
 function Partidos() {
 
   // =========================
   // STATES
   // =========================
-  const [teams, setTeams] =
-    useState<any[]>([])
-
   const [matches, setMatches] =
     useState<any[]>([])
 
-  const [homeTeam, setHomeTeam] =
+  const [teams, setTeams] =
+    useState<any[]>([])
+
+  const [homeTeamId, setHomeTeamId] =
     useState("")
 
-  const [awayTeam, setAwayTeam] =
-    useState("")
-
-  const [stadium, setStadium] =
-    useState("")
-
-  const [tournament, setTournament] =
+  const [awayTeamId, setAwayTeamId] =
     useState("")
 
   const [date, setDate] =
     useState("")
 
-  const [modalOpen, setModalOpen] =
+  const [stadium, setStadium] =
+    useState("")
+
+  const [loading, setLoading] =
     useState(false)
-
-  const [selectedMatch, setSelectedMatch] =
-    useState<any>(null)
-
-  const [homeScore, setHomeScore] =
-    useState("0")
-
-  const [awayScore, setAwayScore] =
-    useState("0")
 
   // =========================
   // LOAD DATA
@@ -66,15 +51,28 @@ function Partidos() {
 
   async function loadData() {
 
-    const teamsData =
-      await getTeams()
+    try {
 
-    const matchesData =
-      await getMatches()
+      setLoading(true)
 
-    setTeams(teamsData)
+      const matchesData =
+        await getMatches()
 
-    setMatches(matchesData)
+      const teamsData =
+        await getTeams()
+
+      setMatches(matchesData)
+
+      setTeams(teamsData)
+
+    } catch (error) {
+
+      console.error(error)
+
+    } finally {
+
+      setLoading(false)
+    }
   }
 
   // =========================
@@ -83,23 +81,26 @@ function Partidos() {
   async function handleCreateMatch() {
 
     if (
-      !homeTeam ||
-      !awayTeam
+      !homeTeamId
+      ||
+      !awayTeamId
+      ||
+      !date
     ) {
 
       alert(
-        "Selecciona ambos equipos"
+        "Completa todos los campos"
       )
 
       return
     }
 
     if (
-      homeTeam === awayTeam
+      homeTeamId === awayTeamId
     ) {
 
       alert(
-        "Los equipos no pueden ser iguales"
+        "No puedes elegir el mismo equipo"
       )
 
       return
@@ -110,29 +111,28 @@ function Partidos() {
       await createMatch({
 
         home_team_id:
-          Number(homeTeam),
+          Number(homeTeamId),
 
         away_team_id:
-          Number(awayTeam),
+          Number(awayTeamId),
+
+        home_score: 0,
+
+        away_score: 0,
+
+        date,
 
         stadium,
 
-        tournament,
-
-        match_date: date,
+        status: "scheduled",
       })
 
-      alert(
-        "Partido creado"
-      )
-
-      setHomeTeam("")
-      setAwayTeam("")
-      setStadium("")
-      setTournament("")
+      setHomeTeamId("")
+      setAwayTeamId("")
       setDate("")
+      setStadium("")
 
-      loadData()
+      await loadData()
 
     } catch (error) {
 
@@ -145,62 +145,55 @@ function Partidos() {
   }
 
   // =========================
-  // OPEN RESULT MODAL
+  // FINISH MATCH
   // =========================
-  function openResultModal(
+  async function finishMatch(
     match: any
   ) {
 
-    setSelectedMatch(match)
+    const home =
+      prompt(
+        "Goles local",
+        match.home_score
+      )
 
-    setHomeScore(
-      match.home_score?.toString()
-      || "0"
-    )
+    const away =
+      prompt(
+        "Goles visitante",
+        match.away_score
+      )
 
-    setAwayScore(
-      match.away_score?.toString()
-      || "0"
-    )
-
-    setModalOpen(true)
-  }
-
-  // =========================
-  // SAVE RESULT
-  // =========================
-  async function saveResult() {
+    if (
+      home === null
+      ||
+      away === null
+    ) {
+      return
+    }
 
     try {
 
       await updateMatch(
-        selectedMatch.id,
+        match.id,
         {
-
           home_score:
-            Number(homeScore),
+            Number(home),
 
           away_score:
-            Number(awayScore),
+            Number(away),
 
           status: "finished",
         }
       )
 
-      alert(
-        "Resultado guardado"
-      )
-
-      setModalOpen(false)
-
-      loadData()
+      await loadData()
 
     } catch (error) {
 
       console.error(error)
 
       alert(
-        "Error al guardar resultado"
+        "Error al finalizar partido"
       )
     }
   }
@@ -208,7 +201,7 @@ function Partidos() {
   // =========================
   // DELETE MATCH
   // =========================
-  async function handleDelete(
+  async function handleDeleteMatch(
     id: number
   ) {
 
@@ -225,11 +218,15 @@ function Partidos() {
 
       await deleteMatch(id)
 
-      loadData()
+      await loadData()
 
     } catch (error) {
 
       console.error(error)
+
+      alert(
+        "Error al eliminar partido"
+      )
     }
   }
 
@@ -245,7 +242,7 @@ function Partidos() {
         </h1>
 
         <p className="text-gray-500 mt-2">
-          Gestión de partidos y resultados
+          Gestión de encuentros
         </p>
 
       </div>
@@ -253,25 +250,32 @@ function Partidos() {
       {/* CREATE */}
       <Card>
 
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <div
+          className="
+            grid
+            grid-cols-1
+            md:grid-cols-5
+            gap-4
+          "
+        >
 
-          {/* HOME */}
+          {/* LOCAL */}
           <select
-            value={homeTeam}
+            value={homeTeamId}
             onChange={(e) =>
-              setHomeTeam(
+              setHomeTeamId(
                 e.target.value
               )
             }
             className="
               border
-              p-3
               rounded-xl
+              p-3
             "
           >
 
             <option value="">
-              Local
+              Equipo local
             </option>
 
             {
@@ -290,23 +294,23 @@ function Partidos() {
 
           </select>
 
-          {/* AWAY */}
+          {/* VISITOR */}
           <select
-            value={awayTeam}
+            value={awayTeamId}
             onChange={(e) =>
-              setAwayTeam(
+              setAwayTeamId(
                 e.target.value
               )
             }
             className="
               border
-              p-3
               rounded-xl
+              p-3
             "
           >
 
             <option value="">
-              Visitante
+              Equipo visitante
             </option>
 
             {
@@ -325,27 +329,8 @@ function Partidos() {
 
           </select>
 
-          <Input
-            placeholder="Estadio"
-            value={stadium}
-            onChange={(e) =>
-              setStadium(
-                e.target.value
-              )
-            }
-          />
-
-          <Input
-            placeholder="Torneo"
-            value={tournament}
-            onChange={(e) =>
-              setTournament(
-                e.target.value
-              )
-            }
-          />
-
-          <Input
+          {/* DATE */}
+          <input
             type="datetime-local"
             value={date}
             onChange={(e) =>
@@ -353,12 +338,31 @@ function Partidos() {
                 e.target.value
               )
             }
+            className="
+              border
+              rounded-xl
+              p-3
+            "
           />
 
-        </div>
+          {/* STADIUM */}
+          <input
+            type="text"
+            placeholder="Estadio"
+            value={stadium}
+            onChange={(e) =>
+              setStadium(
+                e.target.value
+              )
+            }
+            className="
+              border
+              rounded-xl
+              p-3
+            "
+          />
 
-        <div className="mt-5">
-
+          {/* BUTTON */}
           <Button
             onClick={
               handleCreateMatch
@@ -372,187 +376,191 @@ function Partidos() {
       </Card>
 
       {/* MATCHES */}
-      <div className="space-y-4">
+      <div className="space-y-5">
 
         {
-          matches.map(
-            (match: any) => {
+          loading
+          ? (
 
-              const home =
-                teams.find(
-                  (t: any) =>
-                    t.id
-                    ===
-                    match.home_team_id
-                )
+            <Card>
 
-              const away =
-                teams.find(
-                  (t: any) =>
-                    t.id
-                    ===
-                    match.away_team_id
-                )
+              <p>
+                Cargando partidos...
+              </p>
 
-              return (
+            </Card>
 
-                <Card
-                  key={match.id}
-                >
+          )
+          : (
 
-                  <div
-                    className="
-                      flex
-                      flex-col
-                      md:flex-row
-                      items-center
-                      justify-between
-                      gap-5
-                    "
+            matches.map(
+              (match: any) => {
+
+                const homeTeam =
+                  teams.find(
+                    (t: any) =>
+                      t.id ===
+                      match.home_team_id
+                  )
+
+                const awayTeam =
+                  teams.find(
+                    (t: any) =>
+                      t.id ===
+                      match.away_team_id
+                  )
+
+                return (
+
+                  <Card
+                    key={match.id}
                   >
 
-                    {/* INFO */}
-                    <div>
-
-                      <h2
-                        className="
-                          text-2xl
-                          font-bold
-                        "
-                      >
-
-                        {home?.name}
-                        {" "}
-                        {match.home_score}
-                        {" - "}
-                        {match.away_score}
-                        {" "}
-                        {away?.name}
-
-                      </h2>
-
-                      <p
-                        className="
-                          text-gray-500
-                          mt-2
-                        "
-                      >
-                        🏟️ {match.stadium}
-                      </p>
-
-                      <p
-                        className="
-                          text-gray-500
-                        "
-                      >
-                        🏆 {match.tournament}
-                      </p>
-
-                    </div>
-
-                    {/* ACTIONS */}
                     <div
                       className="
                         flex
-                        gap-3
+                        flex-col
+                        xl:flex-row
+                        xl:items-center
+                        xl:justify-between
+                        gap-5
                       "
                     >
 
-                      <Button
-                        onClick={() =>
-                          openResultModal(
-                            match
-                          )
-                        }
-                      >
-                        Resultado
-                      </Button>
+                      {/* INFO */}
+                      <div>
 
-                      <Button
-                        variant="danger"
-                        onClick={() =>
-                          handleDelete(
-                            match.id
+                        <div
+                          className="
+                            flex
+                            items-center
+                            gap-3
+                            text-2xl
+                            font-bold
+                          "
+                        >
+
+                          <span>
+                            {homeTeam?.name}
+                          </span>
+
+                          <span className="text-gray-400">
+                            vs
+                          </span>
+
+                          <span>
+                            {awayTeam?.name}
+                          </span>
+
+                        </div>
+
+                        <p className="text-gray-500 mt-2">
+
+                          📍 {match.stadium || "Sin estadio"}
+
+                        </p>
+
+                        <p className="text-gray-500">
+
+                          📅 {match.date}
+
+                        </p>
+
+                      </div>
+
+                      {/* SCORE */}
+                      <div
+                        className="
+                          text-center
+                        "
+                      >
+
+                        <div
+                          className="
+                            text-5xl
+                            font-black
+                          "
+                        >
+
+                          {match.home_score}
+
+                          <span className="mx-3 text-gray-400">
+                            -
+                          </span>
+
+                          {match.away_score}
+
+                        </div>
+
+                        <div
+                          className="
+                            mt-2
+                            inline-block
+                            px-4
+                            py-1
+                            rounded-full
+                            text-sm
+                            font-semibold
+                            bg-gray-100
+                          "
+                        >
+
+                          {
+                            match.status
+                          }
+
+                        </div>
+
+                      </div>
+
+                      {/* ACTIONS */}
+                      <div
+                        className="
+                          flex
+                          gap-3
+                        "
+                      >
+
+                        {
+                          match.status !==
+                          "finished"
+                          && (
+
+                            <Button
+                              onClick={() =>
+                                finishMatch(
+                                  match
+                                )
+                              }
+                            >
+                              Finalizar
+                            </Button>
                           )
                         }
-                      >
-                        Eliminar
-                      </Button>
+
+                        <Button
+                          variant="danger"
+                          onClick={() =>
+                            handleDeleteMatch(
+                              match.id
+                            )
+                          }
+                        >
+                          Eliminar
+                        </Button>
+
+                      </div>
 
                     </div>
 
-                  </div>
-
-                </Card>
-              )
-            }
+                  </Card>
+                )
+              }
+            )
           )
         }
 
       </div>
-
-      {/* RESULT MODAL */}
-      <Modal
-        open={modalOpen}
-        onClose={() =>
-          setModalOpen(false)
-        }
-        title="Cargar Resultado"
-      >
-
-        <div className="space-y-4">
-
-          <Input
-            type="number"
-            placeholder="Goles Local"
-            value={homeScore}
-            onChange={(e) =>
-              setHomeScore(
-                e.target.value
-              )
-            }
-          />
-
-          <Input
-            type="number"
-            placeholder="Goles Visitante"
-            value={awayScore}
-            onChange={(e) =>
-              setAwayScore(
-                e.target.value
-              )
-            }
-          />
-
-          <div
-            className="
-              flex
-              justify-end
-              gap-3
-              pt-4
-            "
-          >
-
-            <Button
-              variant="secondary"
-              onClick={() =>
-                setModalOpen(false)
-              }
-            >
-              Cancelar
-            </Button>
-
-            <Button
-              onClick={saveResult}
-            >
-              Guardar
-            </Button>
-
-          </div>
-
-        </div>
-
-      </Modal>
 
     </div>
   )

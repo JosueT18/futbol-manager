@@ -14,38 +14,43 @@ class Formation(Base):
 
     __tablename__ = "formations"
 
+    # =========================
+    # COLUMNS
+    # =========================
     id = Column(
         Integer,
         primary_key=True,
         index=True
     )
 
-    # Nombre de la formación
+    # Nombre personalizado
+    # Ej:
+    # "Titulares Final"
     name = Column(
         String,
         nullable=False
     )
 
+    # Táctica
     # Ej:
     # 4-3-3
     # 4-4-2
     # custom
     tactic = Column(
         String,
-        nullable=False
+        nullable=False,
+        default="4-3-3"
     )
 
-    # Tipo:
-    # 11
-    # 9
-    # 7
-    # 5
+    # Tipo de partido
+    # 11 / 9 / 7 / 5
     match_type = Column(
         Integer,
         nullable=False,
         default=11
     )
 
+    # Equipo
     team_id = Column(
         Integer,
         ForeignKey("teams.id"),
@@ -55,11 +60,14 @@ class Formation(Base):
     # =========================
     # RELATIONSHIPS
     # =========================
+
+    # TEAM
     team = relationship(
         "Team",
         back_populates="formations"
     )
 
+    # PLAYERS IN FORMATION
     players = relationship(
         "FormationPlayer",
         back_populates="formation",

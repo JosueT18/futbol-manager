@@ -3,8 +3,9 @@ import axios from "axios"
 const API_URL =
   "http://127.0.0.1:8000/formations"
 
+
 // =========================
-// TYPES
+// PLAYER
 // =========================
 export interface FormationPlayer {
 
@@ -17,21 +18,26 @@ export interface FormationPlayer {
   role: string
 }
 
+
+// =========================
+// FORMATION
+// =========================
 export interface FormationData {
 
   name: string
 
   tactic: string
 
-  team_id: number
+  match_type: number
 
-  game_mode: string
+  team_id: number
 
   players: FormationPlayer[]
 }
 
+
 // =========================
-// GET FORMATIONS
+// GET ALL
 // =========================
 export async function getFormations() {
 
@@ -41,8 +47,9 @@ export async function getFormations() {
   return response.data
 }
 
+
 // =========================
-// GET FORMATION
+// GET ONE
 // =========================
 export async function getFormation(
   id: number
@@ -56,8 +63,9 @@ export async function getFormation(
   return response.data
 }
 
+
 // =========================
-// CREATE FORMATION
+// CREATE
 // =========================
 export async function createFormation(
   data: FormationData
@@ -72,8 +80,9 @@ export async function createFormation(
   return response.data
 }
 
+
 // =========================
-// UPDATE FORMATION
+// UPDATE
 // =========================
 export async function updateFormation(
   id: number,
@@ -89,8 +98,9 @@ export async function updateFormation(
   return response.data
 }
 
+
 // =========================
-// DELETE FORMATION
+// DELETE
 // =========================
 export async function deleteFormation(
   id: number

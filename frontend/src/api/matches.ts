@@ -17,6 +17,22 @@ export async function getMatches() {
 
 
 // =========================
+// GET MATCH
+// =========================
+export async function getMatch(
+  id: number
+) {
+
+  const response =
+    await axios.get(
+      `${API_URL}/${id}`
+    )
+
+  return response.data
+}
+
+
+// =========================
 // CREATE MATCH
 // =========================
 export async function createMatch(

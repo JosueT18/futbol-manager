@@ -4,17 +4,19 @@ from typing import List
 
 
 # =========================
-# FORMATION PLAYER
+# FORMATION PLAYER CREATE
 # =========================
 class FormationPlayerCreate(BaseModel):
 
+    # ID jugador
     player_id: int
 
+    # Posición en cancha
     position_x: int
 
     position_y: int
 
-    # titular / suplente
+    # starter / substitute
     role: str
 
 
@@ -26,14 +28,20 @@ class FormationCreate(BaseModel):
     # Nombre personalizado
     name: str
 
-    # 4-3-3 / 4-4-2 / custom
+    # Ej:
+    # 4-3-3
+    # 4-4-2
+    # custom
     tactic: str
 
+    # Tipo:
     # 11 / 9 / 7 / 5
     match_type: int
 
+    # Equipo
     team_id: int
 
+    # Lista jugadores
     players: List[
         FormationPlayerCreate
     ]

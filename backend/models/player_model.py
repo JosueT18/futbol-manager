@@ -1,4 +1,8 @@
-from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy import Column
+from sqlalchemy import Integer
+from sqlalchemy import String
+from sqlalchemy import ForeignKey
+
 from sqlalchemy.orm import relationship
 
 from database.connection import Base
@@ -14,21 +18,11 @@ class Player(Base):
 
     age = Column(Integer, nullable=False)
 
-    position = Column(String, nullable=False)
-
     number = Column(Integer, nullable=False)
 
-    # 🔥 ÚNICO ESTADO REAL
-    status = Column(
-        String,
-        default="pending"
-    )
+    position = Column(String, nullable=False)
 
-    # 🔥 motivo rechazo
-    rejection_reason = Column(
-        String,
-        nullable=True
-    )
+    status = Column(String, default="pending")
 
     team_id = Column(
         Integer,
@@ -39,19 +33,3 @@ class Player(Base):
         "Team",
         back_populates="players"
     )
-    #===========
-    # STATS
-    #===========
-    goals = Column(
-        Integer, default=0
-    )
-
-    yellow_cards = Column(
-        Integer,default=0
-    )
-
-    red_cards = Column(
-        Integer,default=0
-    )
-
-    matches_played = Column(Integer, default=0)

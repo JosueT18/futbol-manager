@@ -31,10 +31,13 @@ function Home() {
       player.status === "pending"
   )
 
-  const approvedPlayers = players.filter(
-    (player: any) =>
-      player.status === "approved"
+  const approvedPlayers = 
+    Array.isArray(players)
+      ?players.filter(
+        (p: any) =>
+          p.status === "aproved"   
   )
+  : []
 
   const averageAge =
     players.length > 0

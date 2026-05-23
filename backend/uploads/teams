@@ -1,0 +1,43 @@
+import os
+import uuid
+
+from fastapi import APIRouter, UploadFile, File
+
+router = APIRouter()
+
+UPLOAD_DIR = "uploads/teams"
+
+os.makedirs(
+    UPLOAD_DIR,
+    exist_ok=True
+)
+
+@router.post("/upload-logo")
+async def upload_logo(
+    file: UploadFile = File(...)
+):
+
+    file_extension = file.filename.split(".")[-1]
+
+    filename = (
+        f"{uuid.uuid4()}."
+        f"{file_extension}"
+    )
+
+    file_path = (
+        f"{UPLOAD_DIR}/{filename}"
+    )
+
+    with open(
+        file_path,
+        "wb"
+    ) as buffer:
+
+        content = await file.read()
+
+        buffer.write(content)
+
+    return {
+        "logo_url":
+        f"/uploads/teams/{filename}"
+    }

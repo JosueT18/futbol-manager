@@ -1,56 +1,29 @@
 from fastapi import FastAPI
+
 from fastapi.middleware.cors import CORSMiddleware
 
-from database.connection import engine, Base
+from fastapi.staticfiles import StaticFiles
 
-# =========================
-# IMPORT MODELS
-# =========================
-from models.user_model import User
+from database.connection import Base, engine
+
 from models.team_model import Team
 from models.player_model import Player
 
-from models.formation_model import Formation
-from models.formation_player_model import FormationPlayer
-from models.match_model import Match
+from routes.team_routes import router as team_router
+from routes.player_routes import router as player_router
 
-# =========================
-# IMPORT ROUTES
-# =========================
-from routes.user_routes import (
-    router as user_router
-)
 
-from routes.team_routes import (
-    router as team_router
-)
+Base.metadata.create_all(bind=engine)
 
-from routes.player_routes import (
-    router as player_router
-)
 
-from routes.formation_routes import (
-    router as formation_router
-)
-
-from routes.match_routes import (
-    router as match_router
-)
-
-# =========================
-# CREATE APP
-# =========================
 app = FastAPI()
 
-# =========================
+
 # CORS
-# =========================
 app.add_middleware(
     CORSMiddleware,
 
-    allow_origins=[
-        "http://localhost:5173",
-    ],
+    allow_origins=["*"],
 
     allow_credentials=True,
 
@@ -59,31 +32,24 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# =========================
-# CREATE DATABASE TABLES
-# =========================
-Base.metadata.create_all(bind=engine)
 
-# =========================
+# STATIC
+app.mount(
+    "/uploads",
+    StaticFiles(directory="uploads"),
+    name="uploads"
+)
+
+
 # ROUTES
-# =========================
-app.include_router(user_router)
-
 app.include_router(team_router)
 
 app.include_router(player_router)
 
-app.include_router(formation_router)
 
-app.include_router(match_router)
-
-# =========================
-# HOME
-# =========================
 @app.get("/")
-def home():
+def root():
 
     return {
-        "message":
-        "Backend funcionando correctamente"
+        "message": "Backend funcionando"
     }
