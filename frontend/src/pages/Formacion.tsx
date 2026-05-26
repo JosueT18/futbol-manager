@@ -17,6 +17,21 @@ import {
 
 import Card from "../components/ui/Card"
 
+// =========================
+// AUTH
+// =========================
+const role =
+  localStorage.getItem("role") || ""
+
+const isPlayer =
+  role === "Jugador"
+
+const canManageFormation =
+  role === "Administrador"
+  ||
+  role === "Director"
+  ||
+  role === "Comision"
 
 // =========================
 // PLAYER TOKEN
@@ -32,6 +47,7 @@ function PlayerToken({
     transform,
   } = useDraggable({
     id: item.player.id.toString(),
+    disabled: !canManageFormation,
   })
 
   const style = {
@@ -59,9 +75,9 @@ function PlayerToken({
     <div
       ref={setNodeRef}
       style={style}
-      {...listeners}
-      {...attributes}
-      className="
+      {...(canManageFormation ? listeners : {})}
+      {...(canManageFormation ? attributes : {})}
+      className={`
         w-12
         h-12
         rounded-full
@@ -76,12 +92,16 @@ function PlayerToken({
         flex-col
         items-center
         justify-center
-        cursor-grab
         select-none
         z-20
-        hover:scale-110
         transition
-      "
+
+        ${
+          canManageFormation
+            ? "cursor-grab hover:scale-110"
+            : "cursor-default"
+        }
+      `}
     >
 
       <span className="text-[10px] font-bold leading-none">
@@ -105,7 +125,6 @@ function PlayerToken({
     </div>
   )
 }
-
 
 // =========================
 // MAIN
@@ -148,7 +167,6 @@ function Formacion() {
   const [selectedFormation, setSelectedFormation] =
     useState<any>(null)
 
-
   // =========================
   // LOAD
   // =========================
@@ -157,7 +175,6 @@ function Formacion() {
     loadData()
 
   }, [])
-
 
   async function loadData() {
 
@@ -172,19 +189,42 @@ function Formacion() {
       const formationsData =
         await getFormations()
 
-      setTeams(teamsData)
-
-      setPlayers(
-
-        playersData.filter(
-          (p: any) =>
-            p.status === "approved"
-        )
+      setTeams(
+        Array.isArray(teamsData)
+          ? teamsData
+          : []
       )
+
+      const approvedPlayers =
+        Array.isArray(playersData)
+          ? playersData.filter(
+              (p: any) =>
+                p.status === "approved"
+            )
+          : []
+
+      setPlayers(approvedPlayers)
 
       setFormations(
-        formationsData
+        Array.isArray(formationsData)
+          ? formationsData
+          : []
       )
+
+      if (
+        isPlayer &&
+        Array.isArray(formationsData) &&
+        formationsData.length > 0
+      ) {
+
+        const formation =
+          formationsData[0]
+
+        loadFormationData(
+          formation,
+          approvedPlayers
+        )
+      }
 
     } catch (error) {
 
@@ -192,9 +232,93 @@ function Formacion() {
     }
   }
 
+  // =========================
+  // LOAD FORMATION
+  // =========================
+  function loadFormationData(
+    formation: any,
+    playersList = players
+  ) {
+
+    setSelectedFormation(
+      formation
+    )
+
+    setEditingId(
+      formation.id
+    )
+
+    setFormationName(
+      formation.name
+    )
+
+    setTactic(
+      formation.tactic
+    )
+
+    setMatchType(
+      formation.match_type
+    )
+
+    setTeamId(
+      formation.team_id.toString()
+    )
+
+    const startersLoaded =
+      formation.players
+        .filter(
+          (p: any) =>
+            p.role === "starter"
+        )
+        .map((p: any) => {
+
+          const player =
+            playersList.find(
+              (pl: any) =>
+                pl.id === p.player_id
+            )
+
+          if (!player) {
+            return null
+          }
+
+          return {
+
+            player,
+
+            x: p.position_x,
+
+            y: p.position_y,
+          }
+        })
+        .filter(Boolean)
+
+    const substitutesLoaded =
+      formation.players
+        .filter(
+          (p: any) =>
+            p.role === "substitute"
+        )
+        .map((p: any) =>
+
+          playersList.find(
+            (pl: any) =>
+              pl.id === p.player_id
+          )
+        )
+        .filter(Boolean)
+
+    setStarters(
+      startersLoaded
+    )
+
+    setSubstitutes(
+      substitutesLoaded
+    )
+  }
 
   // =========================
-  // RESET FORM
+  // RESET
   // =========================
   function resetForm() {
 
@@ -215,7 +339,6 @@ function Formacion() {
     setSubstitutes([])
   }
 
-
   // =========================
   // FILTER PLAYERS
   // =========================
@@ -226,13 +349,16 @@ function Formacion() {
         Number(teamId)
     )
 
-
   // =========================
   // ADD STARTER
   // =========================
   function addStarter(
     player: any
   ) {
+
+    if (!canManageFormation) {
+      return
+    }
 
     const exists =
       starters.find(
@@ -263,13 +389,16 @@ function Formacion() {
     ])
   }
 
-
   // =========================
   // ADD SUBSTITUTE
   // =========================
   function addSubstitute(
     player: any
   ) {
+
+    if (!canManageFormation) {
+      return
+    }
 
     const exists =
       substitutes.find(
@@ -289,13 +418,10 @@ function Formacion() {
     )
 
     setSubstitutes([
-
       ...substitutes,
       player,
-
     ])
   }
-
 
   // =========================
   // DRAG
@@ -303,6 +429,10 @@ function Formacion() {
   function handleDragEnd(
     event: any
   ) {
+
+    if (!canManageFormation) {
+      return
+    }
 
     const {
       delta,
@@ -336,11 +466,14 @@ function Formacion() {
     )
   }
 
-
   // =========================
   // SAVE
   // =========================
   async function saveFormation() {
+
+    if (!canManageFormation) {
+      return
+    }
 
     try {
 
@@ -413,13 +546,16 @@ function Formacion() {
     }
   }
 
-
   // =========================
-  // REMOVE
+  // DELETE
   // =========================
   async function removeFormation(
     id: number
   ) {
+
+    if (!canManageFormation) {
+      return
+    }
 
     const confirmDelete =
       confirm(
@@ -453,91 +589,21 @@ function Formacion() {
     }
   }
 
-
   // =========================
   // EDIT
   // =========================
-  async function editFormation(
+  function editFormation(
     formation: any
   ) {
 
-    setSelectedFormation(
+    if (!canManageFormation) {
+      return
+    }
+
+    loadFormationData(
       formation
     )
-
-    setEditingId(
-      formation.id
-    )
-
-    setFormationName(
-      formation.name
-    )
-
-    setTactic(
-      formation.tactic
-    )
-
-    setMatchType(
-      formation.match_type
-    )
-
-    setTeamId(
-      formation.team_id.toString()
-    )
-
-    const startersLoaded =
-      formation.players
-        .filter(
-          (p: any) =>
-            p.role === "starter"
-        )
-        .map((p: any) => {
-
-          const player =
-            players.find(
-              (pl: any) =>
-                pl.id === p.player_id
-            )
-
-          if (!player) {
-            return null
-          }
-
-          return {
-
-            player,
-
-            x: p.position_x,
-
-            y: p.position_y,
-          }
-        })
-        .filter(Boolean)
-
-    const substitutesLoaded =
-      formation.players
-        .filter(
-          (p: any) =>
-            p.role === "substitute"
-        )
-        .map((p: any) =>
-
-          players.find(
-            (pl: any) =>
-              pl.id === p.player_id
-          )
-        )
-        .filter(Boolean)
-
-    setStarters(
-      startersLoaded
-    )
-
-    setSubstitutes(
-      substitutesLoaded
-    )
   }
-
 
   return (
 
@@ -550,436 +616,448 @@ function Formacion() {
           Formación
         </h1>
 
-        {
-  teamId && (
+        <p className="text-gray-500 mt-2">
 
-    <div className="mt-3">
-
-      {
-        teams
-          .filter(
-            (t: any) =>
-              t.id === Number(teamId)
-          )
-          .map((team: any) => (
-
-            <div
-              key={team.id}
-              className="
-                flex
-                items-center
-                gap-3
-              "
-            >
-
-              {
-                team.logo && (
-
-                  <img
-                    src={
-                      `http://localhost:8000${team.logo}`
-                    }
-                    alt={team.name}
-                    className="
-                      w-14
-                      h-14
-                      rounded-full
-                      object-cover
-                      border-2
-                      border-white
-                      shadow-lg
-                    "
-                  />
-
-                )
-              }
-
-              <div>
-
-                <p className="font-bold text-lg">
-                  {team.name}
-                </p>
-
-                <p className="text-sm text-gray-500">
-                  {team.city}
-                </p>
-
-              </div>
-
-              </div>
-            ))
+          {
+            isPlayer
+              ? "Visualización táctica del equipo"
+              : "Gestión táctica avanzada"
           }
 
-          </div>
-        )
-        }
-
-        <p className="text-gray-500 mt-2">
-          Gestión táctica avanzada
         </p>
 
       </div>
 
-
       {/* CONFIG */}
-      <Card>
+      {
+        canManageFormation && (
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Card>
 
-          <input
-            type="text"
-            placeholder="Nombre formación"
-            value={formationName}
-            onChange={(e) =>
-              setFormationName(
-                e.target.value
-              )
-            }
-            className="
-              border
-              p-3
-              rounded-xl
-            "
-          />
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
 
-          <select
-            value={teamId}
-            onChange={(e) =>
-              setTeamId(
-                e.target.value
-              )
-            }
-            className="
-              border
-              p-3
-              rounded-xl
-            "
-          >
+              <input
+                type="text"
+                placeholder="Nombre formación"
+                value={formationName}
+                onChange={(e) =>
+                  setFormationName(
+                    e.target.value
+                  )
+                }
+                className="border p-3 rounded-xl"
+              />
 
-            <option value="">
-              Equipo
-            </option>
+              <select
+                value={teamId}
+                onChange={(e) =>
+                  setTeamId(
+                    e.target.value
+                  )
+                }
+                className="border p-3 rounded-xl"
+              >
 
-            {
-              teams.map(
-                (team: any) => (
+                <option value="">
+                  Equipo
+                </option>
 
-                  <option
-                    key={team.id}
-                    value={team.id}
-                  >
-                    {team.name}
-                  </option>
-                )
-              )
-            }
+                {
+                  teams.map(
+                    (team: any) => (
 
-          </select>
+                      <option
+                        key={team.id}
+                        value={team.id}
+                      >
+                        {team.name}
+                      </option>
+                    )
+                  )
+                }
 
-          <select
-            value={matchType}
-            onChange={(e) =>
-              setMatchType(
-                Number(
-                  e.target.value
-                )
-              )
-            }
-            className="
-              border
-              p-3
-              rounded-xl
-            "
-          >
+              </select>
 
-            <option value={11}>
-              Fútbol 11
-            </option>
+              <select
+                value={matchType}
+                onChange={(e) =>
+                  setMatchType(
+                    Number(
+                      e.target.value
+                    )
+                  )
+                }
+                className="border p-3 rounded-xl"
+              >
 
-            <option value={9}>
-              Fútbol 9
-            </option>
+                <option value={11}>
+                  Fútbol 11
+                </option>
 
-            <option value={7}>
-              Fútbol 7
-            </option>
+                <option value={9}>
+                  Fútbol 9
+                </option>
 
-            <option value={5}>
-              Fútbol 5
-            </option>
+                <option value={7}>
+                  Fútbol 7
+                </option>
 
-          </select>
+                <option value={5}>
+                  Fútbol 5
+                </option>
 
-          <input
-            type="text"
-            value={tactic}
-            onChange={(e) =>
-              setTactic(
-                e.target.value
-              )
-            }
-            placeholder="4-3-3"
-            className="
-              border
-              p-3
-              rounded-xl
-            "
-          />
+              </select>
 
-        </div>
+              <input
+                type="text"
+                value={tactic}
+                onChange={(e) =>
+                  setTactic(
+                    e.target.value
+                  )
+                }
+                placeholder="4-3-3"
+                className="border p-3 rounded-xl"
+              />
 
-      </Card>
+            </div>
 
+          </Card>
+        )
+      }
 
       {/* MAIN */}
       <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
 
         {/* LEFT */}
-        <div className="space-y-4">
+        {
+          canManageFormation && (
 
-          {/* PLANTILLA */}
-          <Card>
+            <div className="space-y-4">
 
-            <h2 className="text-lg font-bold mb-3">
-              Plantilla
-            </h2>
+              <Card>
 
-            <div className="space-y-2 max-h-[320px] overflow-auto">
+                <h2 className="text-lg font-bold mb-3">
+                  Plantilla
+                </h2>
 
-              {
-                availablePlayers.map(
-                  (player: any) => (
+                <div className="space-y-2 max-h-[320px] overflow-auto">
 
-                    <div
-                      key={player.id}
-                      className="
-                        bg-gray-50
-                        rounded-xl
-                        p-2
-                        flex
-                        items-center
-                        justify-between
-                      "
-                    >
+                  {
+                    availablePlayers.map(
+                      (player: any) => (
 
-                      <p className="text-sm font-semibold">
-                        {player.name}
-                      </p>
-
-                      <div className="flex gap-1">
-
-                        <button
-                          onClick={() =>
-                            addStarter(player)
-                          }
+                        <div
+                          key={player.id}
                           className="
-                            px-2
-                            py-1
-                            text-xs
-                            rounded-lg
-                            bg-blue-600
-                            text-white
+                            bg-gray-50
+                            rounded-xl
+                            p-2
+                            flex
+                            items-center
+                            justify-between
                           "
                         >
-                          Titular
-                        </button>
 
-                        <button
-                          onClick={() =>
-                            addSubstitute(player)
-                          }
+                          <div>
+
+                            <p className="text-sm font-semibold">
+                              {player.name}
+                            </p>
+
+                            <p className="text-xs text-gray-500">
+                              {player.position}
+                            </p>
+
+                          </div>
+
+                          <div className="flex gap-1">
+
+                            <button
+                              onClick={() =>
+                                addStarter(player)
+                              }
+                              className="
+                                px-2
+                                py-1
+                                text-xs
+                                rounded-lg
+                                bg-blue-600
+                                text-white
+                              "
+                            >
+                              Titular
+                            </button>
+
+                            <button
+                              onClick={() =>
+                                addSubstitute(player)
+                              }
+                              className="
+                                px-2
+                                py-1
+                                text-xs
+                                rounded-lg
+                                bg-yellow-500
+                                text-white
+                              "
+                            >
+                              Suplente
+                            </button>
+
+                          </div>
+
+                        </div>
+                      )
+                    )
+                  }
+
+                </div>
+
+              </Card>
+
+              {/* TITULARES */}
+              <Card>
+
+                <h2 className="text-lg font-bold mb-3">
+                  Titulares
+                </h2>
+
+                <div className="space-y-2">
+
+                  {
+                    starters.length === 0 && (
+
+                      <p className="text-sm text-gray-500">
+                        No hay titulares
+                      </p>
+                    )
+                  }
+
+                  {
+                    starters.map(
+                      (item: any) => (
+
+                        <div
+                          key={item.player.id}
                           className="
-                            px-2
-                            py-1
-                            text-xs
-                            rounded-lg
-                            bg-yellow-500
-                            text-white
+                            bg-blue-50
+                            rounded-xl
+                            p-3
+                            flex
+                            items-center
+                            justify-between
                           "
                         >
-                          Suplente
-                        </button>
 
-                      </div>
+                          <div>
 
-                    </div>
-                  )
-                )
-              }
+                            <p className="text-sm font-semibold">
+                              #{item.player.number} {item.player.name}
+                            </p>
 
-            </div>
+                            <p className="text-xs text-gray-500">
+                              {item.player.position}
+                            </p>
 
-          </Card>
+                          </div>
 
-
-          {/* TITULARES */}
-          <Card>
-
-            <h2 className="text-lg font-bold mb-3">
-              Titulares
-            </h2>
-
-            <div className="space-y-2">
-
-              {
-                starters.map(
-                  (item: any) => (
-
-                    <div
-                      key={item.player.id}
-                      className="
-                        bg-blue-50
-                        border
-                        border-blue-100
-                        rounded-xl
-                        p-2
-                      "
-                    >
-
-                      <p className="text-sm font-semibold">
-                        {item.player.name}
-                      </p>
-
-                      <p className="text-xs text-gray-500">
-                        {item.player.position}
-                      </p>
-
-                    </div>
-                  )
-                )
-              }
-
-            </div>
-
-          </Card>
-
-
-          {/* SUPLENTES */}
-          <Card>
-
-            <h2 className="text-lg font-bold mb-3">
-              Suplentes
-            </h2>
-
-            <div className="space-y-2">
-
-              {
-                substitutes.map(
-                  (player: any) => (
-
-                    <div
-                      key={player.id}
-                      className="
-                        bg-yellow-50
-                        border
-                        border-yellow-100
-                        rounded-xl
-                        p-2
-                      "
-                    >
-
-                      <p className="text-sm font-semibold">
-                        {player.name}
-                      </p>
-
-                      <p className="text-xs text-gray-500">
-                        {player.position}
-                      </p>
-
-                    </div>
-                  )
-                )
-              }
-
-            </div>
-
-          </Card>
-
-
-          {/* FORMACIONES */}
-          <Card>
-
-            <div className="mb-4">
-
-              <h2 className="text-lg font-bold">
-                Formaciones guardadas
-              </h2>
-
-            </div>
-
-            <div className="space-y-3">
-
-              {
-                formations.map(
-                  (formation: any) => (
-
-                    <div
-                      key={formation.id}
-                      onClick={() =>
-                        editFormation(
-                          formation
-                        )
-                      }
-                      className={`
-                        border
-                        rounded-2xl
-                        p-3
-                        cursor-pointer
-                        transition
-
-                        ${
-                          selectedFormation?.id ===
-                          formation.id
-                            ? `
-                              bg-black
+                          <button
+                            onClick={() =>
+                              addSubstitute(
+                                item.player
+                              )
+                            }
+                            className="
+                              px-2
+                              py-1
+                              text-xs
+                              rounded-lg
+                              bg-yellow-500
                               text-white
-                            `
-                            : `
-                              bg-gray-50
-                              hover:bg-gray-100
-                            `
-                        }
-                      `}
-                    >
+                            "
+                          >
+                            Pasar a suplente
+                          </button>
 
-                      <h3 className="font-bold text-sm">
-                        {formation.name}
-                      </h3>
+                        </div>
+                      )
+                    )
+                  }
 
-                      <p
-                        className={`
-                          text-xs
-                          mt-1
+                </div>
 
-                          ${
-                            selectedFormation?.id ===
-                            formation.id
-                              ? "text-gray-300"
-                              : "text-gray-500"
-                          }
-                        `}
-                      >
+              </Card>
 
-                        {formation.tactic}
-                        {" • "}
-                        Fútbol {formation.match_type}
+              {/* SUPLENTES */}
+              <Card>
 
+                <h2 className="text-lg font-bold mb-3">
+                  Suplentes
+                </h2>
+
+                <div className="space-y-2">
+
+                  {
+                    substitutes.length === 0 && (
+
+                      <p className="text-sm text-gray-500">
+                        No hay suplentes
                       </p>
+                    )
+                  }
 
-                    </div>
-                  )
-                )
-              }
+                  {
+                    substitutes.map(
+                      (player: any) => (
+
+                        <div
+                          key={player.id}
+                          className="
+                            bg-yellow-50
+                            rounded-xl
+                            p-3
+                            flex
+                            items-center
+                            justify-between
+                          "
+                        >
+
+                          <div>
+
+                            <p className="text-sm font-semibold">
+                              #{player.number} {player.name}
+                            </p>
+
+                            <p className="text-xs text-gray-500">
+                              {player.position}
+                            </p>
+
+                          </div>
+
+                          <button
+                            onClick={() =>
+                              addStarter(
+                                player
+                              )
+                            }
+                            className="
+                              px-2
+                              py-1
+                              text-xs
+                              rounded-lg
+                              bg-blue-600
+                              text-white
+                            "
+                          >
+                            Pasar a titular
+                          </button>
+
+                        </div>
+                      )
+                    )
+                  }
+
+                </div>
+
+              </Card>
+
+              {/* FORMATIONS */}
+              <Card>
+
+                <h2 className="text-lg font-bold mb-3">
+                  Formaciones
+                </h2>
+
+                <div className="space-y-2">
+
+                  {
+                    formations.map(
+                      (formation: any) => (
+
+                        <div
+                          key={formation.id}
+                          className="
+                            border
+                            rounded-xl
+                            p-3
+                            flex
+                            justify-between
+                            items-center
+                          "
+                        >
+
+                          <div>
+
+                            <p className="font-semibold">
+                              {formation.name}
+                            </p>
+
+                            <p className="text-xs text-gray-500">
+                              {formation.tactic}
+                            </p>
+
+                          </div>
+
+                          <div className="flex gap-2">
+
+                            <button
+                              onClick={() =>
+                                editFormation(formation)
+                              }
+                              className="
+                                text-xs
+                                bg-black
+                                text-white
+                                px-3
+                                py-1
+                                rounded-lg
+                              "
+                            >
+                              Editar
+                            </button>
+
+                            <button
+                              onClick={() =>
+                                removeFormation(
+                                  formation.id
+                                )
+                              }
+                              className="
+                                text-xs
+                                bg-red-600
+                                text-white
+                                px-3
+                                py-1
+                                rounded-lg
+                              "
+                            >
+                              Eliminar
+                            </button>
+
+                          </div>
+
+                        </div>
+                      )
+                    )
+                  }
+
+                </div>
+
+              </Card>
 
             </div>
-
-          </Card>
-
-        </div>
-
+          )
+        }
 
         {/* RIGHT */}
-        <div className="xl:col-span-3">
+        <div
+          className={
+            canManageFormation
+              ? "xl:col-span-3"
+              : "xl:col-span-4"
+          }
+        >
 
           <DndContext
             onDragEnd={handleDragEnd}
@@ -1004,103 +1082,75 @@ function Formacion() {
               "
             >
 
-              {/* STRIPES */}
-              <div className="absolute inset-0 grid grid-cols-8 opacity-10">
-
-                {
-                  Array.from({
-                    length: 8,
-                  }).map((_, i) => (
-
-                    <div
-                      key={i}
-                      className={
-                        i % 2 === 0
-                          ? "bg-white"
-                          : ""
-                      }
-                    />
-
-                  ))
-                }
-
-              </div>
-
-
-              {/* MID LINE */}
+              {/* BORDER */}
               <div
                 className="
                   absolute
+                  inset-4
+                  border-4
+                  border-white
+                  rounded-2xl
+                "
+              />
+
+              {/* HALF */}
+              <div
+                className="
+                  absolute
+                  left-1/2
                   top-0
                   bottom-0
-                  left-1/2
-                  w-[4px]
+                  w-1
                   bg-white
                   -translate-x-1/2
                 "
               />
-
 
               {/* CENTER */}
               <div
                 className="
                   absolute
-                  left-1/2
-                  top-1/2
                   w-40
                   h-40
-                  rounded-full
-                  border-[4px]
+                  border-4
                   border-white
-                  -translate-x-1/2
-                  -translate-y-1/2
-                "
-              />
-
-              <div
-                className="
-                  absolute
+                  rounded-full
                   left-1/2
                   top-1/2
-                  w-4
-                  h-4
-                  rounded-full
-                  bg-white
                   -translate-x-1/2
                   -translate-y-1/2
                 "
               />
 
-
-              {/* AREAS */}
+              {/* LEFT AREA */}
               <div
                 className="
                   absolute
-                  left-0
+                  left-4
                   top-1/2
                   -translate-y-1/2
-                  w-[180px]
-                  h-[320px]
-                  border-[4px]
+                  w-28
+                  h-72
+                  border-4
                   border-white
                   border-l-0
                 "
               />
 
+              {/* RIGHT AREA */}
               <div
                 className="
                   absolute
-                  right-0
+                  right-4
                   top-1/2
                   -translate-y-1/2
-                  w-[180px]
-                  h-[320px]
-                  border-[4px]
+                  w-28
+                  h-72
+                  border-4
                   border-white
                   border-r-0
                 "
               />
-
 
               {/* PLAYERS */}
               {
@@ -1121,72 +1171,66 @@ function Formacion() {
 
           </DndContext>
 
+          {/* SUBSTITUTES */}
+          {
+            substitutes.length > 0 && (
 
-          {/* ACTIONS */}
-          <div
-            className="
-              flex
-              flex-col
-              items-center
-              gap-3
-              mt-6
-            "
-          >
+              <Card className="mt-6">
 
-            <button
-              onClick={saveFormation}
-              className="
-                w-[190px]
-                h-[44px]
-                bg-black
-                hover:bg-gray-800
-                text-white
-                rounded-xl
-                text-sm
-                font-semibold
-                transition
-              "
-            >
+                <h2 className="text-lg font-bold mb-4">
+                  Suplentes
+                </h2>
 
-              {
-                editingId
-                  ? "Actualizar"
-                  : "Guardar"
-              }
+                <div className="flex flex-wrap gap-3">
 
-            </button>
+                  {
+                    substitutes.map(
+                      (player: any) => (
 
-            <button
-              onClick={resetForm}
-              className="
-                w-[190px]
-                h-[44px]
-                bg-gray-200
-                hover:bg-gray-300
-                text-black
-                rounded-xl
-                text-sm
-                font-semibold
-                transition
-              "
-            >
-              Nueva Formación
-            </button>
-
-            {
-              selectedFormation && (
-
-                <button
-                  onClick={() =>
-                    removeFormation(
-                      selectedFormation.id
+                        <div
+                          key={player.id}
+                          className="
+                            bg-yellow-100
+                            px-4
+                            py-2
+                            rounded-xl
+                            text-sm
+                            font-semibold
+                          "
+                        >
+                          #{player.number} {player.name}
+                        </div>
+                      )
                     )
                   }
+
+                </div>
+
+              </Card>
+            )
+          }
+
+          {/* ACTIONS */}
+          {
+            canManageFormation && (
+
+              <div
+                className="
+                  flex
+                  flex-col
+                  items-center
+                  gap-3
+                  mt-6
+                "
+              >
+
+                <button
+                  onClick={saveFormation}
                   className="
                     w-[190px]
                     h-[44px]
-                    bg-red-500
-                    hover:bg-red-600
+                    bg-black
+                    hover:bg-gray-800
                     text-white
                     rounded-xl
                     text-sm
@@ -1194,12 +1238,35 @@ function Formacion() {
                     transition
                   "
                 >
-                  Eliminar
-                </button>
-              )
-            }
 
-          </div>
+                  {
+                    editingId
+                      ? "Actualizar"
+                      : "Guardar"
+                  }
+
+                </button>
+
+                <button
+                  onClick={resetForm}
+                  className="
+                    w-[190px]
+                    h-[44px]
+                    bg-gray-200
+                    hover:bg-gray-300
+                    text-black
+                    rounded-xl
+                    text-sm
+                    font-semibold
+                    transition
+                  "
+                >
+                  Nueva Formación
+                </button>
+
+              </div>
+            )
+          }
 
         </div>
 

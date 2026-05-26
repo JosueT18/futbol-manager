@@ -1,14 +1,76 @@
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import (
+    Column,
+    Integer,
+    String,
+    Boolean,
+    ForeignKey,
+)
+
+from sqlalchemy.orm import relationship
+
 from database.connection import Base
-from database.base import Base
 
 
 class User(Base):
 
     __tablename__ = "users"
 
-    id = Column(Integer, primary_key=True, index=True)
+    # =========================
+    # BASIC DATA
+    # =========================
+    id = Column(
+        Integer,
+        primary_key=True,
+        index=True
+    )
 
-    username = Column(String, unique=True, index=True)
+    name = Column(
+        String,
+        nullable=False
+    )
 
-    password = Column(String)
+    email = Column(
+        String,
+        unique=True,
+        nullable=False
+    )
+
+    password = Column(
+        String,
+        nullable=False
+    )
+
+    # =========================
+    # ROLES
+    # Administrador
+    # Director
+    # Comision
+    # Jugador
+    # =========================
+    role = Column(
+        String,
+        nullable=False,
+        default="Jugador"
+    )
+
+    # =========================
+    # STATUS
+    # =========================
+    active = Column(
+        Boolean,
+        default=True
+    )
+
+    # =========================
+    # TEAM
+    # =========================
+    team_id = Column(
+        Integer,
+        ForeignKey("teams.id"),
+        nullable=True
+    )
+
+    team = relationship(
+        "Team",
+        back_populates="users"
+    )

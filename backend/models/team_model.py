@@ -11,27 +11,78 @@ class Team(Base):
 
     __tablename__ = "teams"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(
+        Integer,
+        primary_key=True,
+        index=True
+    )
 
-    name = Column(String, nullable=False)
+    name = Column(
+        String,
+        nullable=False
+    )
 
-    city = Column(String, nullable=False)
+    city = Column(
+        String,
+        nullable=False
+    )
 
-    tecnico = Column(String, nullable=False)
+    tecnico = Column(
+        String,
+        nullable=False
+    )
 
-    logo = Column(String, nullable=True)
+    logo = Column(
+        String,
+        nullable=True
+    )
 
-    pj = Column(Integer, default=0)
+    pj = Column(
+        Integer,
+        default=0
+    )
 
-    pg = Column(Integer, default=0)
+    pg = Column(
+        Integer,
+        default=0
+    )
 
-    pe = Column(Integer, default=0)
+    pe = Column(
+        Integer,
+        default=0
+    )
 
-    pp = Column(Integer, default=0)
+    pp = Column(
+        Integer,
+        default=0
+    )
 
-    points = Column(Integer, default=0)
+    points = Column(
+        Integer,
+        default=0
+    )
 
+    # =========================
+    # PLAYERS
+    # =========================
     players = relationship(
         "Player",
         back_populates="team"
+    )
+
+    # =========================
+    # USERS
+    # =========================
+    users = relationship(
+        "User",
+        back_populates="team"
+    )
+
+    # =========================
+    # FORMATIONS
+    # =========================
+    formations = relationship(
+        "Formation",
+        back_populates="team",
+        cascade="all, delete"
     )

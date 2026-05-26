@@ -6,19 +6,43 @@ type InputProps = {
 
   value: string
 
+  min?: number
+
   onChange: (
     e: React.ChangeEvent<HTMLInputElement>
   ) => void
-
 }
-
 
 function Input({
   type = "text",
   placeholder,
   value,
+  min,
   onChange,
 }: InputProps) {
+
+  function handleChange(
+    e: React.ChangeEvent<HTMLInputElement>
+  ) {
+
+    // =========================
+    // BLOQUEAR NEGATIVOS
+    // =========================
+    if (type === "number") {
+
+      const numericValue =
+        Number(e.target.value)
+
+      if (
+        numericValue < 0
+      ) {
+
+        return
+      }
+    }
+
+    onChange(e)
+  }
 
   return (
 
@@ -26,8 +50,10 @@ function Input({
       type={type}
       placeholder={placeholder}
       value={value}
-      onChange={onChange}
+      min={min}
+      onChange={handleChange}
       className="
+        w-full
         border border-gray-300
         focus:border-black
         focus:ring-2

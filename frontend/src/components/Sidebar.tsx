@@ -1,83 +1,131 @@
 import {
-  LayoutDashboard,
-  ShieldCheck,
+  Link,
+  useLocation,
+} from "react-router-dom"
+
+import {
+  Home,
+  Shield,
   Users,
   ClipboardList,
+  Trophy,
   BarChart3,
   LogOut,
-  Trophy,
-  ChevronRight,
-  CalendarDays,
+  Calendar,
 } from "lucide-react"
 
-import { NavLink } from "react-router-dom"
-
-import { useAuth } from "../auth/AuthContext"
+import {
+  useAuth,
+} from "../auth/AuthContext"
 
 function Sidebar() {
 
-  const { logout } = useAuth()
+  const location =
+    useLocation()
 
+  const {
+    user,
+    logout,
+  } = useAuth()
+
+  // =========================
+  // MENU
+  // =========================
   const menu = [
 
     {
-      name: "Dashboard",
+      label: "Inicio",
+      icon: Home,
       path: "/",
-      icon: LayoutDashboard,
+      roles: [
+        "Administrador",
+        "Director",
+        "Comision",
+        "Jugador",
+      ],
     },
 
     {
-      name: "Equipos",
+      label: "Equipos",
+      icon: Shield,
       path: "/equipos",
-      icon: Trophy,
+      roles: [
+        "Administrador",
+        "Director",
+      ],
     },
 
     {
-      name: "Jugadores",
-      path: "/jugadores",
+      label: "Jugadores",
       icon: Users,
+      path: "/jugadores",
+      roles: [
+        "Administrador",
+        "Director",
+        "Comision",
+        "Jugador",
+      ],
     },
 
     {
-      name: "Solicitudes",
-      path: "/solicitudes",
+      label: "Solicitudes",
       icon: ClipboardList,
+      path: "/solicitudes",
+      roles: [
+        "Administrador",
+        "Director",
+        "Comision",
+      ],
     },
 
     {
-      name: "Formación",
+      label: "Formación",
+      icon: Trophy,
       path: "/formacion",
-      icon: ShieldCheck,
+      roles: [
+        "Administrador",
+        "Director",
+        "Comision",
+        "Jugador",
+      ],
     },
 
     {
-      name: "Partidos",
+      label: "Partidos",
+      icon: Calendar,
       path: "/partidos",
-      icon: CalendarDays,
+      roles: [
+        "Administrador",
+        "Director",
+        "Comision",
+      ],
     },
 
     {
-      name: "Estadísticas",
-      path: "/estadisticas",
+      label: "Estadísticas",
       icon: BarChart3,
+      path: "/estadisticas",
+      roles: [
+        "Administrador",
+        "Director",
+        "Comision",
+        "Jugador",
+      ],
     },
   ]
 
   return (
 
-    <aside
+    <div
       className="
-        w-72
+        w-[260px]
         min-h-screen
-        bg-white
-        border-r
-        border-gray-200
+        bg-black
+        text-white
         flex
         flex-col
         justify-between
-        px-5
-        py-6
-        shadow-sm
+        p-5
       "
     >
 
@@ -87,186 +135,106 @@ function Sidebar() {
         {/* LOGO */}
         <div className="mb-10">
 
-          <div
-            className="
-              flex
-              items-center
-              gap-3
-            "
-          >
+          <h1 className="text-2xl font-bold">
+            Futbol Manager
+          </h1>
 
-            <div
-              className="
-                w-12
-                h-12
-                rounded-2xl
-                bg-black
-                text-white
-                flex
-                items-center
-                justify-center
-                text-xl
-                shadow-sm
-              "
-            >
-              ⚽
-            </div>
+          <p className="text-gray-400 text-sm mt-1">
 
-            <div>
+            Rol:
+            {" "}
+            {user?.role || "Sin rol"}
 
-              <h1
-                className="
-                  text-2xl
-                  font-bold
-                  text-black
-                  tracking-tight
-                "
-              >
-                Futbol Manager
-              </h1>
-
-              <p className="text-sm text-gray-500">
-                Panel administrativo
-              </p>
-
-            </div>
-
-          </div>
+          </p>
 
         </div>
 
         {/* MENU */}
-        <nav className="flex flex-col gap-2">
+        <div className="space-y-2">
 
           {
-            menu.map((item) => {
+            menu
+              .filter((item) =>
 
-              const Icon = item.icon
+                item.roles.includes(
+                  user?.role
+                )
+              )
+              .map((item) => {
 
-              return (
+                const Icon =
+                  item.icon
 
-                <NavLink
-                  key={item.path}
-                  to={item.path}
-                  className={({ isActive }) =>
-                    `
-                      group
-                      flex
-                      items-center
-                      justify-between
-                      px-4
-                      py-3
-                      rounded-2xl
-                      text-sm
-                      font-medium
-                      transition-all
-                      duration-200
+                const active =
+                  location.pathname ===
+                  item.path
 
-                      ${
-                        isActive
-                          ? `
-                            bg-black
-                            text-white
-                            shadow-sm
-                          `
-                          : `
-                            text-gray-600
-                            hover:bg-gray-100
-                            hover:text-black
-                          `
-                      }
-                    `
-                  }
-                >
+                return (
 
-                  {/* LEFT */}
-                  <div
-                    className="
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    className={`
                       flex
                       items-center
                       gap-3
-                    "
+                      px-4
+                      py-3
+                      rounded-xl
+                      transition
+
+                      ${
+                        active
+                          ? `
+                            bg-white
+                            text-black
+                          `
+                          : `
+                            hover:bg-gray-800
+                          `
+                      }
+                    `}
                   >
 
                     <Icon size={18} />
 
-                    {item.name}
+                    <span>
+                      {item.label}
+                    </span>
 
-                  </div>
-
-                  {/* RIGHT ICON */}
-                  <ChevronRight
-                    size={16}
-                    className="
-                      opacity-0
-                      group-hover:opacity-100
-                      transition
-                    "
-                  />
-
-                </NavLink>
-              )
-            })
+                  </Link>
+                )
+              })
           }
-
-        </nav>
-
-      </div>
-
-      {/* FOOTER */}
-      <div className="space-y-4">
-
-        {/* USER BOX */}
-        <div
-          className="
-            bg-gray-50
-            border
-            rounded-2xl
-            p-4
-          "
-        >
-
-          <p className="text-sm text-gray-500">
-            Sesión activa
-          </p>
-
-          <p className="font-semibold mt-1">
-            Administrador
-          </p>
 
         </div>
 
-        {/* LOGOUT */}
-        <button
-          onClick={logout}
-          className="
-            w-full
-            flex
-            items-center
-            justify-center
-            gap-3
-            px-4
-            py-3
-            rounded-2xl
-            text-sm
-            font-medium
-            text-red-500
-            hover:bg-red-50
-            transition
-            border
-            border-red-100
-          "
-        >
-
-          <LogOut size={18} />
-
-          Cerrar sesión
-
-        </button>
-
       </div>
 
-    </aside>
+      {/* BOTTOM */}
+      <button
+        onClick={logout}
+        className="
+          flex
+          items-center
+          gap-3
+          px-4
+          py-3
+          rounded-xl
+          hover:bg-red-600
+          transition
+        "
+      >
+
+        <LogOut size={18} />
+
+        <span>
+          Cerrar sesión
+        </span>
+
+      </button>
+
+    </div>
   )
 }
 

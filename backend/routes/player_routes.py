@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from database.connection import get_db
@@ -17,21 +17,40 @@ def create_player(
     db: Session = Depends(get_db)
 ):
 
+    # VALIDAR NUMERO REPETIDO
+    existing_number = db.query(Player).filter(
+        Player.team_id == player.team_id,
+        Player.number == player.number
+    ).first()
+
+    if existing_number:
+
+        raise HTTPException(
+            status_code=400,
+            detail="El número ya existe en este equipo"
+        )
+
     new_player = Player(
         name=player.name,
         age=player.age,
         position=player.position,
         number=player.number,
         team_id=player.team_id,
-        status = "pending",
 
-        goals=player.goals,
-        yellow_cards=player.yellow_cards,
-        red_cards=player.red_cards
+        # NUEVOS JUGADORES
+        # ENTRAN APROBADOS
+        status="pending",
+
+        goals=player.goals or 0,
+        yellow_cards=player.yellow_cards or 0,
+        red_cards=player.red_cards or 0,
+        matches_played=0
     )
 
     db.add(new_player)
+
     db.commit()
+
     db.refresh(new_player)
 
     return new_player
@@ -41,8 +60,13 @@ def create_player(
 # GET PLAYERS
 # =========================
 @router.get("/players")
-def get_players(db: Session = Depends(get_db)):
-    return db.query(Player).all()
+def get_players(
+    db: Session = Depends(get_db)
+):
+
+    players = db.query(Player).all()
+
+    return players
 
 
 # =========================
@@ -59,9 +83,11 @@ def approve_player(
     ).first()
 
     if not player:
-        return {
-            "error": "Jugador no encontrado"
-        }
+
+        raise HTTPException(
+            status_code=404,
+            detail="Jugador no encontrado"
+        )
 
     player.status = "approved"
 
@@ -72,6 +98,7 @@ def approve_player(
     db.refresh(player)
 
     return player
+
 
 # =========================
 # REJECT PLAYER
@@ -89,14 +116,13 @@ def reject_player(
 
     if not player:
 
-        return {
-            "error": "Jugador no encontrado"
-        }
+        raise HTTPException(
+            status_code=404,
+            detail="Jugador no encontrado"
+        )
 
-    # 🔥 ESTADO REAL
     player.status = "rejected"
 
-    # 🔥 MOTIVO
     player.rejection_reason = data.get(
         "reason",
         ""
@@ -107,72 +133,119 @@ def reject_player(
     db.refresh(player)
 
     return player
+
+
 # =========================
 # DELETE PLAYER
 # =========================
 @router.delete("/players/{player_id}")
-def delete_player(player_id: int, db: Session = Depends(get_db)):
+def delete_player(
+    player_id: int,
+    db: Session = Depends(get_db)
+):
 
-    player = db.query(Player).filter(Player.id == player_id).first()
+    player = db.query(Player).filter(
+        Player.id == player_id
+    ).first()
 
     if not player:
-        return {"error": "Jugador no encontrado"}
+
+        raise HTTPException(
+            status_code=404,
+            detail="Jugador no encontrado"
+        )
 
     db.delete(player)
+
     db.commit()
 
-    return {"message": "Jugador eliminado"}
+    return {
+        "message": "Jugador eliminado"
+    }
 
 
 # =========================
 # UPDATE PLAYER
 # =========================
 @router.put("/players/{player_id}")
-def update_player(player_id: int, data: dict, db: Session = Depends(get_db)):
+def update_player(
+    player_id: int,
+    data: dict,
+    db: Session = Depends(get_db)
+):
 
-    player = db.query(Player).filter(Player.id == player_id).first()
+    player = db.query(Player).filter(
+        Player.id == player_id
+    ).first()
 
     if not player:
-        return {"error": "Jugador no encontrado"}
 
+        raise HTTPException(
+            status_code=404,
+            detail="Jugador no encontrado"
+        )
+
+    # =========================
+    # VALIDAR NUMERO REPETIDO
+    # =========================
+    new_number = data.get(
+        "number",
+        player.number
+    )
+
+    new_team_id = data.get(
+        "team_id",
+        player.team_id
+    )
+
+    existing_number = db.query(Player).filter(
+        Player.id != player_id,
+        Player.team_id == new_team_id,
+        Player.number == new_number
+    ).first()
+
+    if existing_number:
+
+        raise HTTPException(
+            status_code=400,
+            detail="El número ya existe en este equipo"
+        )
+
+    # =========================
+    # UPDATE DATA
+    # =========================
     player.name = data.get(
-    "name",
-    player.name
+        "name",
+        player.name
     )
 
     player.age = data.get(
-    "age",
-    player.age
+        "age",
+        player.age
     )
 
     player.position = data.get(
-    "position",
-    player.position
+        "position",
+        player.position
     )
 
-    player.number = data.get(
-    "number",
-    player.number
-    )
+    player.number = new_number
 
-    player.team_id = data.get(
-    "team_id",
-    player.team_id
-    )
+    player.team_id = new_team_id
 
     player.goals = data.get(
-    "goals",
-    player.goals
+        "goals",
+        player.goals
     )
 
     player.yellow_cards = data.get(
-    "yellow_cards",
-    player.yellow_cards
+        "yellow_cards",
+        player.yellow_cards
     )
 
     player.red_cards = data.get(
-    "red_cards",
-    player.red_cards
+        "red_cards",
+        player.red_cards
     )
 
     player.matches_played = data.get(
@@ -181,6 +254,7 @@ def update_player(player_id: int, data: dict, db: Session = Depends(get_db)):
     )
 
     db.commit()
+
     db.refresh(player)
 
     return player

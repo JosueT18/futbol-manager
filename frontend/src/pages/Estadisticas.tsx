@@ -20,6 +20,19 @@ import Input from "../components/ui/Input"
 function Estadisticas() {
 
   // =========================
+  // ROLE
+  // =========================
+  const role =
+    localStorage.getItem("role") || ""
+
+  const canEditStats =
+    role === "Administrador"
+    ||
+    role === "Director"
+    ||
+    role === "Comision"
+
+  // =========================
   // STATES
   // =========================
   const [teamModalOpen, setTeamModalOpen] =
@@ -33,6 +46,9 @@ function Estadisticas() {
 
   const [selectedPlayer, setSelectedPlayer] =
     useState<any>(null)
+
+  const [selectedTeamFilter, setSelectedTeamFilter] =
+    useState("all")
 
   // TEAM STATS
   const [pj, setPj] = useState("")
@@ -105,9 +121,25 @@ function Estadisticas() {
     )
 
   // =========================
+  // FILTER PLAYERS BY TEAM
+  // =========================
+  const filteredPlayersByTeam =
+    selectedTeamFilter === "all"
+      ? approvedPlayers
+      : approvedPlayers.filter(
+          (player: any) =>
+            player.team_id?.toString() ===
+            selectedTeamFilter
+        )
+
+  // =========================
   // OPEN TEAM MODAL
   // =========================
   function openTeamModal(team: any) {
+
+    if (!canEditStats) {
+      return
+    }
 
     setSelectedTeam(team)
 
@@ -155,6 +187,10 @@ function Estadisticas() {
   // OPEN PLAYER MODAL
   // =========================
   function openPlayerModal(player: any) {
+
+    if (!canEditStats) {
+      return
+    }
 
     setSelectedPlayer(player)
 
@@ -288,9 +324,14 @@ function Estadisticas() {
                   PTS
                 </th>
 
-                <th className="px-4 py-3 text-center">
-                  Acción
-                </th>
+                {
+                  canEditStats && (
+
+                    <th className="px-4 py-3 text-center">
+                      Acción
+                    </th>
+                  )
+                }
 
               </tr>
 
@@ -359,18 +400,23 @@ function Estadisticas() {
                           {team.points || 0}
                         </td>
 
-                        <td className="text-center">
+                        {
+                          canEditStats && (
 
-                          <Button
-                            variant="secondary"
-                            onClick={() =>
-                              openTeamModal(team)
-                            }
-                          >
-                            Editar
-                          </Button>
+                            <td className="text-center">
 
-                        </td>
+                              <Button
+                                variant="secondary"
+                                onClick={() =>
+                                  openTeamModal(team)
+                                }
+                              >
+                                Editar
+                              </Button>
+
+                            </td>
+                          )
+                        }
 
                       </tr>
                     )
@@ -392,8 +438,11 @@ function Estadisticas() {
         <div
           className="
             flex
-            items-center
-            justify-between
+            flex-col
+            md:flex-row
+            md:items-center
+            md:justify-between
+            gap-4
             mb-5
           "
         >
@@ -401,6 +450,40 @@ function Estadisticas() {
           <h2 className="text-2xl font-bold">
             Estadísticas Jugadores
           </h2>
+
+          <select
+            value={selectedTeamFilter}
+            onChange={(e) =>
+              setSelectedTeamFilter(
+                e.target.value
+              )
+            }
+            className="
+              border
+              rounded-xl
+              px-4
+              py-3
+              bg-white
+            "
+          >
+
+            <option value="all">
+              Todos los equipos
+            </option>
+
+            {
+              teams.map((team: any) => (
+
+                <option
+                  key={team.id}
+                  value={team.id}
+                >
+                  {team.name}
+                </option>
+              ))
+            }
+
+          </select>
 
         </div>
 
@@ -423,6 +506,10 @@ function Estadisticas() {
                 </th>
 
                 <th className="px-4 py-3 text-center">
+                  Equipo
+                </th>
+
+                <th className="px-4 py-3 text-center">
                   Posición
                 </th>
 
@@ -442,9 +529,14 @@ function Estadisticas() {
                   Rojas
                 </th>
 
-                <th className="px-4 py-3 text-center">
-                  Acción
-                </th>
+                {
+                  canEditStats && (
+
+                    <th className="px-4 py-3 text-center">
+                      Acción
+                    </th>
+                  )
+                }
 
               </tr>
 
@@ -453,58 +545,76 @@ function Estadisticas() {
             <tbody>
 
               {
-                approvedPlayers.map(
-                  (player: any) => (
+                filteredPlayersByTeam.map(
+                  (player: any) => {
 
-                    <tr
-                      key={player.id}
-                      className="
-                        border-t
-                        hover:bg-gray-50
-                      "
-                    >
+                    const team =
+                      teams.find(
+                        (t: any) =>
+                          t.id === player.team_id
+                      )
 
-                      <td className="px-4 py-4 font-semibold">
-                        ⚽ {player.name}
-                      </td>
+                    return (
 
-                      <td className="text-center">
-                        {player.position}
-                      </td>
+                      <tr
+                        key={player.id}
+                        className="
+                          border-t
+                          hover:bg-gray-50
+                        "
+                      >
 
-                      <td className="text-center">
-                        {
-                          player.matches_played || 0
-                        }
-                      </td>
+                        <td className="px-4 py-4 font-semibold">
+                          ⚽ {player.name}
+                        </td>
 
-                      <td className="text-center font-bold text-green-600">
-                        {player.goals || 0}
-                      </td>
+                        <td className="text-center">
+                          {team?.name || "-"}
+                        </td>
 
-                      <td className="text-center">
-                        {player.yellow_cards || 0}
-                      </td>
+                        <td className="text-center">
+                          {player.position}
+                        </td>
 
-                      <td className="text-center">
-                        {player.red_cards || 0}
-                      </td>
-
-                      <td className="text-center">
-
-                        <Button
-                          variant="secondary"
-                          onClick={() =>
-                            openPlayerModal(player)
+                        <td className="text-center">
+                          {
+                            player.matches_played || 0
                           }
-                        >
-                          Editar
-                        </Button>
+                        </td>
 
-                      </td>
+                        <td className="text-center font-bold text-green-600">
+                          {player.goals || 0}
+                        </td>
 
-                    </tr>
-                  )
+                        <td className="text-center">
+                          {player.yellow_cards || 0}
+                        </td>
+
+                        <td className="text-center">
+                          {player.red_cards || 0}
+                        </td>
+
+                        {
+                          canEditStats && (
+
+                            <td className="text-center">
+
+                              <Button
+                                variant="secondary"
+                                onClick={() =>
+                                  openPlayerModal(player)
+                                }
+                              >
+                                Editar
+                              </Button>
+
+                            </td>
+                          )
+                        }
+
+                      </tr>
+                    )
+                  }
                 )
               }
 
@@ -517,100 +627,268 @@ function Estadisticas() {
       </Card>
 
       {/* GOLEADORES */}
-      <Card>
+<Card>
 
-        <div
-          className="
-            flex
-            items-center
-            justify-between
-            mb-5
-          "
-        >
+  <div
+    className="
+      flex
+      flex-col
+      md:flex-row
+      md:items-center
+      md:justify-between
+      gap-4
+      mb-5
+    "
+  >
 
-          <h2 className="text-2xl font-bold">
-            Ranking de Goleadores
-          </h2>
+    <h2 className="text-2xl font-bold">
+      Ranking de Goleadores
+    </h2>
 
-        </div>
+    {/* FILTRO EQUIPO */}
+    <select
+      value={selectedTeamFilter}
+      onChange={(e) =>
+        setSelectedTeamFilter(
+          e.target.value
+        )
+      }
+      className="
+        border
+        border-gray-300
+        rounded-xl
+        px-4
+        py-3
+        bg-white
+      "
+    >
 
-        <div className="space-y-3">
+      <option value="all">
+        Todos los equipos
+      </option>
 
-          {
-            topScorers
-              .slice(0, 10)
-              .map(
-                (
-                  player: any,
-                  index: number
-                ) => (
+      {
+        teams.map((team: any) => (
 
-                  <div
-                    key={player.id}
-                    className="
-                      flex
-                      items-center
-                      justify-between
-                      bg-gray-50
-                      rounded-xl
-                      px-4
-                      py-3
-                    "
-                  >
+          <option
+            key={team.id}
+            value={team.id}
+          >
+            {team.name}
+          </option>
+        ))
+      }
 
-                    <div className="flex items-center gap-4">
+    </select>
 
-                      <div
-                        className="
-                          w-9
-                          h-9
-                          rounded-full
-                          bg-yellow-100
-                          text-yellow-700
-                          flex
-                          items-center
-                          justify-center
-                          font-bold
-                        "
-                      >
-                        {index + 1}
-                      </div>
+  </div>
 
-                      <div>
+  {/* TOP GENERAL */}
+  <div className="mb-8">
 
-                        <p className="font-semibold">
-                          ⚽ {player.name}
-                        </p>
+    <h3 className="text-xl font-bold mb-4">
+      Top 10 General
+    </h3>
 
-                        <p className="text-sm text-gray-500">
-                          {player.position}
-                        </p>
+    <div className="space-y-3">
 
-                      </div>
+      {
+        topScorers
+          .slice(0, 10)
+          .map(
+            (
+              player: any,
+              index: number
+            ) => {
 
-                    </div>
+              const team =
+                teams.find(
+                  (t: any) =>
+                    t.id === player.team_id
+                )
+
+              return (
+
+                <div
+                  key={player.id}
+                  className="
+                    flex
+                    items-center
+                    justify-between
+                    bg-gray-50
+                    rounded-xl
+                    px-4
+                    py-3
+                  "
+                >
+
+                  <div className="flex items-center gap-4">
 
                     <div
                       className="
-                        bg-green-100
-                        text-green-700
-                        px-4
-                        py-2
+                        w-9
+                        h-9
                         rounded-full
+                        bg-yellow-100
+                        text-yellow-700
+                        flex
+                        items-center
+                        justify-center
                         font-bold
                       "
                     >
-                      {player.goals || 0} goles
+                      {index + 1}
+                    </div>
+
+                    <div>
+
+                      <p className="font-semibold">
+                        ⚽ {player.name}
+                      </p>
+
+                      <p className="text-sm text-gray-500">
+                        {team?.name || "-"}
+                      </p>
+
                     </div>
 
                   </div>
-                )
+
+                  <div
+                    className="
+                      bg-green-100
+                      text-green-700
+                      px-4
+                      py-2
+                      rounded-full
+                      font-bold
+                    "
+                  >
+                    {player.goals || 0} goles
+                  </div>
+
+                </div>
               )
+            }
+          )
+      }
+
+    </div>
+
+  </div>
+
+  {/* GOLEADORES POR EQUIPO */}
+  <div>
+
+    <h3 className="text-xl font-bold mb-4">
+      Goleadores por Equipo
+    </h3>
+
+    <div className="overflow-x-auto">
+
+      <table className="w-full">
+
+        <thead>
+
+          <tr
+            className="
+              bg-gray-100
+              text-sm
+              text-gray-600
+            "
+          >
+
+            <th className="px-4 py-3 text-left">
+              Jugador
+            </th>
+
+            <th className="px-4 py-3 text-center">
+              Equipo
+            </th>
+
+            <th className="px-4 py-3 text-center">
+              Posición
+            </th>
+
+            <th className="px-4 py-3 text-center">
+              Goles
+            </th>
+
+          </tr>
+
+        </thead>
+
+        <tbody>
+
+          {
+            topScorers
+              .filter((player: any) => {
+
+                if (
+                  selectedTeamFilter === "all"
+                ) {
+                  return true
+                }
+
+                return (
+                  player.team_id ===
+                  Number(selectedTeamFilter)
+                )
+              })
+              .map((player: any) => {
+
+                const team =
+                  teams.find(
+                    (t: any) =>
+                      t.id === player.team_id
+                  )
+
+                return (
+
+                  <tr
+                    key={player.id}
+                    className="
+                      border-t
+                      hover:bg-gray-50
+                    "
+                  >
+
+                    <td className="px-4 py-4 font-semibold">
+                      ⚽ {player.name}
+                    </td>
+
+                    <td className="text-center">
+                      {team?.name || "-"}
+                    </td>
+
+                    <td className="text-center">
+                      {player.position}
+                    </td>
+
+                    <td
+                      className="
+                        text-center
+                        font-bold
+                        text-green-600
+                      "
+                    >
+                      {player.goals || 0}
+                    </td>
+
+                  </tr>
+                )
+              })
           }
 
-        </div>
+        </tbody>
 
-      </Card>
+      </table>
+
+    </div>
+
+  </div>
+
+</Card>
 
       {/* TEAM MODAL */}
       <Modal
@@ -625,6 +903,7 @@ function Estadisticas() {
 
           <Input
             type="number"
+            min={0}
             placeholder="PJ"
             value={pj}
             onChange={(e) =>
@@ -634,6 +913,7 @@ function Estadisticas() {
 
           <Input
             type="number"
+            min={0}
             placeholder="PG"
             value={pg}
             onChange={(e) =>
@@ -643,6 +923,7 @@ function Estadisticas() {
 
           <Input
             type="number"
+            min={0}
             placeholder="PE"
             value={pe}
             onChange={(e) =>
@@ -652,6 +933,7 @@ function Estadisticas() {
 
           <Input
             type="number"
+            min={0}
             placeholder="PP"
             value={pp}
             onChange={(e) =>
@@ -661,6 +943,7 @@ function Estadisticas() {
 
           <Input
             type="number"
+            min={0}
             placeholder="Goles a favor"
             value={gf}
             onChange={(e) =>
@@ -670,6 +953,7 @@ function Estadisticas() {
 
           <Input
             type="number"
+            min={0}
             placeholder="Goles en contra"
             value={gc}
             onChange={(e) =>
@@ -679,6 +963,7 @@ function Estadisticas() {
 
           <Input
             type="number"
+            min={0}
             placeholder="Puntos"
             value={points}
             onChange={(e) =>
@@ -722,6 +1007,7 @@ function Estadisticas() {
 
           <Input
             type="number"
+            min={0}
             placeholder="Partidos Jugados"
             value={matchesPlayed}
             onChange={(e) =>
@@ -733,6 +1019,7 @@ function Estadisticas() {
 
           <Input
             type="number"
+            min={0}
             placeholder="Goles"
             value={goals}
             onChange={(e) =>
@@ -742,6 +1029,7 @@ function Estadisticas() {
 
           <Input
             type="number"
+            min={0}
             placeholder="Amarillas"
             value={yellowCards}
             onChange={(e) =>
@@ -753,6 +1041,7 @@ function Estadisticas() {
 
           <Input
             type="number"
+            min={0}
             placeholder="Rojas"
             value={redCards}
             onChange={(e) =>

@@ -19,6 +19,10 @@ from models.team_model import Team
 
 from schemas.team_schema import TeamCreate
 
+from utils.dependencies import (
+    admin_required,
+    director_required,
+)
 
 router = APIRouter()
 
@@ -29,18 +33,30 @@ router = APIRouter()
 @router.post("/teams")
 def create_team(
     team: TeamCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user=Depends(
+        director_required
+    )
 ):
 
     new_team = Team(
+
         name=team.name,
+
         city=team.city,
+
         tecnico=team.tecnico,
+
         pj=team.pj,
+
         pg=team.pg,
+
         pe=team.pe,
+
         pp=team.pp,
+
         points=team.points,
+
         logo=team.logo,
     )
 
@@ -110,7 +126,10 @@ def get_teams(
 @router.delete("/teams/{team_id}")
 def delete_team(
     team_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user=Depends(
+        admin_required
+    )
 ):
 
     team = db.query(Team).filter(
@@ -147,7 +166,10 @@ def delete_team(
 def update_team(
     team_id: int,
     data: dict = Body(...),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user=Depends(
+        director_required
+    )
 ):
 
     team = db.query(Team).filter(
@@ -201,7 +223,9 @@ def update_team(
         team.logo
     )
 
+    # =========================
     # CALCULAR PUNTOS
+    # =========================
     team.points = (
         (team.pg * 3)
         + team.pe
@@ -222,22 +246,28 @@ async def upload_logo(
     file: UploadFile = File(...)
 ):
 
-    # CREAR CARPETA
+    # =========================
+    # CREATE FOLDER
+    # =========================
     os.makedirs(
         "uploads",
         exist_ok=True
     )
 
-    # VALIDAR EXTENSION
+    # =========================
+    # VALIDATE EXTENSION
+    # =========================
     allowed_extensions = [
         "jpg",
         "jpeg",
         "png",
-        "webp"
+        "webp",
     ]
 
     file_extension = (
-        file.filename.split(".")[-1].lower()
+        file.filename
+        .split(".")[-1]
+        .lower()
     )
 
     if file_extension not in allowed_extensions:
@@ -247,7 +277,9 @@ async def upload_logo(
             detail="Formato de imagen no permitido"
         )
 
-    # NOMBRE UNICO
+    # =========================
+    # UNIQUE NAME
+    # =========================
     filename = (
         f"{uuid.uuid4()}.{file_extension}"
     )
@@ -256,7 +288,9 @@ async def upload_logo(
         f"uploads/{filename}"
     )
 
-    # GUARDAR ARCHIVO
+    # =========================
+    # SAVE FILE
+    # =========================
     with open(
         file_path,
         "wb"
@@ -267,7 +301,9 @@ async def upload_logo(
             buffer
         )
 
-    # RESPUESTA
+    # =========================
+    # RESPONSE
+    # =========================
     return {
         "logo": f"/uploads/{filename}"
     }

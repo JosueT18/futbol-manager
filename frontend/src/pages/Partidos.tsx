@@ -1,27 +1,21 @@
 import { useEffect, useState } from "react"
 
-import {
-  getMatches,
-  createMatch,
-  updateMatch,
-  deleteMatch,
-} from "../api/matches"
+import Card from "../components/ui/Card"
 
 import {
   getTeams,
 } from "../api/teams"
 
-import Card from "../components/ui/Card"
-import Button from "../components/ui/Button"
+import {
+  createMatch,
+} from "../api/matches"
+
 
 function Partidos() {
 
   // =========================
   // STATES
   // =========================
-  const [matches, setMatches] =
-    useState<any[]>([])
-
   const [teams, setTeams] =
     useState<any[]>([])
 
@@ -40,55 +34,63 @@ function Partidos() {
   const [loading, setLoading] =
     useState(false)
 
+  const [message, setMessage] =
+    useState("")
+
+
   // =========================
-  // LOAD DATA
+  // LOAD TEAMS
   // =========================
   useEffect(() => {
 
-    loadData()
+    loadTeams()
 
   }, [])
 
-  async function loadData() {
+
+  async function loadTeams() {
 
     try {
 
-      setLoading(true)
-
-      const matchesData =
-        await getMatches()
-
-      const teamsData =
+      const data =
         await getTeams()
 
-      setMatches(matchesData)
+      if (Array.isArray(data)) {
 
-      setTeams(teamsData)
+        setTeams(data)
+
+      } else {
+
+        console.error(
+          "Teams no es array",
+          data
+        )
+
+        setTeams([])
+      }
 
     } catch (error) {
 
       console.error(error)
 
-    } finally {
-
-      setLoading(false)
+      setTeams([])
     }
   }
+
 
   // =========================
   // CREATE MATCH
   // =========================
-  async function handleCreateMatch() {
+  async function saveMatch() {
 
     if (
-      !homeTeamId
-      ||
-      !awayTeamId
-      ||
-      !date
+      !homeTeamId ||
+      !awayTeamId ||
+      !date ||
+      !stadium
     ) {
 
-      alert(
+      setMessage(
         "Completa todos los campos"
       )
 
@@ -99,14 +101,16 @@ function Partidos() {
       homeTeamId === awayTeamId
     ) {
 
-      alert(
-        "No puedes elegir el mismo equipo"
+      setMessage(
+        "Los equipos no pueden ser iguales"
       )
 
       return
     }
 
     try {
+
+      setLoading(true)
 
       await createMatch({
 
@@ -116,126 +120,41 @@ function Partidos() {
         away_team_id:
           Number(awayTeamId),
 
-        home_score: 0,
-
-        away_score: 0,
-
         date,
 
         stadium,
-
-        status: "scheduled",
       })
+
+      setMessage(
+        "Partido creado correctamente"
+      )
 
       setHomeTeamId("")
       setAwayTeamId("")
       setDate("")
       setStadium("")
 
-      await loadData()
-
     } catch (error) {
 
       console.error(error)
 
-      alert(
+      setMessage(
         "Error al crear partido"
       )
+
+    } finally {
+
+      setLoading(false)
     }
   }
 
-  // =========================
-  // FINISH MATCH
-  // =========================
-  async function finishMatch(
-    match: any
-  ) {
-
-    const home =
-      prompt(
-        "Goles local",
-        match.home_score
-      )
-
-    const away =
-      prompt(
-        "Goles visitante",
-        match.away_score
-      )
-
-    if (
-      home === null
-      ||
-      away === null
-    ) {
-      return
-    }
-
-    try {
-
-      await updateMatch(
-        match.id,
-        {
-          home_score:
-            Number(home),
-
-          away_score:
-            Number(away),
-
-          status: "finished",
-        }
-      )
-
-      await loadData()
-
-    } catch (error) {
-
-      console.error(error)
-
-      alert(
-        "Error al finalizar partido"
-      )
-    }
-  }
-
-  // =========================
-  // DELETE MATCH
-  // =========================
-  async function handleDeleteMatch(
-    id: number
-  ) {
-
-    const confirmDelete =
-      confirm(
-        "¿Eliminar partido?"
-      )
-
-    if (!confirmDelete) {
-      return
-    }
-
-    try {
-
-      await deleteMatch(id)
-
-      await loadData()
-
-    } catch (error) {
-
-      console.error(error)
-
-      alert(
-        "Error al eliminar partido"
-      )
-    }
-  }
 
   return (
 
-    <div className="p-6 space-y-6">
+    <div className="p-6">
 
       {/* HEADER */}
-      <div>
+      <div className="mb-6">
 
         <h1 className="text-4xl font-bold">
           Partidos
@@ -247,14 +166,34 @@ function Partidos() {
 
       </div>
 
-      {/* CREATE */}
+
+      {/* MESSAGE */}
+      {
+        message && (
+
+          <div
+            className="
+              mb-5
+              bg-blue-100
+              text-blue-800
+              p-4
+              rounded-xl
+            "
+          >
+            {message}
+          </div>
+        )
+      }
+
+
+      {/* FORM */}
       <Card>
 
         <div
           className="
             grid
             grid-cols-1
-            md:grid-cols-5
+            md:grid-cols-2
             gap-4
           "
         >
@@ -269,8 +208,8 @@ function Partidos() {
             }
             className="
               border
-              rounded-xl
               p-3
+              rounded-xl
             "
           >
 
@@ -279,6 +218,8 @@ function Partidos() {
             </option>
 
             {
+              Array.isArray(teams)
+              &&
               teams.map(
                 (team: any) => (
 
@@ -294,7 +235,8 @@ function Partidos() {
 
           </select>
 
-          {/* VISITOR */}
+
+          {/* VISITANTE */}
           <select
             value={awayTeamId}
             onChange={(e) =>
@@ -304,8 +246,8 @@ function Partidos() {
             }
             className="
               border
-              rounded-xl
               p-3
+              rounded-xl
             "
           >
 
@@ -314,6 +256,8 @@ function Partidos() {
             </option>
 
             {
+              Array.isArray(teams)
+              &&
               teams.map(
                 (team: any) => (
 
@@ -329,7 +273,8 @@ function Partidos() {
 
           </select>
 
-          {/* DATE */}
+
+          {/* FECHA */}
           <input
             type="datetime-local"
             value={date}
@@ -340,12 +285,13 @@ function Partidos() {
             }
             className="
               border
-              rounded-xl
               p-3
+              rounded-xl
             "
           />
 
-          {/* STADIUM */}
+
+          {/* ESTADIO */}
           <input
             type="text"
             placeholder="Estadio"
@@ -357,210 +303,42 @@ function Partidos() {
             }
             className="
               border
-              rounded-xl
               p-3
+              rounded-xl
             "
           />
 
-          {/* BUTTON */}
-          <Button
-            onClick={
-              handleCreateMatch
-            }
+        </div>
+
+
+        {/* BUTTON */}
+        <div className="mt-5">
+
+          <button
+            onClick={saveMatch}
+            disabled={loading}
+            className="
+              bg-black
+              hover:bg-gray-800
+              text-white
+              px-6
+              py-3
+              rounded-xl
+              transition
+            "
           >
-            Crear Partido
-          </Button>
+
+            {
+              loading
+                ? "Guardando..."
+                : "Crear Partido"
+            }
+
+          </button>
 
         </div>
 
       </Card>
-
-      {/* MATCHES */}
-      <div className="space-y-5">
-
-        {
-          loading
-          ? (
-
-            <Card>
-
-              <p>
-                Cargando partidos...
-              </p>
-
-            </Card>
-
-          )
-          : (
-
-            matches.map(
-              (match: any) => {
-
-                const homeTeam =
-                  teams.find(
-                    (t: any) =>
-                      t.id ===
-                      match.home_team_id
-                  )
-
-                const awayTeam =
-                  teams.find(
-                    (t: any) =>
-                      t.id ===
-                      match.away_team_id
-                  )
-
-                return (
-
-                  <Card
-                    key={match.id}
-                  >
-
-                    <div
-                      className="
-                        flex
-                        flex-col
-                        xl:flex-row
-                        xl:items-center
-                        xl:justify-between
-                        gap-5
-                      "
-                    >
-
-                      {/* INFO */}
-                      <div>
-
-                        <div
-                          className="
-                            flex
-                            items-center
-                            gap-3
-                            text-2xl
-                            font-bold
-                          "
-                        >
-
-                          <span>
-                            {homeTeam?.name}
-                          </span>
-
-                          <span className="text-gray-400">
-                            vs
-                          </span>
-
-                          <span>
-                            {awayTeam?.name}
-                          </span>
-
-                        </div>
-
-                        <p className="text-gray-500 mt-2">
-
-                          📍 {match.stadium || "Sin estadio"}
-
-                        </p>
-
-                        <p className="text-gray-500">
-
-                          📅 {match.date}
-
-                        </p>
-
-                      </div>
-
-                      {/* SCORE */}
-                      <div
-                        className="
-                          text-center
-                        "
-                      >
-
-                        <div
-                          className="
-                            text-5xl
-                            font-black
-                          "
-                        >
-
-                          {match.home_score}
-
-                          <span className="mx-3 text-gray-400">
-                            -
-                          </span>
-
-                          {match.away_score}
-
-                        </div>
-
-                        <div
-                          className="
-                            mt-2
-                            inline-block
-                            px-4
-                            py-1
-                            rounded-full
-                            text-sm
-                            font-semibold
-                            bg-gray-100
-                          "
-                        >
-
-                          {
-                            match.status
-                          }
-
-                        </div>
-
-                      </div>
-
-                      {/* ACTIONS */}
-                      <div
-                        className="
-                          flex
-                          gap-3
-                        "
-                      >
-
-                        {
-                          match.status !==
-                          "finished"
-                          && (
-
-                            <Button
-                              onClick={() =>
-                                finishMatch(
-                                  match
-                                )
-                              }
-                            >
-                              Finalizar
-                            </Button>
-                          )
-                        }
-
-                        <Button
-                          variant="danger"
-                          onClick={() =>
-                            handleDeleteMatch(
-                              match.id
-                            )
-                          }
-                        >
-                          Eliminar
-                        </Button>
-
-                      </div>
-
-                    </div>
-
-                  </Card>
-                )
-              }
-            )
-          )
-        }
-
-      </div>
 
     </div>
   )

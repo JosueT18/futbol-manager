@@ -1,13 +1,36 @@
-from pydantic import BaseModel
+from pydantic import (
+    BaseModel,
+    Field,
+)
 
+from typing import Optional
+
+# =========================
+# USER CREATE
+# =========================
 class UserCreate(BaseModel):
 
-    username: str
+    name: str = Field(
+        ...,
+        min_length=2
+    )
 
-    password: str
+    email: str
 
+    password: str = Field(
+        ...,
+        min_length=4
+    )
+
+    role: str
+
+    team_id: Optional[int] = None
+
+# =========================
+# USER LOGIN
+# =========================
 class UserLogin(BaseModel):
 
-    username: str
+    email: str
 
     password: str

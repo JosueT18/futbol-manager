@@ -1,5 +1,7 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, Fragment } from "react"
+
 import Swal from "sweetalert2"
+
 import { useQuery } from "@tanstack/react-query"
 
 import {
@@ -19,93 +21,142 @@ import Modal from "../components/ui/Modal"
 function Jugadores() {
 
   // =========================
+  // ROLE
+  // =========================
+  const role =
+    localStorage.getItem("role") || ""
+
+  const isPlayer =
+    role === "Jugador"
+
+  const canManagePlayers =
+    role === "Administrador"
+    ||
+    role === "Director"
+    ||
+    role === "Comision"
+
+  // =========================
   // CREATE STATES
   // =========================
-  const [name, setName] = useState("")
-  const [age, setAge] = useState("")
-  const [position, setPosition] = useState("")
-  const [number, setNumber] = useState("")
-  const [teamId, setTeamId] = useState("")
+  const [name, setName] =
+    useState("")
+
+  const [age, setAge] =
+    useState("")
+
+  const [position, setPosition] =
+    useState("")
+
+  const [number, setNumber] =
+    useState("")
+
+  const [teamId, setTeamId] =
+    useState("")
 
   // =========================
   // UI STATES
   // =========================
-  const [showForm, setShowForm] = useState(false)
-  const [editModalOpen, setEditModalOpen] = useState(false)
+  const [showForm, setShowForm] =
+    useState(false)
+
+  const [editModalOpen, setEditModalOpen] =
+    useState(false)
 
   // =========================
   // SELECTED PLAYER
   // =========================
-  const [selectedPlayer, setSelectedPlayer] = useState<any>(null)
+  const [selectedPlayer, setSelectedPlayer] =
+    useState<any>(null)
 
   // =========================
   // EDIT STATES
   // =========================
-  const [editName, setEditName] = useState("")
-  const [editAge, setEditAge] = useState("")
-  const [editPosition, setEditPosition] = useState("")
-  const [editNumber, setEditNumber] = useState("")
-  const [editTeamId, setEditTeamId] = useState("")
+  const [editName, setEditName] =
+    useState("")
 
-  // =========================
-  // PLAYER STATS
-  // =========================
-  const [editGoals, setEditGoals] = useState("")
-  const [editYellowCards, setEditYellowCards] = useState("")
-  const [editRedCards, setEditRedCards] = useState("")
-  const [editMatchesPlayed, setEditMatchesPlayed] = useState("")
+  const [editAge, setEditAge] =
+    useState("")
+
+  const [editPosition, setEditPosition] =
+    useState("")
+
+  const [editNumber, setEditNumber] =
+    useState("")
 
   // =========================
   // FILTERS
   // =========================
-  const [search, setSearch] = useState("")
-  const [statusFilter, setStatusFilter] = useState("all")
+  const [search, setSearch] =
+    useState("")
+
+  const [statusFilter, setStatusFilter] =
+    useState("all")
 
   // =========================
   // DATA
   // =========================
-  const [teams, setTeams] = useState<any[]>([])
+  const [teams, setTeams] =
+    useState<any[]>([])
 
   // =========================
   // ALERTS
   // =========================
-  const [successMessage, setSuccessMessage] = useState("")
-  const [errorMessage, setErrorMessage] = useState("")
+  const [successMessage, setSuccessMessage] =
+    useState("")
+
+  const [errorMessage, setErrorMessage] =
+    useState("")
 
   // =========================
-  // PLAYERS QUERY
+  // QUERY
   // =========================
   const {
     data: players = [],
-    isLoading,
     refetch,
+    isLoading,
   } = useQuery({
     queryKey: ["players"],
     queryFn: getPlayers,
   })
 
   // =========================
-  // FILTER PLAYERS
+  // PLAYERS ARRAY
   // =========================
-  const filteredPlayers = players.filter(
-    (player: any) => {
+  const playersArray =
+    Array.isArray(players)
+      ? players
+      : []
 
-      const matchesSearch =
-        player.name
-          .toLowerCase()
-          .includes(search.toLowerCase())
+  // =========================
+  // FILTERED PLAYERS
+  // =========================
+  const filteredPlayers =
+    playersArray.filter(
+      (player: any) => {
 
-      const matchesStatus =
-        statusFilter === "all"
-        ||
-        player.status === statusFilter
+        const matchesSearch =
+          player.name
+            ?.toLowerCase()
+            .includes(
+              search.toLowerCase()
+            )
 
-      return (
-        matchesSearch &&
-        matchesStatus
-      )
-    }
-  )
+        const matchesStatus =
+          isPlayer
+            ? player.status === "approved"
+            : (
+                statusFilter === "all"
+                ||
+                player.status === statusFilter
+              )
+
+        return (
+          matchesSearch &&
+          matchesStatus
+        )
+      }
+    )
 
   // =========================
   // LOAD TEAMS
@@ -120,7 +171,10 @@ function Jugadores() {
 
       const data = await response.json()
 
-      setTeams(data)
+      if (Array.isArray(data)) {
+
+        setTeams(data)
+      }
 
     } catch (error) {
 
@@ -132,6 +186,10 @@ function Jugadores() {
   // CREATE PLAYER
   // =========================
   async function createPlayer() {
+
+    if (!canManagePlayers) {
+      return
+    }
 
     if (
       !name ||
@@ -148,13 +206,30 @@ function Jugadores() {
       return
     }
 
+    if (
+      Number(age) <= 0 ||
+      Number(number) <= 0
+    ) {
+
+      setErrorMessage(
+        "Edad y número deben ser positivos"
+      )
+
+      return
+    }
+
     try {
 
       await createPlayerApi({
+
         name,
+
         age: Number(age),
+
         position,
+
         number: Number(number),
+
         team_id: Number(teamId),
       })
 
@@ -189,12 +264,22 @@ function Jugadores() {
   // =========================
   async function deletePlayer(id: number) {
 
+    if (!canManagePlayers) {
+      return
+    }
+
     const result = await Swal.fire({
+
       title: "¿Eliminar jugador?",
+
       text: "Esta acción no se puede deshacer",
+
       icon: "warning",
+
       showCancelButton: true,
+
       confirmButtonText: "Sí, eliminar",
+
       cancelButtonText: "Cancelar",
     })
 
@@ -225,52 +310,41 @@ function Jugadores() {
   }
 
   // =========================
-  // OPEN EDIT MODAL
+  // OPEN EDIT
   // =========================
-  function updatePlayer(player: any) {
+  function openEditModal(player: any) {
 
     setSelectedPlayer(player)
 
-    setEditName(player.name)
-    setEditAge(player.age.toString())
-    setEditPosition(player.position)
-    setEditNumber(player.number.toString())
-    setEditTeamId(player.team_id.toString())
+    setEditName(player.name || "")
 
-    setEditGoals(
-      player.goals?.toString() || "0"
+    setEditAge(
+      player.age?.toString() || ""
     )
 
-    setEditYellowCards(
-      player.yellow_cards?.toString() || "0"
+    setEditPosition(
+      player.position || ""
     )
 
-    setEditRedCards(
-      player.red_cards?.toString() || "0"
-    )
-
-    setEditMatchesPlayed(
-      player.matches_played?.toString() || "0"
+    setEditNumber(
+      player.number?.toString() || ""
     )
 
     setEditModalOpen(true)
   }
 
   // =========================
-  // SAVE PLAYER
+  // SAVE EDIT
   // =========================
   async function saveEditPlayer() {
 
     if (
-      !editName ||
-      !editAge ||
-      !editPosition ||
-      !editNumber ||
-      !editTeamId
+      Number(editAge) <= 0 ||
+      Number(editNumber) <= 0
     ) {
 
       setErrorMessage(
-        "Todos los campos son obligatorios"
+        "Edad y número deben ser positivos"
       )
 
       return
@@ -281,16 +355,14 @@ function Jugadores() {
       await updatePlayerApi(
         selectedPlayer.id,
         {
-          name: editName,
-          age: Number(editAge),
-          position: editPosition,
-          number: Number(editNumber),
-          team_id: Number(editTeamId),
 
-          goals: Number(editGoals),
-          yellow_cards: Number(editYellowCards),
-          red_cards: Number(editRedCards),
-          matches_played: Number(editMatchesPlayed),
+          name: editName,
+
+          age: Number(editAge),
+
+          position: editPosition,
+
+          number: Number(editNumber),
         }
       )
 
@@ -315,7 +387,7 @@ function Jugadores() {
   }
 
   // =========================
-  // INITIAL LOAD
+  // LOAD
   // =========================
   useEffect(() => {
 
@@ -324,37 +396,41 @@ function Jugadores() {
   }, [])
 
   // =========================
-  // AUTO CLEAR SUCCESS
+  // CLEAR SUCCESS
   // =========================
   useEffect(() => {
 
     if (successMessage) {
 
-      const timer = setTimeout(() => {
+      const timer =
+        setTimeout(() => {
 
-        setSuccessMessage("")
+          setSuccessMessage("")
 
-      }, 3000)
+        }, 3000)
 
-      return () => clearTimeout(timer)
+      return () =>
+        clearTimeout(timer)
     }
 
   }, [successMessage])
 
   // =========================
-  // AUTO CLEAR ERROR
+  // CLEAR ERROR
   // =========================
   useEffect(() => {
 
     if (errorMessage) {
 
-      const timer = setTimeout(() => {
+      const timer =
+        setTimeout(() => {
 
-        setErrorMessage("")
+          setErrorMessage("")
 
-      }, 3000)
+        }, 3000)
 
-      return () => clearTimeout(timer)
+      return () =>
+        clearTimeout(timer)
     }
 
   }, [errorMessage])
@@ -362,26 +438,6 @@ function Jugadores() {
   return (
 
     <div className="p-6">
-
-      {/* SUCCESS */}
-      {
-        successMessage && (
-
-          <div className="mb-5 bg-green-100 text-green-800 p-4 rounded-xl">
-            ✅ {successMessage}
-          </div>
-        )
-      }
-
-      {/* ERROR */}
-      {
-        errorMessage && (
-
-          <div className="mb-5 bg-red-100 text-red-800 p-4 rounded-xl">
-            ❌ {errorMessage}
-          </div>
-        )
-      }
 
       {/* HEADER */}
       <div className="flex items-center justify-between mb-6">
@@ -393,44 +449,61 @@ function Jugadores() {
           </h1>
 
           <p className="text-gray-500 mt-1">
-            Gestión completa de jugadores y estadísticas
+
+            {
+              isPlayer
+                ? "Plantilla general"
+                : "Gestión de jugadores"
+            }
+
           </p>
 
         </div>
 
-        <Button
-          onClick={() =>
-            setShowForm(!showForm)
-          }
-        >
-          {
-            showForm
-              ? "Cerrar"
-              : "+ Crear Jugador"
-          }
-        </Button>
+        {
+          canManagePlayers && (
+
+            <Button
+              onClick={() =>
+                setShowForm(!showForm)
+              }
+            >
+
+              {
+                showForm
+                  ? "Cerrar"
+                  : "+ Crear Jugador"
+              }
+
+            </Button>
+          )
+        }
 
       </div>
 
-      {/* FILTERS */}
-      <div
-        className="
-          bg-white
-          rounded-2xl
-          shadow-sm
-          p-5
-          mb-6
-        "
-      >
+      {/* ALERTS */}
+      {
+        successMessage && (
 
-        <div
-          className="
-            flex
-            flex-col
-            md:flex-row
-            gap-4
-          "
-        >
+          <div className="mb-5 bg-green-100 text-green-800 p-4 rounded-xl">
+            ✅ {successMessage}
+          </div>
+        )
+      }
+
+      {
+        errorMessage && (
+
+          <div className="mb-5 bg-red-100 text-red-800 p-4 rounded-xl">
+            ❌ {errorMessage}
+          </div>
+        )
+      }
+
+      {/* FILTERS */}
+      <div className="bg-white rounded-2xl shadow-sm p-5 mb-6">
+
+        <div className="flex flex-col md:flex-row gap-4">
 
           <Input
             placeholder="Buscar jugador..."
@@ -440,38 +513,36 @@ function Jugadores() {
             }
           />
 
-          <select
-            value={statusFilter}
-            onChange={(e) =>
-              setStatusFilter(e.target.value)
-            }
-            className="
-              border
-              rounded-xl
-              px-4
-              py-3
-              bg-white
-              min-w-[220px]
-            "
-          >
+          {
+            !isPlayer && (
 
-            <option value="all">
-              Todos los estados
-            </option>
+              <select
+                value={statusFilter}
+                onChange={(e) =>
+                  setStatusFilter(e.target.value)
+                }
+                className="border rounded-xl px-4 py-3 bg-white"
+              >
 
-            <option value="pending">
-              Pendientes
-            </option>
+                <option value="all">
+                  Todos
+                </option>
 
-            <option value="approved">
-              Aprobados
-            </option>
+                <option value="pending">
+                  Pendientes
+                </option>
 
-            <option value="rejected">
-              Rechazados
-            </option>
+                <option value="approved">
+                  Aprobados
+                </option>
 
-          </select>
+                <option value="rejected">
+                  Rechazados
+                </option>
+
+              </select>
+            )
+          }
 
         </div>
 
@@ -479,7 +550,8 @@ function Jugadores() {
 
       {/* CREATE FORM */}
       {
-        showForm && (
+        showForm &&
+        canManagePlayers && (
 
           <Card>
 
@@ -489,111 +561,177 @@ function Jugadores() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-              <Input
-                placeholder="Nombre"
-                value={name}
-                onChange={(e) =>
-                  setName(e.target.value)
-                }
-              />
+              {/* NOMBRE */}
+              <div>
 
-              <Input
-                type="number"
-                placeholder="Edad"
-                value={age}
-                onChange={(e) =>
-                  setAge(e.target.value)
-                }
-              />
+                <label className="block text-sm font-semibold mb-2 text-gray-700">
+                  Nombre y apellido
+                </label>
 
-              <select
-                value={position}
-                onChange={(e) =>
-                  setPosition(e.target.value)
-                }
-                className="
-                  border
-                  p-3
-                  rounded-xl
-                "
-              >
+                <Input
+                  value={name}
+                  onChange={(e) =>
+                    setName(e.target.value)
+                  }
+                />
 
-                <option value="">
-                  Seleccionar posición
-                </option>
+              </div>
 
-                <option value="Arquero">
-                  Arquero
-                </option>
+              {/* EDAD */}
+              <div>
 
-                <option value="Defensor Central">
-                  Defensor Central
-                </option>
+                <label className="block text-sm font-semibold mb-2 text-gray-700">
+                  Edad
+                </label>
 
-                <option value="Lateral Derecho">
-                  Lateral Derecho
-                </option>
+                <Input
+                  type="number"
+                  min={1}
+                  value={age}
+                  onChange={(e) =>
+                    setAge(e.target.value)
+                  }
+                />
 
-                <option value="Lateral Izquierdo">
-                  Lateral Izquierdo
-                </option>
+              </div>
 
-                <option value="Mediocampista">
-                  Mediocampista
-                </option>
+              {/* POSICION */}
+              <div>
 
-                <option value="Volante Ofensivo">
-                  Volante Ofensivo
-                </option>
+                <label className="block text-sm font-semibold mb-2 text-gray-700">
+                  Posición
+                </label>
 
-                <option value="Extremo">
-                  Extremo
-                </option>
+                <select
+                  value={position}
+                  onChange={(e) =>
+                    setPosition(e.target.value)
+                  }
+                  className="
+                    w-full
+                    border border-gray-300
+                    focus:border-black
+                    focus:ring-2
+                    focus:ring-black/10
+                    outline-none
+                    p-3
+                    rounded-xl
+                    text-sm
+                    bg-white
+                    transition
+                  "
+                >
 
-                <option value="Delantero">
-                  Delantero
-                </option>
+                  <option value="">
+                    Seleccionar posición
+                  </option>
 
-              </select>
+                  <option value="Arquero">
+                    Arquero
+                  </option>
 
-              <Input
-                type="number"
-                placeholder="Número"
-                value={number}
-                onChange={(e) =>
-                  setNumber(e.target.value)
-                }
-              />
+                  <option value="Defensor Central">
+                    Defensor Central
+                  </option>
 
-              <select
-                value={teamId}
-                onChange={(e) =>
-                  setTeamId(e.target.value)
-                }
-                className="
-                  border
-                  p-3
-                  rounded-xl
-                "
-              >
+                  <option value="Lateral Derecho">
+                    Lateral Derecho
+                  </option>
 
-                <option value="">
-                  Seleccionar equipo
-                </option>
+                  <option value="Lateral Izquierdo">
+                    Lateral Izquierdo
+                  </option>
 
-                {
-                  teams.map((team: any) => (
+                  <option value="Volante Central">
+                    Volante Central
+                  </option>
 
-                    <option
-                      key={team.id}
-                      value={team.id}
-                    >
-                      {team.name}
-                    </option>
-                  ))
-                }
+                  <option value="Volante Derecho">
+                    Volante Derecho
+                  </option>
 
-              </select>
+                  <option value="Volante Izquierdo">
+                    Volante Izquierdo
+                  </option>
+
+                  <option value="Enganche">
+                    Enganche
+                  </option>
+
+                  <option value="Extremo Derecho">
+                    Extremo Derecho
+                  </option>
+
+                  <option value="Extremo Izquierdo">
+                    Extremo Izquierdo
+                  </option>
+
+                  <option value="Delantero">
+                    Delantero
+                  </option>
+
+                </select>
+
+              </div>
+
+              {/* NUMERO */}
+              <div>
+
+                <label className="block text-sm font-semibold mb-2 text-gray-700">
+                  Número
+                </label>
+
+                <Input
+                  type="number"
+                  min={1}
+                  value={number}
+                  onChange={(e) =>
+                    setNumber(e.target.value)
+                  }
+                />
+
+              </div>
+
+              {/* EQUIPO */}
+              <div>
+
+                <label className="block text-sm font-semibold mb-2 text-gray-700">
+                  Equipo
+                </label>
+
+                <select
+                  value={teamId}
+                  onChange={(e) =>
+                    setTeamId(e.target.value)
+                  }
+                  className="
+                    w-full
+                    border border-gray-300
+                    p-3
+                    rounded-xl
+                    bg-white
+                  "
+                >
+
+                  <option value="">
+                    Seleccionar equipo
+                  </option>
+
+                  {
+                    teams.map((team: any) => (
+
+                      <option
+                        key={team.id}
+                        value={team.id}
+                      >
+                        {team.name}
+                      </option>
+                    ))
+                  }
+
+                </select>
+
+              </div>
 
             </div>
 
@@ -609,198 +747,161 @@ function Jugadores() {
         )
       }
 
-      {/* LOADING */}
-      {
-        isLoading && (
-
-          <div className="my-5 bg-yellow-100 text-yellow-800 p-4 rounded-xl">
-            ⏳ Cargando jugadores...
-          </div>
-        )
-      }
-
       {/* TABLE */}
-      <div
-        className="
-          bg-white
-          rounded-2xl
-          shadow-sm
-          overflow-hidden
-        "
-      >
+      <div className="bg-white rounded-2xl shadow-sm overflow-hidden mt-6">
 
         <TableContainer>
 
-          <table className="w-full">
+          {
+            isLoading ? (
 
-            <thead className="bg-gray-50 text-gray-600 text-sm">
+              <div className="p-6">
+                Cargando jugadores...
+              </div>
 
-              <tr>
+            ) : (
 
-                <th className="text-left py-4 px-4">
-                  Nombre
-                </th>
+              <table className="w-full">
 
-                <th className="text-left py-4 px-4">
-                  Posición
-                </th>
+                <thead className="bg-gray-50">
 
-                <th className="text-left py-4 px-4">
-                  Número
-                </th>
+                  <tr>
 
-                <th className="text-left py-4 px-4">
-                  Edad
-                </th>
+                    <th className="text-left p-4">
+                      Nombre
+                    </th>
 
-                <th className="text-left py-4 px-4">
-                  Equipo
-                </th>
+                    <th className="text-left p-4">
+                      Posición
+                    </th>
 
-                <th className="text-center py-4 px-4">
-                  PJ
-                </th>
+                    <th className="text-left p-4">
+                      Número
+                    </th>
 
-                <th className="text-center py-4 px-4">
-                  ⚽
-                </th>
+                    <th className="text-left p-4">
+                      Equipo
+                    </th>
 
-                <th className="text-center py-4 px-4">
-                  🟨
-                </th>
+                    <th className="text-center p-4">
+                      ⚽
+                    </th>
 
-                <th className="text-center py-4 px-4">
-                  🟥
-                </th>
+                    <th className="text-center p-4">
+                      Estado
+                    </th>
 
-                <th className="text-center py-4 px-4">
-                  Estado
-                </th>
+                    {
+                      canManagePlayers && (
 
-                <th className="text-center py-4 px-4">
-                  Acciones
-                </th>
+                        <th className="text-center p-4">
+                          Acciones
+                        </th>
+                      )
+                    }
 
-              </tr>
+                  </tr>
 
-            </thead>
+                </thead>
 
-            <tbody>
+                <tbody>
 
-              {
-                filteredPlayers.map((player: any) => {
+                  {
+                    filteredPlayers.map(
+                      (player: any) => {
 
-                  const team: any = teams.find(
-                    (t: any) =>
-                      t.id === player.team_id
-                  )
-
-                  return (
-
-                    <tr
-                      key={player.id}
-                      className="
-                        border-t
-                        hover:bg-gray-50
-                        transition-colors
-                      "
-                    >
-
-                      <td className="py-4 px-4 font-semibold">
-                        ⚽ {player.name}
-                      </td>
-
-                      <td className="py-4 px-4">
-                        {player.position}
-                      </td>
-
-                      <td className="py-4 px-4">
-                        {player.number}
-                      </td>
-
-                      <td className="py-4 px-4">
-                        {player.age}
-                      </td>
-
-                      <td className="py-4 px-4">
-                        {team?.name}
-                      </td>
-
-                      <td className="py-4 px-4 text-center font-medium">
-                        {player.matches_played || 0}
-                      </td>
-
-                      <td className="py-4 px-4 text-center font-bold text-green-600">
-                        {player.goals || 0}
-                      </td>
-
-                      <td className="py-4 px-4 text-center font-bold text-yellow-500">
-                        {player.yellow_cards || 0}
-                      </td>
-
-                      <td className="py-4 px-4 text-center font-bold text-red-500">
-                        {player.red_cards || 0}
-                      </td>
-
-                      <td className="py-4 px-4 text-center">
-
-                        <Badge
-                          status={player.status}
-                        />
-
-                        {
-                          player.status === "rejected"
-                          &&
-                          player.rejection_reason && (
-
-                            <p className="text-xs text-red-500 mt-2">
-                              {player.rejection_reason}
-                            </p>
+                        const team =
+                          teams.find(
+                            (t: any) =>
+                              t.id === player.team_id
                           )
-                        }
 
-                      </td>
+                        return (
 
-                      <td className="py-4 px-4">
-
-                        <div className="flex justify-center gap-2">
-
-                          <Button
-                            variant="secondary"
-                            onClick={() =>
-                              updatePlayer(player)
-                            }
+                          <Fragment
+                            key={player.id}
                           >
-                            Editar
-                          </Button>
 
-                          <Button
-                            variant="danger"
-                            onClick={() =>
-                              deletePlayer(player.id)
-                            }
-                          >
-                            Eliminar
-                          </Button>
+                            <tr className="border-t">
 
-                        </div>
+                              <td className="p-4">
+                                {player.name}
+                              </td>
 
-                      </td>
+                              <td className="p-4">
+                                {player.position}
+                              </td>
 
-                    </tr>
-                  )
-                })
-              }
+                              <td className="p-4">
+                                {player.number}
+                              </td>
 
-            </tbody>
+                              <td className="p-4">
+                                {team?.name || "-"}
+                              </td>
 
-          </table>
+                              <td className="p-4 text-center">
+                                {player.goals || 0}
+                              </td>
+
+                              <td className="p-4 text-center">
+
+                                <Badge
+                                  status={player.status}
+                                />
+
+                              </td>
+
+                              {
+                                canManagePlayers && (
+
+                                  <td className="p-4">
+
+                                    <div className="flex justify-center gap-2">
+
+                                      <Button
+                                        variant="secondary"
+                                        onClick={() =>
+                                          openEditModal(player)
+                                        }
+                                      >
+                                        Editar
+                                      </Button>
+
+                                      <Button
+                                        variant="danger"
+                                        onClick={() =>
+                                          deletePlayer(player.id)
+                                        }
+                                      >
+                                        Eliminar
+                                      </Button>
+
+                                    </div>
+
+                                  </td>
+                                )
+                              }
+
+                            </tr>
+
+                          </Fragment>
+                        )
+                      }
+                    )
+                  }
+
+                </tbody>
+
+              </table>
+            )
+          }
 
         </TableContainer>
 
       </div>
 
-      {/* EDIT MODAL */}
+      {/* MODAL */}
       <Modal
         open={editModalOpen}
         onClose={() =>
@@ -809,7 +910,7 @@ function Jugadores() {
         title="Editar Jugador"
       >
 
-        <div className="space-y-5">
+        <div className="space-y-4">
 
           <Input
             placeholder="Nombre"
@@ -819,177 +920,37 @@ function Jugadores() {
             }
           />
 
-          <div className="grid grid-cols-2 gap-4">
+          <Input
+            type="number"
+            min={1}
+            placeholder="Edad"
+            value={editAge}
+            onChange={(e) =>
+              setEditAge(e.target.value)
+            }
+          />
 
-            <Input
-              type="number"
-              placeholder="Edad"
-              value={editAge}
-              onChange={(e) =>
-                setEditAge(e.target.value)
-              }
-            />
-
-            <Input
-              type="number"
-              placeholder="Número"
-              value={editNumber}
-              onChange={(e) =>
-                setEditNumber(e.target.value)
-              }
-            />
-
-          </div>
-
-          <select
+          <Input
+            placeholder="Posición"
             value={editPosition}
             onChange={(e) =>
               setEditPosition(e.target.value)
             }
-            className="
-              w-full
-              border
-              p-3
-              rounded-xl
-            "
-          >
+          />
 
-            <option value="">
-              Seleccionar posición
-            </option>
-
-            <option value="Arquero">
-              Arquero
-            </option>
-
-            <option value="Defensor Central">
-              Defensor Central
-            </option>
-
-            <option value="Lateral Derecho">
-              Lateral Derecho
-            </option>
-
-            <option value="Lateral Izquierdo">
-              Lateral Izquierdo
-            </option>
-
-            <option value="Mediocampista">
-              Mediocampista
-            </option>
-
-            <option value="Volante Ofensivo">
-              Volante Ofensivo
-            </option>
-
-            <option value="Extremo">
-              Extremo
-            </option>
-
-            <option value="Delantero">
-              Delantero
-            </option>
-
-          </select>
-
-          <select
-            value={editTeamId}
+          <Input
+            type="number"
+            min={1}
+            placeholder="Número"
+            value={editNumber}
             onChange={(e) =>
-              setEditTeamId(e.target.value)
+              setEditNumber(e.target.value)
             }
-            className="
-              w-full
-              border
-              p-3
-              rounded-xl
-            "
-          >
+          />
 
-            <option value="">
-              Seleccionar equipo
-            </option>
-
-            {
-              teams.map((team: any) => (
-
-                <option
-                  key={team.id}
-                  value={team.id}
-                >
-                  {team.name}
-                </option>
-              ))
-            }
-
-          </select>
-
-          {/* STATS */}
-          <div className="border-t pt-5">
-
-            <h3 className="font-semibold mb-4 text-gray-700">
-              Estadísticas del Jugador
-            </h3>
-
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-
-              <Input
-                type="number"
-                placeholder="PJ"
-                value={editMatchesPlayed}
-                onChange={(e) =>
-                  setEditMatchesPlayed(e.target.value)
-                }
-              />
-
-              <Input
-                type="number"
-                placeholder="Goles"
-                value={editGoals}
-                onChange={(e) =>
-                  setEditGoals(e.target.value)
-                }
-              />
-
-              <Input
-                type="number"
-                placeholder="Amarillas"
-                value={editYellowCards}
-                onChange={(e) =>
-                  setEditYellowCards(e.target.value)
-                }
-              />
-
-              <Input
-                type="number"
-                placeholder="Rojas"
-                value={editRedCards}
-                onChange={(e) =>
-                  setEditRedCards(e.target.value)
-                }
-              />
-
-            </div>
-
-          </div>
-
-          <div className="flex justify-end gap-3 pt-4">
-
-            <Button
-              variant="secondary"
-              onClick={() =>
-                setEditModalOpen(false)
-              }
-            >
-              Cancelar
-            </Button>
-
-            <Button
-              onClick={saveEditPlayer}
-            >
-              Guardar Cambios
-            </Button>
-
-          </div>
+          <Button onClick={saveEditPlayer}>
+            Guardar Cambios
+          </Button>
 
         </div>
 

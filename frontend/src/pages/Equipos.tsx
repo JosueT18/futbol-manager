@@ -16,9 +16,22 @@ import Input from "../components/ui/Input"
 import Card from "../components/ui/Card"
 import TableContainer from "../components/ui/TableContainer"
 
-
 function Equipos() {
 
+  // =========================
+  // ROLE
+  // =========================
+  const role =
+    localStorage.getItem("role") || ""
+
+  const canManageTeams =
+    role === "Administrador"
+    ||
+    role === "Director"
+
+  // =========================
+  // STATES
+  // =========================
   const [name, setName] = useState("")
   const [city, setCity] = useState("")
   const [tecnico, setTecnico] = useState("")
@@ -35,7 +48,6 @@ function Equipos() {
 
   const [errorMessage, setErrorMessage] =
     useState("")
-
 
   // =========================
   // UPLOAD LOGO
@@ -66,8 +78,6 @@ function Equipos() {
       const data =
         await response.json()
 
-      console.log(data)
-
       setLogo(
         data.logo
       )
@@ -82,7 +92,6 @@ function Equipos() {
     }
   }
 
-
   // =========================
   // TEAMS
   // =========================
@@ -95,11 +104,19 @@ function Equipos() {
     queryFn: getTeams,
   })
 
-
   // =========================
   // CREATE TEAM
   // =========================
   async function createTeam() {
+
+    if (!canManageTeams) {
+
+      setErrorMessage(
+        "No tenés permisos"
+      )
+
+      return
+    }
 
     if (
       !name ||
@@ -142,21 +159,30 @@ function Equipos() {
 
       await refetch()
 
-    } catch (error) {
+    } catch (error: any) {
 
       console.error(error)
 
       setErrorMessage(
+        error.message ||
         "Error al crear equipo"
       )
     }
   }
 
-
   // =========================
   // DELETE TEAM
   // =========================
   async function deleteTeam(id: number) {
+
+    if (!canManageTeams) {
+
+      setErrorMessage(
+        "No tenés permisos"
+      )
+
+      return
+    }
 
     const result = await Swal.fire({
 
@@ -203,11 +229,19 @@ function Equipos() {
     }
   }
 
-
   // =========================
   // UPDATE TEAM
   // =========================
   async function updateTeam(team: any) {
+
+    if (!canManageTeams) {
+
+      setErrorMessage(
+        "No tenés permisos"
+      )
+
+      return
+    }
 
     const newName = prompt(
       "Nuevo nombre",
@@ -266,7 +300,6 @@ function Equipos() {
     }
   }
 
-
   // =========================
   // AUTO CLEAR SUCCESS
   // =========================
@@ -285,7 +318,6 @@ function Equipos() {
 
   }, [successMessage])
 
-
   // =========================
   // AUTO CLEAR ERROR
   // =========================
@@ -303,7 +335,6 @@ function Equipos() {
     }
 
   }, [errorMessage])
-
 
   return (
 
@@ -327,7 +358,6 @@ function Equipos() {
         )
       }
 
-
       {/* ERROR */}
       {
         errorMessage && (
@@ -346,7 +376,6 @@ function Equipos() {
         )
       }
 
-
       {/* HEADER */}
       <div
         className="
@@ -357,32 +386,48 @@ function Equipos() {
         "
       >
 
-        <h1 className="text-4xl font-bold">
-          Equipos
-        </h1>
+        <div>
 
-        <Button
-          onClick={() =>
-            setShowForm(!showForm)
-          }
-        >
+          <h1 className="text-4xl font-bold">
+            Equipos
+          </h1>
 
-          {
-            showForm
-              ? "Cerrar"
-              : "+ Crear Equipo"
-          }
+          <p className="text-gray-500 mt-1">
+            Gestión de equipos
+          </p>
 
-        </Button>
+        </div>
+
+        {
+          canManageTeams && (
+
+            <Button
+              onClick={() =>
+                setShowForm(!showForm)
+              }
+            >
+
+              {
+                showForm
+                  ? "Cerrar"
+                  : "+ Crear Equipo"
+              }
+
+            </Button>
+          )
+        }
 
       </div>
 
-
       {/* FORM */}
       {
-        showForm && (
+        showForm && canManageTeams && (
 
           <Card>
+
+            <h2 className="text-2xl font-bold mb-5">
+              Nuevo Equipo
+            </h2>
 
             <div
               className="
@@ -393,29 +438,56 @@ function Equipos() {
               "
             >
 
-              <Input
-                placeholder="Nombre"
-                value={name}
-                onChange={(e) =>
-                  setName(e.target.value)
-                }
-              />
+              {/* NOMBRE */}
+              <div>
 
-              <Input
-                placeholder="Ciudad"
-                value={city}
-                onChange={(e) =>
-                  setCity(e.target.value)
-                }
-              />
+                <label className="block text-sm font-semibold mb-2">
+                  Nombre del Equipo
+                </label>
 
-              <Input
-                placeholder="Director Técnico"
-                value={tecnico}
-                onChange={(e) =>
-                  setTecnico(e.target.value)
-                }
-              />
+                <Input
+                  placeholder="Ej: River Plate"
+                  value={name}
+                  onChange={(e) =>
+                    setName(e.target.value)
+                  }
+                />
+
+              </div>
+
+              {/* CIUDAD */}
+              <div>
+
+                <label className="block text-sm font-semibold mb-2">
+                  Ciudad
+                </label>
+
+                <Input
+                  placeholder="Ej: Buenos Aires"
+                  value={city}
+                  onChange={(e) =>
+                    setCity(e.target.value)
+                  }
+                />
+
+              </div>
+
+              {/* TECNICO */}
+              <div>
+
+                <label className="block text-sm font-semibold mb-2">
+                  Director Técnico
+                </label>
+
+                <Input
+                  placeholder="Nombre del DT"
+                  value={tecnico}
+                  onChange={(e) =>
+                    setTecnico(e.target.value)
+                  }
+                />
+
+              </div>
 
               {/* UPLOAD */}
               <div>
@@ -424,11 +496,11 @@ function Equipos() {
                   className="
                     block
                     text-sm
-                    font-medium
+                    font-semibold
                     mb-2
                   "
                 >
-                  Escudo
+                  Escudo del Equipo
                 </label>
 
                 <input
@@ -448,7 +520,7 @@ function Equipos() {
                     w-full
                     border
                     rounded-xl
-                    p-2
+                    p-3
                     bg-white
                   "
                 />
@@ -457,14 +529,13 @@ function Equipos() {
 
             </div>
 
-
             {/* PREVIEW */}
             {
               logo && (
 
                 <div
                   className="
-                    mt-5
+                    mt-6
                     flex
                     justify-center
                   "
@@ -474,8 +545,8 @@ function Equipos() {
                     src={`http://localhost:8000${logo}`}
                     alt="logo"
                     className="
-                      w-24
-                      h-24
+                      w-28
+                      h-28
                       object-cover
                       rounded-full
                       border-4
@@ -488,8 +559,7 @@ function Equipos() {
               )
             }
 
-
-            <div className="mt-5">
+            <div className="mt-6">
 
               <Button onClick={createTeam}>
                 Crear Equipo
@@ -500,7 +570,6 @@ function Equipos() {
           </Card>
         )
       }
-
 
       {/* LOADING */}
       {
@@ -519,7 +588,6 @@ function Equipos() {
           </div>
         )
       }
-
 
       {/* TABLE */}
       <div
@@ -558,17 +626,21 @@ function Equipos() {
                 </th>
 
                 <th className="text-left py-3 px-4">
-                  Cantidad
+                  Jugadores
                 </th>
 
-                <th className="text-left py-3 px-4">
-                  Acciones
-                </th>
+                {
+                  canManageTeams && (
+
+                    <th className="text-left py-3 px-4">
+                      Acciones
+                    </th>
+                  )
+                }
 
               </tr>
 
             </thead>
-
 
             <tbody>
 
@@ -670,18 +742,15 @@ function Equipos() {
 
                       </td>
 
-
                       {/* CITY */}
                       <td className="py-4 px-4">
                         📍 {team.city}
                       </td>
 
-
                       {/* TECNICO */}
                       <td className="py-4 px-4">
                         👨‍🏫 {team.tecnico}
                       </td>
-
 
                       {/* COUNT */}
                       <td className="py-4 px-4">
@@ -710,35 +779,121 @@ function Equipos() {
 
                       </td>
 
-
                       {/* ACTIONS */}
-                      <td className="py-4 px-4">
+                      {
+                        canManageTeams && (
 
-                        <div className="flex gap-2">
+                          <td className="py-4 px-4">
 
-                          <Button
-                            variant="secondary"
-                            onClick={() =>
-                              updateTeam(team)
-                            }
-                          >
-                            Editar
-                          </Button>
+                            <div className="flex gap-2">
 
-                          <Button
-                            variant="danger"
-                            onClick={() =>
-                              deleteTeam(team.id)
-                            }
-                          >
-                            Eliminar
-                          </Button>
+                              <Button
+                                variant="secondary"
+                                onClick={() =>
+                                  updateTeam(team)
+                                }
+                              >
+                                Editar
+                              </Button>
 
-                        </div>
+                              <Button
+                                variant="danger"
+                                onClick={() =>
+                                  deleteTeam(team.id)
+                                }
+                              >
+                                Eliminar
+                              </Button>
 
-                      </td>
+                            </div>
+
+                          </td>
+                        )
+                      }
 
                     </tr>
+
+                    {/* PLAYERS */}
+                    {
+                      openTeamId === team.id && (
+
+                        <tr>
+
+                          <td
+                            colSpan={
+                              canManageTeams
+                                ? 5
+                                : 4
+                            }
+                            className="bg-gray-50 p-5"
+                          >
+
+                            <h3 className="font-bold text-lg mb-4">
+                              Jugadores
+                            </h3>
+
+                            {
+                              team.players?.length > 0 ? (
+
+                                <div
+                                  className="
+                                    grid
+                                    grid-cols-1
+                                    md:grid-cols-2
+                                    lg:grid-cols-3
+                                    gap-3
+                                  "
+                                >
+
+                                  {
+                                    team.players
+                                      .filter(
+                                        (player: any) =>
+                                          player.status === "approved"
+                                      )
+                                      .map((player: any) => (
+
+                                        <div
+                                          key={player.id}
+                                          className="
+                                            bg-white
+                                            rounded-xl
+                                            p-4
+                                            border
+                                          "
+                                        >
+
+                                          <p className="font-bold">
+                                            {player.name}
+                                          </p>
+
+                                          <p className="text-sm text-gray-500">
+                                            {player.position}
+                                          </p>
+
+                                          <p className="text-sm mt-1">
+                                            #{player.number}
+                                          </p>
+
+                                        </div>
+                                      ))
+                                  }
+
+                                </div>
+
+                              ) : (
+
+                                <p className="text-gray-500">
+                                  No hay jugadores aprobados
+                                </p>
+                              )
+                            }
+
+                          </td>
+
+                        </tr>
+                      )
+                    }
 
                   </Fragment>
                 ))

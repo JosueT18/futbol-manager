@@ -12,21 +12,78 @@ class Player(Base):
 
     __tablename__ = "players"
 
-    id = Column(Integer, primary_key=True, index=True)
+    # =========================
+    # BASIC DATA
+    # =========================
+    id = Column(
+        Integer,
+        primary_key=True,
+        index=True
+    )
 
-    name = Column(String, nullable=False)
+    name = Column(
+        String,
+        nullable=False
+    )
 
-    age = Column(Integer, nullable=False)
+    age = Column(
+        Integer,
+        nullable=False
+    )
 
-    number = Column(Integer, nullable=False)
+    number = Column(
+        Integer,
+        nullable=False
+    )
 
-    position = Column(String, nullable=False)
+    position = Column(
+        String,
+        nullable=False
+    )
 
-    status = Column(String, default="pending")
+    # =========================
+    # PLAYER STATUS
+    # =========================
+    status = Column(
+        String,
+        default="approved"
+    )
 
+    rejection_reason = Column(
+        String,
+        nullable=True
+    )
+
+    # =========================
+    # PLAYER STATS
+    # =========================
+    goals = Column(
+        Integer,
+        default=0
+    )
+
+    yellow_cards = Column(
+        Integer,
+        default=0
+    )
+
+    red_cards = Column(
+        Integer,
+        default=0
+    )
+
+    matches_played = Column(
+        Integer,
+        default=0
+    )
+
+    # =========================
+    # TEAM RELATION
+    # =========================
     team_id = Column(
         Integer,
-        ForeignKey("teams.id")
+        ForeignKey("teams.id"),
+        nullable=False
     )
 
     team = relationship(

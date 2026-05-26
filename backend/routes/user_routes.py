@@ -1,80 +1,130 @@
-from fastapi import APIRouter
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+)
+
 from sqlalchemy.orm import Session
 
-from database.connection import SessionLocal
+from database.connection import get_db
+
 from models.user_model import User
-from schemas.user_schema import UserCreate, UserLogin
+
+from schemas.user_schema import (
+    UserCreate,
+    UserLogin,
+)
+
+from utils.security import (
+    hash_password,
+    verify_password,
+    create_access_token,
+)
 
 router = APIRouter()
 
 
+# =========================
+# REGISTER
+# =========================
 @router.post("/register")
-def register(user: UserCreate):
+def register(
+    user: UserCreate,
+    db: Session = Depends(get_db)
+):
 
-    db: Session = SessionLocal()
+    existing_user = db.query(User).filter(
+        User.email == user.email
+    ).first()
 
-    try:
+    if existing_user:
 
-        existing_user = db.query(User).filter(
-            User.username == user.username
-        ).first()
-
-        if existing_user:
-
-            return {
-                "success": False,
-                "message": "El usuario ya existe"
-            }
-
-        new_user = User(
-            username=user.username,
-            password=user.password
+        raise HTTPException(
+            status_code=400,
+            detail="El email ya existe"
         )
 
-        db.add(new_user)
+    new_user = User(
 
-        db.commit()
+        name=user.name,
 
-        db.refresh(new_user)
+        email=user.email,
 
-        return {
-            "success": True,
-            "message": "Usuario creado correctamente"
-        }
+        password=hash_password(
+            user.password
+        ),
 
-    finally:
+        role=user.role,
 
-        db.close()
+        team_id=user.team_id,
+    )
+
+    db.add(new_user)
+
+    db.commit()
+
+    db.refresh(new_user)
+
+    return {
+        "message": "Usuario creado correctamente"
+    }
 
 
+# =========================
+# LOGIN
+# =========================
 @router.post("/login")
-def login(user: UserLogin):
+def login(
+    user: UserLogin,
+    db: Session = Depends(get_db)
+):
 
-    db: Session = SessionLocal()
+    db_user = db.query(User).filter(
+        User.email == user.email
+    ).first()
 
-    try:
+    if not db_user:
 
-        existing_user = db.query(User).filter(
-            User.username == user.username,
-            User.password == user.password
-        ).first()
+        raise HTTPException(
+            status_code=401,
+            detail="Credenciales inválidas"
+        )
 
-        if not existing_user:
+    if not verify_password(
+        user.password,
+        db_user.password
+    ):
 
-            return {
-                "success": False,
-                "message": "Usuario o contraseña incorrectos"
-            }
+        raise HTTPException(
+            status_code=401,
+            detail="Credenciales inválidas"
+        )
 
-        return {
-            "success": True,
-            "message": "Login correcto",
-            "user": {
-                "id": existing_user.id,
-                "username": existing_user.username
-            }
+    token = create_access_token({
+
+        "id": db_user.id,
+
+        "role": db_user.role,
+
+        "email": db_user.email,
+    })
+
+    return {
+
+        "access_token": token,
+
+        "token_type": "bearer",
+
+        "user": {
+
+            "id": db_user.id,
+
+            "name": db_user.name,
+
+            "email": db_user.email,
+
+            "role": db_user.role,
+
+            "team_id": db_user.team_id,
         }
-
-    finally:
-
-        db.close()
+    }

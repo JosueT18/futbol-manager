@@ -1,101 +1,237 @@
 import { useState } from "react"
-import { useNavigate } from "react-router-dom"
-import { useAuth } from "../auth/AuthContext"
+
+import {
+  loginUser,
+} from "../api/auth"
+
+import {
+  useAuth,
+} from "../auth/AuthContext"
 
 function Login() {
 
-  const navigate = useNavigate()
+  // =========================
+  // STATES
+  // =========================
+  const [email, setEmail] =
+    useState("")
 
-  const { login } = useAuth()
+  const [password, setPassword] =
+    useState("")
 
-  const [username, setUsername] = useState("")
+  const [error, setError] =
+    useState("")
 
-  const [password, setPassword] = useState("")
+  const [loading, setLoading] =
+    useState(false)
 
-  const [message, setMessage] = useState("")
+  // =========================
+  // AUTH
+  // =========================
+  const { login } =
+    useAuth()
 
-
+  // =========================
+  // LOGIN
+  // =========================
   async function handleLogin() {
 
-    const response = await fetch(
-      "http://127.0.0.1:8000/login",
-      {
-        method: "POST",
+    if (!email || !password) {
 
-        headers: {
-          "Content-Type": "application/json",
-        },
+      setError(
+        "Completa email y contraseña"
+      )
 
-        body: JSON.stringify({
-          username,
+      return
+    }
+
+    try {
+
+      setLoading(true)
+
+      setError("")
+
+      const data =
+        await loginUser({
+
+          email,
           password,
-        }),
-      }
-    )
+        })
 
-    const data = await response.json()
+      // =========================
+      // AUTH CONTEXT
+      // =========================
+      login(data)
 
-    if (data.success) {
+      // =========================
+      // REDIRECT
+      // =========================
+      window.location.href = "/"
 
-      login()
+    } catch (error: any) {
 
-      setMessage("✅ Login correcto")
+      console.error(error)
 
-      setTimeout(() => {
+      setError(
+        "Credenciales inválidas"
+      )
 
-        navigate("/")
+    } finally {
 
-      }, 1000)
+      setLoading(false)
+    }
+  }
 
-    } else {
+  // =========================
+  // ENTER KEY
+  // =========================
+  function handleKeyDown(
+    e: React.KeyboardEvent<HTMLInputElement>
+  ) {
 
-      setMessage("❌ Usuario o contraseña incorrectos")
+    if (e.key === "Enter") {
+
+      handleLogin()
     }
   }
 
   return (
 
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
+    <div
+      className="
+        min-h-screen
+        flex
+        items-center
+        justify-center
+        bg-gray-100
+        px-4
+      "
+    >
 
-      <div className="bg-white p-10 rounded-xl shadow-lg w-96">
+      <div
+        className="
+          bg-white
+          p-8
+          rounded-3xl
+          shadow-xl
+          w-full
+          max-w-md
+        "
+      >
 
-        <h1 className="text-3xl font-bold mb-6 text-center">
-          Iniciar Sesión
+        {/* TITLE */}
+        <h1
+          className="
+            text-3xl
+            font-bold
+            mb-2
+            text-center
+          "
+        >
+          Login
         </h1>
 
-        <input
-          type="text"
-          placeholder="Usuario"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          className="w-full border p-3 rounded-lg mb-4"
-        />
-
-        <input
-          type="password"
-          placeholder="Contraseña"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="w-full border p-3 rounded-lg mb-6"
-        />
-
-        <button
-          onClick={handleLogin}
-          className="w-full bg-black text-white p-3 rounded-lg hover:bg-gray-800"
+        <p
+          className="
+            text-gray-500
+            text-center
+            mb-6
+          "
         >
+          Ingresá al sistema
+        </p>
 
-          Ingresar
-
-        </button>
-
+        {/* ERROR */}
         {
-          message && (
+          error && (
 
-            <p className="mt-5 text-center font-semibold">
-              {message}
-            </p>
+            <div
+              className="
+                mb-4
+                bg-red-100
+                text-red-700
+                p-3
+                rounded-xl
+                text-sm
+              "
+            >
+              ❌ {error}
+            </div>
           )
         }
+
+        {/* FORM */}
+        <div className="space-y-4">
+
+          <input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) =>
+              setEmail(
+                e.target.value
+              )
+            }
+            onKeyDown={handleKeyDown}
+            className="
+              w-full
+              border
+              p-3
+              rounded-xl
+              outline-none
+              focus:ring-2
+              focus:ring-black
+            "
+          />
+
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) =>
+              setPassword(
+                e.target.value
+              )
+            }
+            onKeyDown={handleKeyDown}
+            className="
+              w-full
+              border
+              p-3
+              rounded-xl
+              outline-none
+              focus:ring-2
+              focus:ring-black
+            "
+          />
+
+        </div>
+
+        {/* BUTTON */}
+        <button
+          onClick={handleLogin}
+          disabled={loading}
+          className="
+            w-full
+            mt-6
+            bg-black
+            hover:bg-gray-800
+            disabled:bg-gray-400
+            text-white
+            py-3
+            rounded-xl
+            transition
+            font-semibold
+          "
+        >
+
+          {
+            loading
+              ? "Ingresando..."
+              : "Ingresar"
+          }
+
+        </button>
 
       </div>
 
