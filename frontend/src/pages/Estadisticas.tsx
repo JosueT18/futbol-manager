@@ -47,10 +47,22 @@ function Estadisticas() {
   const [selectedPlayer, setSelectedPlayer] =
     useState<any>(null)
 
-  const [selectedTeamFilter, setSelectedTeamFilter] =
-    useState("all")
+  // =========================
+  // FILTERS
+  // =========================
+  const [
+    playersTeamFilter,
+    setPlayersTeamFilter
+  ] = useState("all")
 
+  const [
+    scorersTeamFilter,
+    setScorersTeamFilter
+  ] = useState("all")
+
+  // =========================
   // TEAM STATS
+  // =========================
   const [pj, setPj] = useState("")
   const [pg, setPg] = useState("")
   const [pe, setPe] = useState("")
@@ -59,8 +71,11 @@ function Estadisticas() {
   const [gc, setGc] = useState("")
   const [points, setPoints] = useState("")
 
+  // =========================
   // PLAYER STATS
+  // =========================
   const [goals, setGoals] = useState("")
+
   const [yellowCards, setYellowCards] =
     useState("")
 
@@ -124,12 +139,12 @@ function Estadisticas() {
   // FILTER PLAYERS BY TEAM
   // =========================
   const filteredPlayersByTeam =
-    selectedTeamFilter === "all"
+    playersTeamFilter === "all"
       ? approvedPlayers
       : approvedPlayers.filter(
           (player: any) =>
             player.team_id?.toString() ===
-            selectedTeamFilter
+            playersTeamFilter
         )
 
   // =========================
@@ -452,9 +467,9 @@ function Estadisticas() {
           </h2>
 
           <select
-            value={selectedTeamFilter}
+            value={playersTeamFilter}
             onChange={(e) =>
-              setSelectedTeamFilter(
+              setPlayersTeamFilter(
                 e.target.value
               )
             }
@@ -627,268 +642,267 @@ function Estadisticas() {
       </Card>
 
       {/* GOLEADORES */}
-<Card>
+      <Card>
 
-  <div
-    className="
-      flex
-      flex-col
-      md:flex-row
-      md:items-center
-      md:justify-between
-      gap-4
-      mb-5
-    "
-  >
+        <div
+          className="
+            flex
+            flex-col
+            md:flex-row
+            md:items-center
+            md:justify-between
+            gap-4
+            mb-5
+          "
+        >
 
-    <h2 className="text-2xl font-bold">
-      Ranking de Goleadores
-    </h2>
+          <h2 className="text-2xl font-bold">
+            Ranking de Goleadores
+          </h2>
 
-    {/* FILTRO EQUIPO */}
-    <select
-      value={selectedTeamFilter}
-      onChange={(e) =>
-        setSelectedTeamFilter(
-          e.target.value
-        )
-      }
-      className="
-        border
-        border-gray-300
-        rounded-xl
-        px-4
-        py-3
-        bg-white
-      "
-    >
-
-      <option value="all">
-        Todos los equipos
-      </option>
-
-      {
-        teams.map((team: any) => (
-
-          <option
-            key={team.id}
-            value={team.id}
-          >
-            {team.name}
-          </option>
-        ))
-      }
-
-    </select>
-
-  </div>
-
-  {/* TOP GENERAL */}
-  <div className="mb-8">
-
-    <h3 className="text-xl font-bold mb-4">
-      Top 10 General
-    </h3>
-
-    <div className="space-y-3">
-
-      {
-        topScorers
-          .slice(0, 10)
-          .map(
-            (
-              player: any,
-              index: number
-            ) => {
-
-              const team =
-                teams.find(
-                  (t: any) =>
-                    t.id === player.team_id
-                )
-
-              return (
-
-                <div
-                  key={player.id}
-                  className="
-                    flex
-                    items-center
-                    justify-between
-                    bg-gray-50
-                    rounded-xl
-                    px-4
-                    py-3
-                  "
-                >
-
-                  <div className="flex items-center gap-4">
-
-                    <div
-                      className="
-                        w-9
-                        h-9
-                        rounded-full
-                        bg-yellow-100
-                        text-yellow-700
-                        flex
-                        items-center
-                        justify-center
-                        font-bold
-                      "
-                    >
-                      {index + 1}
-                    </div>
-
-                    <div>
-
-                      <p className="font-semibold">
-                        ⚽ {player.name}
-                      </p>
-
-                      <p className="text-sm text-gray-500">
-                        {team?.name || "-"}
-                      </p>
-
-                    </div>
-
-                  </div>
-
-                  <div
-                    className="
-                      bg-green-100
-                      text-green-700
-                      px-4
-                      py-2
-                      rounded-full
-                      font-bold
-                    "
-                  >
-                    {player.goals || 0} goles
-                  </div>
-
-                </div>
+          <select
+            value={scorersTeamFilter}
+            onChange={(e) =>
+              setScorersTeamFilter(
+                e.target.value
               )
             }
-          )
-      }
-
-    </div>
-
-  </div>
-
-  {/* GOLEADORES POR EQUIPO */}
-  <div>
-
-    <h3 className="text-xl font-bold mb-4">
-      Goleadores por Equipo
-    </h3>
-
-    <div className="overflow-x-auto">
-
-      <table className="w-full">
-
-        <thead>
-
-          <tr
             className="
-              bg-gray-100
-              text-sm
-              text-gray-600
+              border
+              border-gray-300
+              rounded-xl
+              px-4
+              py-3
+              bg-white
             "
           >
 
-            <th className="px-4 py-3 text-left">
-              Jugador
-            </th>
+            <option value="all">
+              Todos los equipos
+            </option>
 
-            <th className="px-4 py-3 text-center">
-              Equipo
-            </th>
+            {
+              teams.map((team: any) => (
 
-            <th className="px-4 py-3 text-center">
-              Posición
-            </th>
+                <option
+                  key={team.id}
+                  value={team.id}
+                >
+                  {team.name}
+                </option>
+              ))
+            }
 
-            <th className="px-4 py-3 text-center">
-              Goles
-            </th>
+          </select>
 
-          </tr>
+        </div>
 
-        </thead>
+        {/* TOP GENERAL */}
+        <div className="mb-8">
 
-        <tbody>
+          <h3 className="text-xl font-bold mb-4">
+            Top 10 General
+          </h3>
 
-          {
-            topScorers
-              .filter((player: any) => {
+          <div className="space-y-3">
 
-                if (
-                  selectedTeamFilter === "all"
-                ) {
-                  return true
+            {
+              topScorers
+                .slice(0, 10)
+                .map(
+                  (
+                    player: any,
+                    index: number
+                  ) => {
+
+                    const team =
+                      teams.find(
+                        (t: any) =>
+                          t.id === player.team_id
+                      )
+
+                    return (
+
+                      <div
+                        key={player.id}
+                        className="
+                          flex
+                          items-center
+                          justify-between
+                          bg-gray-50
+                          rounded-xl
+                          px-4
+                          py-3
+                        "
+                      >
+
+                        <div className="flex items-center gap-4">
+
+                          <div
+                            className="
+                              w-9
+                              h-9
+                              rounded-full
+                              bg-yellow-100
+                              text-yellow-700
+                              flex
+                              items-center
+                              justify-center
+                              font-bold
+                            "
+                          >
+                            {index + 1}
+                          </div>
+
+                          <div>
+
+                            <p className="font-semibold">
+                              ⚽ {player.name}
+                            </p>
+
+                            <p className="text-sm text-gray-500">
+                              {team?.name || "-"}
+                            </p>
+
+                          </div>
+
+                        </div>
+
+                        <div
+                          className="
+                            bg-green-100
+                            text-green-700
+                            px-4
+                            py-2
+                            rounded-full
+                            font-bold
+                          "
+                        >
+                          {player.goals || 0} goles
+                        </div>
+
+                      </div>
+                    )
+                  }
+                )
+            }
+
+          </div>
+
+        </div>
+
+        {/* GOLEADORES POR EQUIPO */}
+        <div>
+
+          <h3 className="text-xl font-bold mb-4">
+            Goleadores por Equipo
+          </h3>
+
+          <div className="overflow-x-auto">
+
+            <table className="w-full">
+
+              <thead>
+
+                <tr
+                  className="
+                    bg-gray-100
+                    text-sm
+                    text-gray-600
+                  "
+                >
+
+                  <th className="px-4 py-3 text-left">
+                    Jugador
+                  </th>
+
+                  <th className="px-4 py-3 text-center">
+                    Equipo
+                  </th>
+
+                  <th className="px-4 py-3 text-center">
+                    Posición
+                  </th>
+
+                  <th className="px-4 py-3 text-center">
+                    Goles
+                  </th>
+
+                </tr>
+
+              </thead>
+
+              <tbody>
+
+                {
+                  topScorers
+                    .filter((player: any) => {
+
+                      if (
+                        scorersTeamFilter === "all"
+                      ) {
+                        return true
+                      }
+
+                      return (
+                        player.team_id ===
+                        Number(scorersTeamFilter)
+                      )
+                    })
+                    .map((player: any) => {
+
+                      const team =
+                        teams.find(
+                          (t: any) =>
+                            t.id === player.team_id
+                        )
+
+                      return (
+
+                        <tr
+                          key={player.id}
+                          className="
+                            border-t
+                            hover:bg-gray-50
+                          "
+                        >
+
+                          <td className="px-4 py-4 font-semibold">
+                            ⚽ {player.name}
+                          </td>
+
+                          <td className="text-center">
+                            {team?.name || "-"}
+                          </td>
+
+                          <td className="text-center">
+                            {player.position}
+                          </td>
+
+                          <td
+                            className="
+                              text-center
+                              font-bold
+                              text-green-600
+                            "
+                          >
+                            {player.goals || 0}
+                          </td>
+
+                        </tr>
+                      )
+                    })
                 }
 
-                return (
-                  player.team_id ===
-                  Number(selectedTeamFilter)
-                )
-              })
-              .map((player: any) => {
+              </tbody>
 
-                const team =
-                  teams.find(
-                    (t: any) =>
-                      t.id === player.team_id
-                  )
+            </table>
 
-                return (
+          </div>
 
-                  <tr
-                    key={player.id}
-                    className="
-                      border-t
-                      hover:bg-gray-50
-                    "
-                  >
+        </div>
 
-                    <td className="px-4 py-4 font-semibold">
-                      ⚽ {player.name}
-                    </td>
-
-                    <td className="text-center">
-                      {team?.name || "-"}
-                    </td>
-
-                    <td className="text-center">
-                      {player.position}
-                    </td>
-
-                    <td
-                      className="
-                        text-center
-                        font-bold
-                        text-green-600
-                      "
-                    >
-                      {player.goals || 0}
-                    </td>
-
-                  </tr>
-                )
-              })
-          }
-
-        </tbody>
-
-      </table>
-
-    </div>
-
-  </div>
-
-</Card>
+      </Card>
 
       {/* TEAM MODAL */}
       <Modal

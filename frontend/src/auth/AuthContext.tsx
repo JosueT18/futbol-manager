@@ -5,15 +5,68 @@ import {
   useState,
 } from "react"
 
-const AuthContext =
-  createContext<any>(null)
+import type {
+  ReactNode,
+} from "react"
 
+// =========================
+// TYPES
+// =========================
+interface User {
+
+  id: number
+
+  name: string
+
+  email: string
+
+  role: string
+
+  team_id?: number | null
+}
+
+interface LoginData {
+
+  access_token: string
+
+  user: User
+}
+
+interface AuthContextType {
+
+  user: User | null
+
+  token: string
+
+  login: (
+    data: LoginData
+  ) => void
+
+  logout: () => void
+}
+
+// =========================
+// CONTEXT
+// =========================
+const AuthContext =
+  createContext<AuthContextType | null>(
+    null
+  )
+
+// =========================
+// PROVIDER
+// =========================
 export function AuthProvider({
   children,
-}: any) {
+}: {
+  children: ReactNode
+}) {
 
+  // =========================
+  // STATES
+  // =========================
   const [user, setUser] =
-    useState<any>(null)
+    useState<User | null>(null)
 
   const [token, setToken] =
     useState("")
@@ -54,17 +107,51 @@ export function AuthProvider({
           error
         )
 
-        logout()
+        clearStorage()
       }
     }
 
   }, [])
 
   // =========================
+  // CLEAR STORAGE
+  // =========================
+  function clearStorage() {
+
+    localStorage.removeItem(
+      "token"
+    )
+
+    localStorage.removeItem(
+      "user"
+    )
+
+    localStorage.removeItem(
+      "role"
+    )
+
+    localStorage.removeItem(
+      "user_name"
+    )
+
+    localStorage.removeItem(
+      "user_email"
+    )
+
+    localStorage.removeItem(
+      "user_id"
+    )
+
+    localStorage.removeItem(
+      "team_id"
+    )
+  }
+
+  // =========================
   // LOGIN
   // =========================
   function login(
-    data: any
+    data: LoginData
   ) {
 
     // =========================
@@ -135,6 +222,9 @@ export function AuthProvider({
       )
     }
 
+    // =========================
+    // STATES
+    // =========================
     setToken(
       data.access_token
     )
@@ -147,39 +237,21 @@ export function AuthProvider({
   // =========================
   function logout() {
 
-    localStorage.removeItem(
-      "token"
-    )
-
-    localStorage.removeItem(
-      "user"
-    )
-
-    localStorage.removeItem(
-      "role"
-    )
-
-    localStorage.removeItem(
-      "user_name"
-    )
-
-    localStorage.removeItem(
-      "user_email"
-    )
-
-    localStorage.removeItem(
-      "user_id"
-    )
-
-    localStorage.removeItem(
-      "team_id"
-    )
+    clearStorage()
 
     setToken("")
 
     setUser(null)
+
+    // =========================
+    // REDIRECT
+    // =========================
+    window.location.href = "/"
   }
 
+  // =========================
+  // PROVIDER
+  // =========================
   return (
 
     <AuthContext.Provider
@@ -201,9 +273,20 @@ export function AuthProvider({
   )
 }
 
+// =========================
+// HOOK
+// =========================
 export function useAuth() {
 
-  return useContext(
-    AuthContext
-  )
+  const context =
+    useContext(AuthContext)
+
+  if (!context) {
+
+    throw new Error(
+      "useAuth debe usarse dentro de AuthProvider"
+    )
+  }
+
+  return context
 }

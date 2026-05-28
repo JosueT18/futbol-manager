@@ -29,10 +29,19 @@ function Sidebar() {
   } = useAuth()
 
   // =========================
+  // ROLE
+  // =========================
+  const role =
+    user?.role || ""
+
+  // =========================
   // MENU
   // =========================
   const menu = [
 
+    // =========================
+    // HOME
+    // =========================
     {
       label: "Inicio",
       icon: Home,
@@ -42,9 +51,13 @@ function Sidebar() {
         "Director",
         "Comision",
         "Jugador",
+        "Tecnico",
       ],
     },
 
+    // =========================
+    // EQUIPOS
+    // =========================
     {
       label: "Equipos",
       icon: Shield,
@@ -55,6 +68,9 @@ function Sidebar() {
       ],
     },
 
+    // =========================
+    // JUGADORES
+    // =========================
     {
       label: "Jugadores",
       icon: Users,
@@ -64,9 +80,13 @@ function Sidebar() {
         "Director",
         "Comision",
         "Jugador",
+        "Tecnico",
       ],
     },
 
+    // =========================
+    // SOLICITUDES
+    // =========================
     {
       label: "Solicitudes",
       icon: ClipboardList,
@@ -78,6 +98,9 @@ function Sidebar() {
       ],
     },
 
+    // =========================
+    // FORMACION
+    // =========================
     {
       label: "Formación",
       icon: Trophy,
@@ -87,9 +110,13 @@ function Sidebar() {
         "Director",
         "Comision",
         "Jugador",
+        "Tecnico",
       ],
     },
 
+    // =========================
+    // PARTIDOS
+    // =========================
     {
       label: "Partidos",
       icon: Calendar,
@@ -98,9 +125,13 @@ function Sidebar() {
         "Administrador",
         "Director",
         "Comision",
+        "Tecnico",
       ],
     },
 
+    // =========================
+    // ESTADISTICAS
+    // =========================
     {
       label: "Estadísticas",
       icon: BarChart3,
@@ -110,6 +141,7 @@ function Sidebar() {
         "Director",
         "Comision",
         "Jugador",
+        "Tecnico",
       ],
     },
   ]
@@ -143,9 +175,20 @@ function Sidebar() {
 
             Rol:
             {" "}
-            {user?.role || "Sin rol"}
+            {role || "Sin rol"}
 
           </p>
+
+          {
+            user?.team_id && (
+
+              <p className="text-gray-500 text-xs mt-1">
+                Equipo ID:
+                {" "}
+                {user.team_id}
+              </p>
+            )
+          }
 
         </div>
 
@@ -156,9 +199,7 @@ function Sidebar() {
             menu
               .filter((item) =>
 
-                item.roles.includes(
-                  user?.role
-                )
+                item.roles.includes(role)
               )
               .map((item) => {
 
@@ -188,6 +229,7 @@ function Sidebar() {
                           ? `
                             bg-white
                             text-black
+                            shadow-lg
                           `
                           : `
                             hover:bg-gray-800
@@ -198,7 +240,7 @@ function Sidebar() {
 
                     <Icon size={18} />
 
-                    <span>
+                    <span className="font-medium">
                       {item.label}
                     </span>
 
@@ -211,28 +253,55 @@ function Sidebar() {
 
       </div>
 
-      {/* BOTTOM */}
-      <button
-        onClick={logout}
-        className="
-          flex
-          items-center
-          gap-3
-          px-4
-          py-3
-          rounded-xl
-          hover:bg-red-600
-          transition
-        "
-      >
+      {/* USER INFO + LOGOUT */}
+      <div className="space-y-4">
 
-        <LogOut size={18} />
+        {/* USER */}
+        <div
+          className="
+            bg-gray-900
+            rounded-2xl
+            p-4
+            border
+            border-gray-800
+          "
+        >
 
-        <span>
-          Cerrar sesión
-        </span>
+          <p className="font-semibold">
+            {user?.name || "Usuario"}
+          </p>
 
-      </button>
+          <p className="text-sm text-gray-400 mt-1">
+            {user?.email}
+          </p>
+
+        </div>
+
+        {/* LOGOUT */}
+        <button
+          onClick={logout}
+          className="
+            w-full
+            flex
+            items-center
+            gap-3
+            px-4
+            py-3
+            rounded-xl
+            hover:bg-red-600
+            transition
+          "
+        >
+
+          <LogOut size={18} />
+
+          <span>
+            Cerrar sesión
+          </span>
+
+        </button>
+
+      </div>
 
     </div>
   )

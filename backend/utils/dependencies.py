@@ -68,6 +68,16 @@ def get_current_user(
                 detail="Usuario no encontrado"
             )
 
+        # =========================
+        # USER INACTIVE
+        # =========================
+        if not user.active:
+
+            raise HTTPException(
+                status_code=403,
+                detail="Usuario desactivado"
+            )
+
         return user
 
     except Exception:
@@ -143,7 +153,30 @@ def commission_required(
 
 
 # =========================
-# ANY STAFF
+# TECNICO OR ADMIN
+# =========================
+def tecnico_required(
+    current_user: User =
+    Depends(get_current_user)
+):
+
+    if current_user.role not in [
+
+        "Administrador",
+
+        "Tecnico",
+    ]:
+
+        raise HTTPException(
+            status_code=403,
+            detail="Sin permisos"
+        )
+
+    return current_user
+
+
+# =========================
+# STAFF
 # =========================
 def staff_required(
     current_user: User =
@@ -157,6 +190,8 @@ def staff_required(
         "Director",
 
         "Comision",
+
+        "Tecnico",
     ]:
 
         raise HTTPException(
@@ -165,3 +200,34 @@ def staff_required(
         )
 
     return current_user
+
+
+# =========================
+# SAME TEAM VALIDATION
+# PREPARADO PARA TECNICO
+# =========================
+def validate_same_team(
+    current_user: User,
+    target_team_id: int
+):
+
+    # =========================
+    # ADMIN VE TODO
+    # =========================
+    if current_user.role == "Administrador":
+
+        return True
+
+    # =========================
+    # TECNICO SOLO SU EQUIPO
+    # =========================
+    if current_user.role == "Tecnico":
+
+        if current_user.team_id != target_team_id:
+
+            raise HTTPException(
+                status_code=403,
+                detail="Solo puedes gestionar tu equipo"
+            )
+
+    return True

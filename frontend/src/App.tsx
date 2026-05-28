@@ -19,13 +19,11 @@ import {
   useAuth,
 } from "./auth/AuthContext"
 
-
 function App() {
 
   const {
     user,
   } = useAuth()
-
 
   // =========================
   // NO LOGIN
@@ -35,6 +33,50 @@ function App() {
     return <Login />
   }
 
+  // =========================
+  // ROLE
+  // =========================
+  const role =
+    user.role || ""
+
+  const isAdmin =
+    role === "Administrador"
+
+  const isDirector =
+    role === "Director"
+
+  const isCommission =
+    role === "Comision"
+
+  const isPlayer =
+    role === "Jugador"
+
+  // =========================
+  // ACCESS
+  // =========================
+  const canViewSolicitudes =
+    isAdmin ||
+    isDirector ||
+    isCommission
+
+  const canViewFormacion =
+    isAdmin ||
+    isDirector
+
+  const canViewEstadisticas =
+    isAdmin ||
+    isDirector ||
+    isCommission ||
+    isPlayer
+
+  const canViewPartidos =
+    true
+
+  const canViewJugadores =
+    true
+
+  const canViewEquipos =
+    true
 
   // =========================
   // APP
@@ -51,39 +93,70 @@ function App() {
 
         <Routes>
 
+          {/* HOME */}
           <Route
             path="/"
             element={<Home />}
           />
 
+          {/* EQUIPOS */}
           <Route
             path="/equipos"
-            element={<Equipos />}
+            element={
+              canViewEquipos
+                ? <Equipos />
+                : <Navigate to="/" />
+            }
           />
 
+          {/* JUGADORES */}
           <Route
             path="/jugadores"
-            element={<Jugadores />}
+            element={
+              canViewJugadores
+                ? <Jugadores />
+                : <Navigate to="/" />
+            }
           />
 
+          {/* SOLICITUDES */}
           <Route
             path="/solicitudes"
-            element={<Solicitudes />}
+            element={
+              canViewSolicitudes
+                ? <Solicitudes />
+                : <Navigate to="/" />
+            }
           />
 
+          {/* FORMACION */}
           <Route
             path="/formacion"
-            element={<Formacion />}
+            element={
+              canViewFormacion
+                ? <Formacion />
+                : <Navigate to="/" />
+            }
           />
 
+          {/* PARTIDOS */}
           <Route
             path="/partidos"
-            element={<Partidos />}
+            element={
+              canViewPartidos
+                ? <Partidos />
+                : <Navigate to="/" />
+            }
           />
 
+          {/* ESTADISTICAS */}
           <Route
             path="/estadisticas"
-            element={<Estadisticas />}
+            element={
+              canViewEstadisticas
+                ? <Estadisticas />
+                : <Navigate to="/" />
+            }
           />
 
           {/* REDIRECT */}

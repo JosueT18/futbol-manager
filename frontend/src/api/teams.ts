@@ -2,29 +2,39 @@ import { getHeaders } from "./api"
 
 const API_URL = "http://127.0.0.1:8000"
 
-
 // =========================
 // GET TEAMS
 // =========================
 export async function getTeams() {
 
-  const response = await fetch(
-    `${API_URL}/teams`,
-    {
-      headers: getHeaders(),
-    }
-  )
+  try {
 
-  if (!response.ok) {
-
-    throw new Error(
-      "Error obteniendo equipos"
+    const response = await fetch(
+      `${API_URL}/teams`,
+      {
+        headers: getHeaders(),
+      }
     )
+
+    if (!response.ok) {
+
+      throw new Error(
+        "Error obteniendo equipos"
+      )
+    }
+
+    return await response.json()
+
+  } catch (error) {
+
+    console.error(
+      "GET TEAMS ERROR:",
+      error
+    )
+
+    return []
   }
-
-  return response.json()
 }
-
 
 // =========================
 // CREATE TEAM
@@ -33,32 +43,45 @@ export async function createTeam(
   data: any
 ) {
 
-  const response = await fetch(
-    `${API_URL}/teams`,
-    {
-      method: "POST",
+  try {
 
-      headers: getHeaders(),
+    const response = await fetch(
+      `${API_URL}/teams`,
+      {
+        method: "POST",
 
-      body: JSON.stringify(data),
-    }
-  )
+        headers: getHeaders(),
 
-  const result =
-    await response.json()
-
-  if (!response.ok) {
-
-    throw new Error(
-      result.detail ||
-      result.error ||
-      "Error creando equipo"
+        body: JSON.stringify(data),
+      }
     )
+
+    const result =
+      await response.json()
+
+    if (!response.ok) {
+
+      throw new Error(
+        result.detail
+        ||
+        result.error
+        ||
+        "Error creando equipo"
+      )
+    }
+
+    return result
+
+  } catch (error) {
+
+    console.error(
+      "CREATE TEAM ERROR:",
+      error
+    )
+
+    throw error
   }
-
-  return result
 }
-
 
 // =========================
 // DELETE TEAM
@@ -67,30 +90,43 @@ export async function deleteTeam(
   id: number
 ) {
 
-  const response = await fetch(
-    `${API_URL}/teams/${id}`,
-    {
-      method: "DELETE",
+  try {
 
-      headers: getHeaders(),
-    }
-  )
+    const response = await fetch(
+      `${API_URL}/teams/${id}`,
+      {
+        method: "DELETE",
 
-  const result =
-    await response.json()
-
-  if (!response.ok) {
-
-    throw new Error(
-      result.detail ||
-      result.error ||
-      "Error eliminando equipo"
+        headers: getHeaders(),
+      }
     )
+
+    const result =
+      await response.json()
+
+    if (!response.ok) {
+
+      throw new Error(
+        result.detail
+        ||
+        result.error
+        ||
+        "Error eliminando equipo"
+      )
+    }
+
+    return result
+
+  } catch (error) {
+
+    console.error(
+      "DELETE TEAM ERROR:",
+      error
+    )
+
+    throw error
   }
-
-  return result
 }
-
 
 // =========================
 // UPDATE TEAM
@@ -100,32 +136,45 @@ export async function updateTeam(
   data: any
 ) {
 
-  const response = await fetch(
-    `${API_URL}/teams/${id}`,
-    {
-      method: "PUT",
+  try {
 
-      headers: getHeaders(),
+    const response = await fetch(
+      `${API_URL}/teams/${id}`,
+      {
+        method: "PUT",
 
-      body: JSON.stringify(data),
-    }
-  )
+        headers: getHeaders(),
 
-  const result =
-    await response.json()
-
-  if (!response.ok) {
-
-    throw new Error(
-      result.detail ||
-      result.error ||
-      "Error actualizando equipo"
+        body: JSON.stringify(data),
+      }
     )
+
+    const result =
+      await response.json()
+
+    if (!response.ok) {
+
+      throw new Error(
+        result.detail
+        ||
+        result.error
+        ||
+        "Error actualizando equipo"
+      )
+    }
+
+    return result
+
+  } catch (error) {
+
+    console.error(
+      "UPDATE TEAM ERROR:",
+      error
+    )
+
+    throw error
   }
-
-  return result
 }
-
 
 // =========================
 // UPLOAD LOGO
@@ -134,43 +183,56 @@ export async function uploadLogo(
   file: File
 ) {
 
-  const token =
-    localStorage.getItem(
-      "token"
+  try {
+
+    const token =
+      localStorage.getItem(
+        "token"
+      )
+
+    const formData =
+      new FormData()
+
+    formData.append(
+      "file",
+      file
     )
 
-  const formData =
-    new FormData()
+    const response = await fetch(
+      `${API_URL}/teams/upload-logo`,
+      {
+        method: "POST",
 
-  formData.append(
-    "file",
-    file
-  )
+        headers: {
+          Authorization:
+            `Bearer ${token}`,
+        },
 
-  const response = await fetch(
-    `${API_URL}/teams/upload-logo`,
-    {
-      method: "POST",
+        body: formData,
+      }
+    )
 
-      headers: {
-        Authorization:
-          `Bearer ${token}`,
-      },
+    const result =
+      await response.json()
 
-      body: formData,
+    if (!response.ok) {
+
+      throw new Error(
+        result.detail
+        ||
+        "Error subiendo logo"
+      )
     }
-  )
 
-  const result =
-    await response.json()
+    return result
 
-  if (!response.ok) {
+  } catch (error) {
 
-    throw new Error(
-      result.detail ||
-      "Error subiendo logo"
+    console.error(
+      "UPLOAD LOGO ERROR:",
+      error
     )
-  }
 
-  return result
+    throw error
+  }
 }

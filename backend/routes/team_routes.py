@@ -29,6 +29,7 @@ router = APIRouter()
 
 # =========================
 # CREATE TEAM
+# ADMIN + DIRECTOR
 # =========================
 @router.post("/teams")
 def create_team(
@@ -39,23 +40,40 @@ def create_team(
     )
 ):
 
+    # =========================
+    # VALIDATE NAME
+    # =========================
+    existing_team = db.query(Team).filter(
+        Team.name == team.name
+    ).first()
+
+    if existing_team:
+
+        raise HTTPException(
+            status_code=400,
+            detail="El equipo ya existe"
+        )
+
+    # =========================
+    # CREATE TEAM
+    # =========================
     new_team = Team(
 
-        name=team.name,
+        name=team.name.strip(),
 
-        city=team.city,
+        city=team.city.strip(),
 
-        tecnico=team.tecnico,
+        tecnico=team.tecnico.strip(),
 
-        pj=team.pj,
+        pj=team.pj or 0,
 
-        pg=team.pg,
+        pg=team.pg or 0,
 
-        pe=team.pe,
+        pe=team.pe or 0,
 
-        pp=team.pp,
+        pp=team.pp or 0,
 
-        points=team.points,
+        points=team.points or 0,
 
         logo=team.logo,
     )
@@ -71,6 +89,7 @@ def create_team(
 
 # =========================
 # GET TEAMS
+# PUBLIC
 # =========================
 @router.get("/teams")
 def get_teams(
@@ -110,6 +129,10 @@ def get_teams(
 
             "pp": team.pp,
 
+            "gf": getattr(team, "gf", 0),
+
+            "gc": getattr(team, "gc", 0),
+
             "points": team.points,
 
             "logo": team.logo,
@@ -122,6 +145,7 @@ def get_teams(
 
 # =========================
 # DELETE TEAM
+# ADMIN ONLY
 # =========================
 @router.delete("/teams/{team_id}")
 def delete_team(
@@ -143,6 +167,9 @@ def delete_team(
             detail="Equipo no encontrado"
         )
 
+    # =========================
+    # VALIDATE PLAYERS
+    # =========================
     if team.players:
 
         raise HTTPException(
@@ -150,6 +177,23 @@ def delete_team(
             detail="No se puede eliminar el equipo porque tiene jugadores asociados"
         )
 
+    # =========================
+    # DELETE LOGO
+    # =========================
+    if team.logo:
+
+        logo_path = team.logo.replace(
+            "/",
+            ""
+        )
+
+        if os.path.exists(logo_path):
+
+            os.remove(logo_path)
+
+    # =========================
+    # DELETE TEAM
+    # =========================
     db.delete(team)
 
     db.commit()
@@ -161,6 +205,7 @@ def delete_team(
 
 # =========================
 # UPDATE TEAM
+# ADMIN + DIRECTOR
 # =========================
 @router.put("/teams/{team_id}")
 def update_team(
@@ -183,6 +228,9 @@ def update_team(
             detail="Equipo no encontrado"
         )
 
+    # =========================
+    # BASIC DATA
+    # =========================
     team.name = data.get(
         "name",
         team.name
@@ -198,6 +246,9 @@ def update_team(
         team.tecnico
     )
 
+    # =========================
+    # STATS
+    # =========================
     team.pj = data.get(
         "pj",
         team.pj
@@ -218,13 +269,23 @@ def update_team(
         team.pp
     )
 
+    team.gf = data.get(
+        "gf",
+        getattr(team, "gf", 0)
+    )
+
+    team.gc = data.get(
+        "gc",
+        getattr(team, "gc", 0)
+    )
+
     team.logo = data.get(
         "logo",
         team.logo
     )
 
     # =========================
-    # CALCULAR PUNTOS
+    # AUTO POINTS
     # =========================
     team.points = (
         (team.pg * 3)
@@ -240,10 +301,14 @@ def update_team(
 
 # =========================
 # UPLOAD LOGO
+# ADMIN + DIRECTOR
 # =========================
 @router.post("/teams/upload-logo")
 async def upload_logo(
-    file: UploadFile = File(...)
+    file: UploadFile = File(...),
+    current_user=Depends(
+        director_required
+    )
 ):
 
     # =========================

@@ -1,23 +1,43 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    Body,
+)
+
 from sqlalchemy.orm import Session
 
 from database.connection import get_db
+
 from models.player_model import Player
+
 from schemas.player_schema import PlayerCreate
+
+from utils.dependencies import (
+    admin_required,
+    director_required,
+    commission_required,
+)
 
 router = APIRouter()
 
 
 # =========================
 # CREATE PLAYER
+# ADMIN + DIRECTOR
 # =========================
 @router.post("/players")
 def create_player(
     player: PlayerCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user=Depends(
+        director_required
+    )
 ):
 
-    # VALIDAR NUMERO REPETIDO
+    # =========================
+    # VALIDATE NUMBER
+    # =========================
     existing_number = db.query(Player).filter(
         Player.team_id == player.team_id,
         Player.number == player.number
@@ -30,20 +50,54 @@ def create_player(
             detail="El número ya existe en este equipo"
         )
 
+    # =========================
+    # VALIDATE POSITIVE
+    # =========================
+    if player.age <= 0:
+
+        raise HTTPException(
+            status_code=400,
+            detail="La edad debe ser positiva"
+        )
+
+    if player.number <= 0:
+
+        raise HTTPException(
+            status_code=400,
+            detail="El número debe ser positivo"
+        )
+
+    # =========================
+    # CREATE PLAYER
+    # =========================
     new_player = Player(
-        name=player.name,
+
+        name=player.name.strip(),
+
         age=player.age,
-        position=player.position,
+
+        position=player.position.strip(),
+
         number=player.number,
+
         team_id=player.team_id,
 
-        # NUEVOS JUGADORES
-        # ENTRAN APROBADOS
+        # =========================
+        # ALWAYS PENDING
+        # =========================
         status="pending",
 
-        goals=player.goals or 0,
-        yellow_cards=player.yellow_cards or 0,
-        red_cards=player.red_cards or 0,
+        rejection_reason=None,
+
+        # =========================
+        # INITIAL STATS
+        # =========================
+        goals=0,
+
+        yellow_cards=0,
+
+        red_cards=0,
+
         matches_played=0
     )
 
@@ -58,6 +112,7 @@ def create_player(
 
 # =========================
 # GET PLAYERS
+# PUBLIC
 # =========================
 @router.get("/players")
 def get_players(
@@ -71,11 +126,15 @@ def get_players(
 
 # =========================
 # APPROVE PLAYER
+# ADMIN + COMMISSION
 # =========================
 @router.put("/players/{player_id}/approve")
 def approve_player(
     player_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user=Depends(
+        commission_required
+    )
 ):
 
     player = db.query(Player).filter(
@@ -102,12 +161,16 @@ def approve_player(
 
 # =========================
 # REJECT PLAYER
+# ADMIN + COMMISSION
 # =========================
 @router.put("/players/{player_id}/reject")
 def reject_player(
     player_id: int,
-    data: dict,
-    db: Session = Depends(get_db)
+    data: dict = Body(...),
+    db: Session = Depends(get_db),
+    current_user=Depends(
+        commission_required
+    )
 ):
 
     player = db.query(Player).filter(
@@ -137,11 +200,15 @@ def reject_player(
 
 # =========================
 # DELETE PLAYER
+# ADMIN ONLY
 # =========================
 @router.delete("/players/{player_id}")
 def delete_player(
     player_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user=Depends(
+        admin_required
+    )
 ):
 
     player = db.query(Player).filter(
@@ -166,12 +233,16 @@ def delete_player(
 
 # =========================
 # UPDATE PLAYER
+# ADMIN + DIRECTOR
 # =========================
 @router.put("/players/{player_id}")
 def update_player(
     player_id: int,
-    data: dict,
-    db: Session = Depends(get_db)
+    data: dict = Body(...),
+    db: Session = Depends(get_db),
+    current_user=Depends(
+        director_required
+    )
 ):
 
     player = db.query(Player).filter(
@@ -186,7 +257,7 @@ def update_player(
         )
 
     # =========================
-    # VALIDAR NUMERO REPETIDO
+    # VALIDATE NUMBER
     # =========================
     new_number = data.get(
         "number",
@@ -212,7 +283,24 @@ def update_player(
         )
 
     # =========================
-    # UPDATE DATA
+    # VALIDATE POSITIVE
+    # =========================
+    if int(data.get("age", player.age)) <= 0:
+
+        raise HTTPException(
+            status_code=400,
+            detail="La edad debe ser positiva"
+        )
+
+    if int(new_number) <= 0:
+
+        raise HTTPException(
+            status_code=400,
+            detail="El número debe ser positivo"
+        )
+
+    # =========================
+    # BASIC DATA
     # =========================
     player.name = data.get(
         "name",
@@ -233,25 +321,37 @@ def update_player(
 
     player.team_id = new_team_id
 
-    player.goals = data.get(
-        "goals",
-        player.goals
-    )
+    # =========================
+    # STATS
+    # ONLY IF PRESENT
+    # =========================
+    if "goals" in data:
 
-    player.yellow_cards = data.get(
-        "yellow_cards",
-        player.yellow_cards
-    )
+        player.goals = data.get(
+            "goals",
+            player.goals
+        )
 
-    player.red_cards = data.get(
-        "red_cards",
-        player.red_cards
-    )
+    if "yellow_cards" in data:
 
-    player.matches_played = data.get(
-        "matches_played",
-        player.matches_played
-    )
+        player.yellow_cards = data.get(
+            "yellow_cards",
+            player.yellow_cards
+        )
+
+    if "red_cards" in data:
+
+        player.red_cards = data.get(
+            "red_cards",
+            player.red_cards
+        )
+
+    if "matches_played" in data:
+
+        player.matches_played = data.get(
+            "matches_played",
+            player.matches_played
+        )
 
     db.commit()
 

@@ -1,6 +1,24 @@
 const API_URL = "http://127.0.0.1:8000"
 
 // =========================
+// GET TOKEN
+// =========================
+function getAuthHeaders() {
+
+  const token =
+    localStorage.getItem("token")
+
+  return {
+
+    "Content-Type":
+      "application/json",
+
+    Authorization:
+      `Bearer ${token}`,
+  }
+}
+
+// =========================
 // GET PLAYERS
 // =========================
 export async function getPlayers() {
@@ -8,7 +26,10 @@ export async function getPlayers() {
   try {
 
     const response = await fetch(
-      `${API_URL}/players`
+      `${API_URL}/players`,
+      {
+        headers: getAuthHeaders(),
+      }
     )
 
     if (!response.ok) {
@@ -45,10 +66,8 @@ export async function createPlayer(
       {
         method: "POST",
 
-        headers: {
-          "Content-Type":
-            "application/json",
-        },
+        headers:
+          getAuthHeaders(),
 
         body: JSON.stringify(data),
       }
@@ -92,12 +111,20 @@ export async function deletePlayer(
       `${API_URL}/players/${id}`,
       {
         method: "DELETE",
+
+        headers:
+          getAuthHeaders(),
       }
     )
 
     if (!response.ok) {
 
+      const errorData =
+        await response.json()
+
       throw new Error(
+        errorData.detail
+        ||
         "Error al eliminar jugador"
       )
     }
@@ -130,10 +157,8 @@ export async function updatePlayer(
       {
         method: "PUT",
 
-        headers: {
-          "Content-Type":
-            "application/json",
-        },
+        headers:
+          getAuthHeaders(),
 
         body: JSON.stringify(data),
       }
@@ -157,6 +182,99 @@ export async function updatePlayer(
 
     console.error(
       "UPDATE PLAYER ERROR:",
+      error
+    )
+
+    throw error
+  }
+}
+
+// =========================
+// APPROVE PLAYER
+// =========================
+export async function approvePlayer(
+  id: number
+) {
+
+  try {
+
+    const response = await fetch(
+      `${API_URL}/players/${id}/approve`,
+      {
+        method: "PUT",
+
+        headers:
+          getAuthHeaders(),
+      }
+    )
+
+    if (!response.ok) {
+
+      const errorData =
+        await response.json()
+
+      throw new Error(
+        errorData.detail
+        ||
+        "Error al aprobar jugador"
+      )
+    }
+
+    return await response.json()
+
+  } catch (error) {
+
+    console.error(
+      "APPROVE PLAYER ERROR:",
+      error
+    )
+
+    throw error
+  }
+}
+
+// =========================
+// REJECT PLAYER
+// =========================
+export async function rejectPlayer(
+  id: number,
+  reason: string
+) {
+
+  try {
+
+    const response = await fetch(
+      `${API_URL}/players/${id}/reject`,
+      {
+        method: "PUT",
+
+        headers:
+          getAuthHeaders(),
+
+        body: JSON.stringify({
+          reason,
+        }),
+      }
+    )
+
+    if (!response.ok) {
+
+      const errorData =
+        await response.json()
+
+      throw new Error(
+        errorData.detail
+        ||
+        "Error al rechazar jugador"
+      )
+    }
+
+    return await response.json()
+
+  } catch (error) {
+
+    console.error(
+      "REJECT PLAYER ERROR:",
       error
     )
 

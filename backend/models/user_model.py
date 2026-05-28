@@ -32,7 +32,8 @@ class User(Base):
     email = Column(
         String,
         unique=True,
-        nullable=False
+        nullable=False,
+        index=True
     )
 
     password = Column(
@@ -42,10 +43,13 @@ class User(Base):
 
     # =========================
     # ROLES
+    #
     # Administrador
     # Director
     # Comision
+    # Tecnico
     # Jugador
+    #
     # =========================
     role = Column(
         String,
@@ -63,6 +67,9 @@ class User(Base):
 
     # =========================
     # TEAM
+    # Tecnicos y jugadores
+    # pueden pertenecer
+    # a un equipo
     # =========================
     team_id = Column(
         Integer,
@@ -74,3 +81,36 @@ class User(Base):
         "Team",
         back_populates="users"
     )
+
+    # =========================
+    # HELPER METHODS
+    # =========================
+    def is_admin(self):
+
+        return (
+            self.role == "Administrador"
+        )
+
+    def is_director(self):
+
+        return (
+            self.role == "Director"
+        )
+
+    def is_commission(self):
+
+        return (
+            self.role == "Comision"
+        )
+
+    def is_tecnico(self):
+
+        return (
+            self.role == "Tecnico"
+        )
+
+    def is_player(self):
+
+        return (
+            self.role == "Jugador"
+        )

@@ -36,6 +36,9 @@ function Login() {
   // =========================
   async function handleLogin() {
 
+    // =========================
+    // VALIDATION
+    // =========================
     if (!email || !password) {
 
       setError(
@@ -51,6 +54,9 @@ function Login() {
 
       setError("")
 
+      // =========================
+      // API
+      // =========================
       const data =
         await loginUser({
 
@@ -59,9 +65,37 @@ function Login() {
         })
 
       // =========================
-      // AUTH CONTEXT
+      // SAVE AUTH
       // =========================
       login(data)
+
+      // =========================
+      // SAVE LOCAL STORAGE
+      // =========================
+      localStorage.setItem(
+        "token",
+        data.access_token
+      )
+
+      localStorage.setItem(
+        "role",
+        data.user.role
+      )
+
+      localStorage.setItem(
+        "team_id",
+        data.user.team_id || ""
+      )
+
+      localStorage.setItem(
+        "user_name",
+        data.user.name
+      )
+
+      localStorage.setItem(
+        "user_email",
+        data.user.email
+      )
 
       // =========================
       // REDIRECT
@@ -73,6 +107,8 @@ function Login() {
       console.error(error)
 
       setError(
+        error?.response?.data?.detail
+        ||
         "Credenciales inválidas"
       )
 
@@ -103,7 +139,9 @@ function Login() {
         flex
         items-center
         justify-center
-        bg-gray-100
+        bg-gradient-to-br
+        from-gray-100
+        to-gray-300
         px-4
       "
     >
@@ -113,33 +151,37 @@ function Login() {
           bg-white
           p-8
           rounded-3xl
-          shadow-xl
+          shadow-2xl
           w-full
           max-w-md
+          border
+          border-gray-200
         "
       >
 
-        {/* TITLE */}
-        <h1
-          className="
-            text-3xl
-            font-bold
-            mb-2
-            text-center
-          "
-        >
-          Login
-        </h1>
+        {/* LOGO */}
+        <div className="text-center mb-8">
 
-        <p
-          className="
-            text-gray-500
-            text-center
-            mb-6
-          "
-        >
-          Ingresá al sistema
-        </p>
+          <h1
+            className="
+              text-4xl
+              font-black
+              text-black
+            "
+          >
+            Futbol Manager
+          </h1>
+
+          <p
+            className="
+              text-gray-500
+              mt-2
+            "
+          >
+            Sistema de gestión deportiva
+          </p>
+
+        </div>
 
         {/* ERROR */}
         {
@@ -147,11 +189,13 @@ function Login() {
 
             <div
               className="
-                mb-4
+                mb-5
                 bg-red-100
+                border
+                border-red-200
                 text-red-700
-                p-3
-                rounded-xl
+                p-4
+                rounded-2xl
                 text-sm
               "
             >
@@ -161,49 +205,89 @@ function Login() {
         }
 
         {/* FORM */}
-        <div className="space-y-4">
+        <div className="space-y-5">
 
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) =>
-              setEmail(
-                e.target.value
-              )
-            }
-            onKeyDown={handleKeyDown}
-            className="
-              w-full
-              border
-              p-3
-              rounded-xl
-              outline-none
-              focus:ring-2
-              focus:ring-black
-            "
-          />
+          {/* EMAIL */}
+          <div>
 
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) =>
-              setPassword(
-                e.target.value
-              )
-            }
-            onKeyDown={handleKeyDown}
-            className="
-              w-full
-              border
-              p-3
-              rounded-xl
-              outline-none
-              focus:ring-2
-              focus:ring-black
-            "
-          />
+            <label
+              className="
+                block
+                text-sm
+                font-semibold
+                mb-2
+                text-gray-700
+              "
+            >
+              Email
+            </label>
+
+            <input
+              type="email"
+              placeholder="ejemplo@email.com"
+              value={email}
+              onChange={(e) =>
+                setEmail(
+                  e.target.value
+                )
+              }
+              onKeyDown={handleKeyDown}
+              className="
+                w-full
+                border
+                border-gray-300
+                p-3
+                rounded-xl
+                outline-none
+                focus:ring-2
+                focus:ring-black
+                focus:border-black
+                transition
+              "
+            />
+
+          </div>
+
+          {/* PASSWORD */}
+          <div>
+
+            <label
+              className="
+                block
+                text-sm
+                font-semibold
+                mb-2
+                text-gray-700
+              "
+            >
+              Contraseña
+            </label>
+
+            <input
+              type="password"
+              placeholder="********"
+              value={password}
+              onChange={(e) =>
+                setPassword(
+                  e.target.value
+                )
+              }
+              onKeyDown={handleKeyDown}
+              className="
+                w-full
+                border
+                border-gray-300
+                p-3
+                rounded-xl
+                outline-none
+                focus:ring-2
+                focus:ring-black
+                focus:border-black
+                transition
+              "
+            />
+
+          </div>
 
         </div>
 
@@ -213,15 +297,18 @@ function Login() {
           disabled={loading}
           className="
             w-full
-            mt-6
+            mt-8
             bg-black
             hover:bg-gray-800
             disabled:bg-gray-400
+            disabled:cursor-not-allowed
             text-white
             py-3
             rounded-xl
             transition
-            font-semibold
+            font-bold
+            text-lg
+            shadow-lg
           "
         >
 
@@ -232,6 +319,15 @@ function Login() {
           }
 
         </button>
+
+        {/* FOOTER */}
+        <div className="mt-8 text-center">
+
+          <p className="text-xs text-gray-400">
+            Futbol Manager © 2026
+          </p>
+
+        </div>
 
       </div>
 
