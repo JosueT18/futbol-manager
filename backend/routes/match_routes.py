@@ -1,107 +1,112 @@
 from fastapi import APIRouter
+from fastapi import Depends
+from fastapi import HTTPException
 
 from sqlalchemy.orm import Session
 
-from database.connection import SessionLocal
+from database.connection import get_db
 
 from models.match_model import Match
-
 from models.team_model import Team
+from models.match_event_model import MatchEvent
 
 from schemas.match_schema import (
     MatchCreate,
-    MatchUpdate
+    MatchUpdate,
 )
 
-router = APIRouter(
-    prefix="/matches",
-    tags=["Matches"]
+from utils.dependencies import (
+    get_current_user,
 )
 
-
-# =========================
-# DB
-# =========================
-def get_db():
-
-    db = SessionLocal()
-
-    try:
-
-        yield db
-
-    finally:
-
-        db.close()
-
-
-# =========================
-# GET ALL MATCHES
-# =========================
-@router.get("/")
-def get_matches():
-
-    db: Session = SessionLocal()
-
-    matches = (
-        db.query(Match)
-        .all()
-    )
-
-    return matches
-
-
-# =========================
-# GET MATCH
-# =========================
-@router.get("/{match_id}")
-def get_match(match_id: int):
-
-    db: Session = SessionLocal()
-
-    match = (
-        db.query(Match)
-        .filter(
-            Match.id == match_id
-        )
-        .first()
-    )
-
-    return match
+router = APIRouter()
 
 
 # =========================
 # CREATE MATCH
 # =========================
-@router.post("/")
+@router.post("/matches")
 def create_match(
-    match: MatchCreate
+    match: MatchCreate,
+    db: Session = Depends(get_db),
+    current_user=Depends(
+        get_current_user
+    )
 ):
 
-    db: Session = SessionLocal()
+    # =========================
+    # VALIDATE ROLE
+    # =========================
+    if current_user.role not in [
 
+        "Administrador",
+
+        "Comision",
+
+        "Tecnico",
+    ]:
+
+        raise HTTPException(
+            status_code=403,
+            detail="Sin permisos"
+        )
+
+    # =========================
+    # VALIDATE TEAMS
+    # =========================
+    if (
+        match.home_team_id ==
+        match.away_team_id
+    ):
+
+        raise HTTPException(
+            status_code=400,
+            detail="Un equipo no puede jugar contra sí mismo"
+        )
+
+    # =========================
+    # VALIDATE EXIST
+    # =========================
+    home_team = db.query(Team).filter(
+        Team.id == match.home_team_id
+    ).first()
+
+    away_team = db.query(Team).filter(
+        Team.id == match.away_team_id
+    ).first()
+
+    if not home_team or not away_team:
+
+        raise HTTPException(
+            status_code=404,
+            detail="Equipo no encontrado"
+        )
+
+    # =========================
+    # CREATE MATCH
+    # =========================
     new_match = Match(
 
         home_team_id=
-        match.home_team_id,
+            match.home_team_id,
 
         away_team_id=
-        match.away_team_id,
+            match.away_team_id,
 
-        home_score=
-        match.home_score,
+        round_number=
+            match.round_number,
 
-        away_score=
-        match.away_score,
-
-        date=
-        match.date,
+        match_date=
+            match.match_date,
 
         stadium=
-        match.stadium,
+            match.stadium,
 
-        status=
-        match.status,
+        home_score=0,
+
+        away_score=0,
+
+        status="scheduled",
     )
 
     db.add(new_match)
@@ -114,131 +119,199 @@ def create_match(
 
 
 # =========================
-# UPDATE MATCH
+# GET MATCHES
 # =========================
-@router.put("/{match_id}")
-def update_match(
-    match_id: int,
-    match_data: MatchUpdate
+@router.get("/matches")
+def get_matches(
+    db: Session = Depends(get_db),
+    current_user=Depends(
+        get_current_user
+    )
 ):
 
-    db: Session = SessionLocal()
+    matches = db.query(Match).all()
 
-    match = (
-        db.query(Match)
-        .filter(
-            Match.id == match_id
+    result = []
+
+    for match in matches:
+
+        # =========================
+        # EVENTS
+        # =========================
+        events = []
+
+        for event in match.events:
+
+            player_name = ""
+
+            if event.player:
+
+                player_name = (
+                    f"{event.player.name} "
+                    f"{event.player.lastname}"
+                )
+
+            events.append({
+
+                "id":
+                    event.id,
+
+                "event_type":
+                    event.event_type,
+
+                "minute":
+                    event.minute,
+
+                "player_id":
+                    event.player_id,
+
+                "player_name":
+                    player_name,
+
+                "team_id":
+                    event.team_id,
+            })
+
+        result.append({
+
+            "id":
+                match.id,
+
+            "home_team_id":
+                match.home_team_id,
+
+            "away_team_id":
+                match.away_team_id,
+
+            "home_team":
+                match.home_team.name
+                if match.home_team
+                else "",
+
+            "away_team":
+                match.away_team.name
+                if match.away_team
+                else "",
+
+            "home_logo":
+                match.home_team.logo
+                if match.home_team
+                else None,
+
+            "away_logo":
+                match.away_team.logo
+                if match.away_team
+                else None,
+
+            "round_number":
+                match.round_number,
+
+            "match_date":
+                match.match_date,
+
+            "stadium":
+                match.stadium,
+
+            "home_score":
+                match.home_score,
+
+            "away_score":
+                match.away_score,
+
+            "status":
+                match.status,
+
+            # =========================
+            # EVENTS
+            # =========================
+            "events":
+                events,
+        })
+
+    # =========================
+    # ORDER FIXTURE
+    # =========================
+    result.sort(
+        key=lambda x: (
+            x["round_number"],
+            x["match_date"]
+            if x["match_date"]
+            else ""
         )
-        .first()
     )
+
+    return result
+
+
+# =========================
+# UPDATE MATCH
+# =========================
+@router.put("/matches/{match_id}")
+def update_match(
+    match_id: int,
+    data: MatchUpdate,
+    db: Session = Depends(get_db),
+    current_user=Depends(
+        get_current_user
+    )
+):
+
+    # =========================
+    # VALIDATE ROLE
+    # =========================
+    if current_user.role not in [
+
+        "Administrador",
+
+        "Comision",
+
+        "Tecnico",
+    ]:
+
+        raise HTTPException(
+            status_code=403,
+            detail="Sin permisos"
+        )
+
+    match = db.query(Match).filter(
+        Match.id == match_id
+    ).first()
 
     if not match:
 
-        return {
-            "error": "Partido no encontrado"
-        }
-
-    update_data = (
-        match_data.dict(
-            exclude_unset=True
+        raise HTTPException(
+            status_code=404,
+            detail="Partido no encontrado"
         )
-    )
 
-    for key, value in update_data.items():
+    # =========================
+    # TECNICO ONLY OWN TEAM
+    # =========================
+    if current_user.role == "Tecnico":
 
-        setattr(
-            match,
-            key,
-            value
-        )
+        if current_user.team_id not in [
+
+            match.home_team_id,
+
+            match.away_team_id,
+        ]:
+
+            raise HTTPException(
+                status_code=403,
+                detail="No puedes editar este partido"
+            )
+
+    # =========================
+    # UPDATE
+    # =========================
+    match.home_score = data.home_score
+
+    match.away_score = data.away_score
+
+    match.status = data.status
 
     db.commit()
 
     db.refresh(match)
 
-    # =========================
-    # UPDATE TEAM STATS
-    # =========================
-    if match.status == "finished":
-
-        home_team = (
-            db.query(Team)
-            .filter(
-                Team.id ==
-                match.home_team_id
-            )
-            .first()
-        )
-
-        away_team = (
-            db.query(Team)
-            .filter(
-                Team.id ==
-                match.away_team_id
-            )
-            .first()
-        )
-
-        # PJ
-        home_team.pj += 1
-        away_team.pj += 1
-
-        # RESULT
-        if (
-            match.home_score >
-            match.away_score
-        ):
-
-            home_team.pg += 1
-            away_team.pp += 1
-
-        elif (
-            match.home_score <
-            match.away_score
-        ):
-
-            away_team.pg += 1
-            home_team.pp += 1
-
-        else:
-
-            home_team.pe += 1
-            away_team.pe += 1
-
-        db.commit()
-
     return match
-
-
-# =========================
-# DELETE MATCH
-# =========================
-@router.delete("/{match_id}")
-def delete_match(
-    match_id: int
-):
-
-    db: Session = SessionLocal()
-
-    match = (
-        db.query(Match)
-        .filter(
-            Match.id == match_id
-        )
-        .first()
-    )
-
-    if not match:
-
-        return {
-            "error": "Partido no encontrado"
-        }
-
-    db.delete(match)
-
-    db.commit()
-
-    return {
-        "message":
-        "Partido eliminado"
-    }

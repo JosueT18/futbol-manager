@@ -1,30 +1,172 @@
-from pydantic import BaseModel, Field
-from typing import Optional
-from fastapi import UploadFile, File
-import shutil
-import uuid
+from pydantic import (
+    BaseModel,
+    Field,
+    ConfigDict,
+)
 
+from typing import Optional
+
+
+# =========================
+# CREATE TEAM
+# =========================
 class TeamCreate(BaseModel):
 
-    name: str = Field(...,min_length=2)
-    city: str = Field(...,min_length=2)
-    tecnico: str = Field(...,min_length=2)
+    # =========================
+    # BASIC DATA
+    # =========================
+    name: str = Field(
+        ...,
+        min_length=2,
+        max_length=100
+    )
+
+    city: str = Field(
+        ...,
+        min_length=2,
+        max_length=100
+    )
+
+    tecnico: str = Field(
+        ...,
+        min_length=2,
+        max_length=100
+    )
+
     logo: Optional[str] = None
-    #=======
+
+    # =========================
     # STATS
-    #=======
-    pj: int = 0
-    pg: int = 0
-    pe: int = 0
-    pp: int = 0
-    points: int = 0
+    # =========================
+    pj: int = Field(
+        default=0,
+        ge=0
+    )
 
+    pg: int = Field(
+        default=0,
+        ge=0
+    )
+
+    pe: int = Field(
+        default=0,
+        ge=0
+    )
+
+    pp: int = Field(
+        default=0,
+        ge=0
+    )
+
+    gf: int = Field(
+        default=0,
+        ge=0
+    )
+
+    gc: int = Field(
+        default=0,
+        ge=0
+    )
+
+    points: int = Field(
+        default=0,
+        ge=0
+    )
+
+
+# =========================
+# UPDATE TEAM
+# =========================
+class TeamUpdate(BaseModel):
+
+    name: Optional[str] = Field(
+        default=None,
+        min_length=2,
+        max_length=100
+    )
+
+    city: Optional[str] = Field(
+        default=None,
+        min_length=2,
+        max_length=100
+    )
+
+    tecnico: Optional[str] = Field(
+        default=None,
+        min_length=2,
+        max_length=100
+    )
+
+    logo: Optional[str] = None
+
+    pj: Optional[int] = Field(
+        default=None,
+        ge=0
+    )
+
+    pg: Optional[int] = Field(
+        default=None,
+        ge=0
+    )
+
+    pe: Optional[int] = Field(
+        default=None,
+        ge=0
+    )
+
+    pp: Optional[int] = Field(
+        default=None,
+        ge=0
+    )
+
+    gf: Optional[int] = Field(
+        default=None,
+        ge=0
+    )
+
+    gc: Optional[int] = Field(
+        default=None,
+        ge=0
+    )
+
+    points: Optional[int] = Field(
+        default=None,
+        ge=0
+    )
+
+
+# =========================
+# TEAM RESPONSE
+# =========================
 class TeamResponse(BaseModel):
-    id: int
-    name: str
-    city: str
-    tecnico: str
-    logo: Optional [str] = None
 
-class Config:
-        from_attributes = True
+    id: int
+
+    name: str
+
+    city: str
+
+    tecnico: str
+
+    logo: Optional[str] = None
+
+    pj: int
+
+    pg: int
+
+    pe: int
+
+    pp: int
+
+    gf: int
+
+    gc: int
+
+    points: int
+
+    # =========================
+    # ORM MODE
+    # =========================
+    model_config = ConfigDict(
+        from_attributes=True
+    )

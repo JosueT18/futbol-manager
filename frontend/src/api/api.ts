@@ -1,16 +1,35 @@
-export function getHeaders() {
+// =========================
+// API HEADERS
+// =========================
+export function getHeaders(): HeadersInit {
 
   const token =
     localStorage.getItem(
       "token"
     )
 
-  return {
+  // =========================
+  // HEADERS
+  // =========================
+  const headers: HeadersInit = {
 
     "Content-Type":
       "application/json",
-
-    Authorization:
-      `Bearer ${token}`,
   }
+
+  // =========================
+  // ADD TOKEN
+  // =========================
+  if (
+    token &&
+    token !== "undefined" &&
+    token !== "null" &&
+    token.trim() !== ""
+  ) {
+
+    headers["Authorization"] =
+      `Bearer ${token}`
+  }
+
+  return headers
 }

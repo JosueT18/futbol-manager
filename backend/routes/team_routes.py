@@ -21,7 +21,8 @@ from schemas.team_schema import TeamCreate
 
 from utils.dependencies import (
     admin_required,
-    director_required,
+    get_current_user,
+    validate_same_team,
 )
 
 router = APIRouter()
@@ -29,22 +30,19 @@ router = APIRouter()
 
 # =========================
 # CREATE TEAM
-# ADMIN + DIRECTOR
+# ADMIN ONLY
 # =========================
 @router.post("/teams")
 def create_team(
     team: TeamCreate,
     db: Session = Depends(get_db),
     current_user=Depends(
-        director_required
+        admin_required
     )
 ):
 
-    # =========================
-    # VALIDATE NAME
-    # =========================
     existing_team = db.query(Team).filter(
-        Team.name == team.name
+        Team.name == team.name.strip()
     ).first()
 
     if existing_team:
@@ -54,9 +52,27 @@ def create_team(
             detail="El equipo ya existe"
         )
 
-    # =========================
-    # CREATE TEAM
-    # =========================
+    if not team.name.strip():
+
+        raise HTTPException(
+            status_code=400,
+            detail="El nombre es obligatorio"
+        )
+
+    if not team.city.strip():
+
+        raise HTTPException(
+            status_code=400,
+            detail="La ciudad es obligatoria"
+        )
+
+    if not team.tecnico.strip():
+
+        raise HTTPException(
+            status_code=400,
+            detail="El técnico es obligatorio"
+        )
+
     new_team = Team(
 
         name=team.name.strip(),
@@ -73,7 +89,12 @@ def create_team(
 
         pp=team.pp or 0,
 
-        points=team.points or 0,
+        gf=team.gf or 0,
+
+        gc=team.gc or 0,
+
+        points=((team.pg or 0) * 3)
+        + (team.pe or 0),
 
         logo=team.logo,
     )
@@ -89,15 +110,43 @@ def create_team(
 
 # =========================
 # GET TEAMS
-# PUBLIC
+# FILTER BY ROLE
 # =========================
 @router.get("/teams")
 def get_teams(
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user=Depends(
+        get_current_user
+    )
 ):
 
-    teams = db.query(Team).all()
+    # =========================
+    # ADMIN + COMISION
+    # VE TODOS LOS EQUIPOS
+    # =========================
+    if current_user.role in [
 
+        "Administrador",
+
+        "Comision",
+    ]:
+
+        teams = db.query(Team).all()
+
+    # =========================
+    # DIRECTOR + TECNICO + JUGADOR
+    # SOLO SU EQUIPO
+    # =========================
+    else:
+
+        teams = db.query(Team).filter(
+            Team.id ==
+            current_user.team_id
+        ).all()
+
+    # =========================
+    # RESPONSE
+    # =========================
     result = []
 
     for team in teams:
@@ -129,9 +178,9 @@ def get_teams(
 
             "pp": team.pp,
 
-            "gf": getattr(team, "gf", 0),
+            "gf": team.gf,
 
-            "gc": getattr(team, "gc", 0),
+            "gc": team.gc,
 
             "points": team.points,
 
@@ -141,6 +190,178 @@ def get_teams(
         })
 
     return result
+
+# =========================
+# UPDATE TEAM
+# ADMIN + DIRECTOR + TECNICO
+# =========================
+@router.put("/teams/{team_id}")
+def update_team(
+    team_id: int,
+    data: dict = Body(...),
+    db: Session = Depends(get_db),
+    current_user=Depends(
+        get_current_user
+    )
+):
+
+    if current_user.role not in [
+
+        "Administrador",
+
+        "Director",
+
+        "Tecnico",
+    ]:
+
+        raise HTTPException(
+            status_code=403,
+            detail="Sin permisos"
+        )
+
+    team = db.query(Team).filter(
+        Team.id == team_id
+    ).first()
+
+    if not team:
+
+        raise HTTPException(
+            status_code=404,
+            detail="Equipo no encontrado"
+        )
+
+    # =========================
+    # VALIDAR MISMO EQUIPO
+    # =========================
+    validate_same_team(
+        current_user,
+        team.id
+    )
+
+    # =========================
+    # VALIDAR NOMBRE DUPLICADO
+    # =========================
+    if "name" in data:
+
+        existing_team = db.query(Team).filter(
+            Team.id != team_id,
+            Team.name == data["name"].strip()
+        ).first()
+
+        if existing_team:
+
+            raise HTTPException(
+                status_code=400,
+                detail="Ya existe un equipo con ese nombre"
+            )
+
+    # =========================
+    # BASIC DATA
+    # =========================
+    if "name" in data:
+
+        if not data["name"].strip():
+
+            raise HTTPException(
+                status_code=400,
+                detail="El nombre es obligatorio"
+            )
+
+        team.name = data["name"].strip()
+
+    if "city" in data:
+
+        if not data["city"].strip():
+
+            raise HTTPException(
+                status_code=400,
+                detail="La ciudad es obligatoria"
+            )
+
+        team.city = data["city"].strip()
+
+    if "tecnico" in data:
+
+        if not data["tecnico"].strip():
+
+            raise HTTPException(
+                status_code=400,
+                detail="El técnico es obligatorio"
+            )
+
+        team.tecnico = data["tecnico"].strip()
+
+    # =========================
+    # STATS
+    # =========================
+    if "pj" in data:
+
+        team.pj = int(data["pj"])
+
+    if "pg" in data:
+
+        team.pg = int(data["pg"])
+
+    if "pe" in data:
+
+        team.pe = int(data["pe"])
+
+    if "pp" in data:
+
+        team.pp = int(data["pp"])
+
+    if "gf" in data:
+
+        team.gf = int(data["gf"])
+
+    if "gc" in data:
+
+        team.gc = int(data["gc"])
+
+    if "logo" in data:
+
+        team.logo = data["logo"]
+
+    # =========================
+    # VALIDAR POSITIVOS
+    # =========================
+    numeric_fields = [
+
+        team.pj,
+
+        team.pg,
+
+        team.pe,
+
+        team.pp,
+
+        team.gf,
+
+        team.gc,
+    ]
+
+    for value in numeric_fields:
+
+        if value < 0:
+
+            raise HTTPException(
+                status_code=400,
+                detail="Los valores no pueden ser negativos"
+            )
+
+    # =========================
+    # AUTO POINTS
+    # =========================
+    team.points = (
+        (team.pg * 3)
+        + team.pe
+    )
+
+    db.commit()
+
+    db.refresh(team)
+
+    return team
 
 
 # =========================
@@ -167,9 +388,6 @@ def delete_team(
             detail="Equipo no encontrado"
         )
 
-    # =========================
-    # VALIDATE PLAYERS
-    # =========================
     if team.players:
 
         raise HTTPException(
@@ -182,18 +400,12 @@ def delete_team(
     # =========================
     if team.logo:
 
-        logo_path = team.logo.replace(
-            "/",
-            ""
-        )
+        logo_path = team.logo.lstrip("/")
 
         if os.path.exists(logo_path):
 
             os.remove(logo_path)
 
-    # =========================
-    # DELETE TEAM
-    # =========================
     db.delete(team)
 
     db.commit()
@@ -204,124 +416,35 @@ def delete_team(
 
 
 # =========================
-# UPDATE TEAM
-# ADMIN + DIRECTOR
-# =========================
-@router.put("/teams/{team_id}")
-def update_team(
-    team_id: int,
-    data: dict = Body(...),
-    db: Session = Depends(get_db),
-    current_user=Depends(
-        director_required
-    )
-):
-
-    team = db.query(Team).filter(
-        Team.id == team_id
-    ).first()
-
-    if not team:
-
-        raise HTTPException(
-            status_code=404,
-            detail="Equipo no encontrado"
-        )
-
-    # =========================
-    # BASIC DATA
-    # =========================
-    team.name = data.get(
-        "name",
-        team.name
-    )
-
-    team.city = data.get(
-        "city",
-        team.city
-    )
-
-    team.tecnico = data.get(
-        "tecnico",
-        team.tecnico
-    )
-
-    # =========================
-    # STATS
-    # =========================
-    team.pj = data.get(
-        "pj",
-        team.pj
-    )
-
-    team.pg = data.get(
-        "pg",
-        team.pg
-    )
-
-    team.pe = data.get(
-        "pe",
-        team.pe
-    )
-
-    team.pp = data.get(
-        "pp",
-        team.pp
-    )
-
-    team.gf = data.get(
-        "gf",
-        getattr(team, "gf", 0)
-    )
-
-    team.gc = data.get(
-        "gc",
-        getattr(team, "gc", 0)
-    )
-
-    team.logo = data.get(
-        "logo",
-        team.logo
-    )
-
-    # =========================
-    # AUTO POINTS
-    # =========================
-    team.points = (
-        (team.pg * 3)
-        + team.pe
-    )
-
-    db.commit()
-
-    db.refresh(team)
-
-    return team
-
-
-# =========================
 # UPLOAD LOGO
-# ADMIN + DIRECTOR
 # =========================
 @router.post("/teams/upload-logo")
 async def upload_logo(
     file: UploadFile = File(...),
     current_user=Depends(
-        director_required
+        get_current_user
     )
 ):
 
-    # =========================
-    # CREATE FOLDER
-    # =========================
+    if current_user.role not in [
+
+        "Administrador",
+
+        "Director",
+
+        "Tecnico",
+    ]:
+
+        raise HTTPException(
+            status_code=403,
+            detail="Sin permisos"
+        )
+
     os.makedirs(
         "uploads",
         exist_ok=True
     )
 
-    # =========================
-    # VALIDATE EXTENSION
-    # =========================
     allowed_extensions = [
         "jpg",
         "jpeg",
@@ -342,9 +465,6 @@ async def upload_logo(
             detail="Formato de imagen no permitido"
         )
 
-    # =========================
-    # UNIQUE NAME
-    # =========================
     filename = (
         f"{uuid.uuid4()}.{file_extension}"
     )
@@ -353,9 +473,6 @@ async def upload_logo(
         f"uploads/{filename}"
     )
 
-    # =========================
-    # SAVE FILE
-    # =========================
     with open(
         file_path,
         "wb"
@@ -366,9 +483,6 @@ async def upload_logo(
             buffer
         )
 
-    # =========================
-    # RESPONSE
-    # =========================
     return {
         "logo": f"/uploads/{filename}"
     }

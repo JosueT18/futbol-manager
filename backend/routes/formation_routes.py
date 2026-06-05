@@ -1,36 +1,28 @@
-from fastapi import APIRouter
-from fastapi import Depends
-from fastapi import HTTPException
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+)
 
 from sqlalchemy.orm import Session
 
-from database.connection import SessionLocal
+from database.connection import get_db
 
 from models.formation_model import Formation
 from models.formation_player_model import FormationPlayer
+from models.team_model import Team
 
 from schemas.formation_schema import (
     FormationCreate,
     FormationResponse
 )
 
+from utils.dependencies import (
+    get_current_user,
+    validate_same_team,
+)
+
 router = APIRouter()
-
-
-# =========================
-# DB
-# =========================
-def get_db():
-
-    db = SessionLocal()
-
-    try:
-
-        yield db
-
-    finally:
-
-        db.close()
 
 
 # =========================
@@ -42,16 +34,63 @@ def get_db():
 )
 def create_formation(
     formation: FormationCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user=Depends(
+        get_current_user
+    )
 ):
 
+    # =========================
+    # VALIDATE ROLE
+    # =========================
+    if current_user.role not in [
+
+        "Administrador",
+
+        "Director",
+
+        "Tecnico",
+
+        "Comision",
+    ]:
+
+        raise HTTPException(
+            status_code=403,
+            detail="Sin permisos"
+        )
+
+    # =========================
+    # VALIDATE TEAM
+    # =========================
+    team = db.query(Team).filter(
+        Team.id == formation.team_id
+    ).first()
+
+    if not team:
+
+        raise HTTPException(
+            status_code=404,
+            detail="Equipo no encontrado"
+        )
+
+    # =========================
+    # SAME TEAM VALIDATION
+    # =========================
+    validate_same_team(
+        current_user,
+        formation.team_id
+    )
+
+    # =========================
+    # CREATE FORMATION
+    # =========================
     new_formation = Formation(
 
-        name=formation.name,
+        name=formation.name.strip(),
 
-        tactic=formation.tactic,
+        tactic=formation.tactic.strip(),
 
-        match_type=formation.match_type,
+        match_type=formation.match_type.strip(),
 
         team_id=formation.team_id
     )
@@ -145,9 +184,34 @@ def get_formation(
 def update_formation(
     formation_id: int,
     formation_data: FormationCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user=Depends(
+        get_current_user
+    )
 ):
 
+    # =========================
+    # VALIDATE ROLE
+    # =========================
+    if current_user.role not in [
+
+        "Administrador",
+
+        "Director",
+
+        "Tecnico",
+
+        "Comision",
+    ]:
+
+        raise HTTPException(
+            status_code=403,
+            detail="Sin permisos"
+        )
+
+    # =========================
+    # GET FORMATION
+    # =========================
     formation = db.query(
         Formation
     ).filter(
@@ -162,17 +226,27 @@ def update_formation(
         )
 
     # =========================
-    # UPDATE FORMATION
+    # SAME TEAM VALIDATION
     # =========================
-    formation.name = formation_data.name
-
-    formation.tactic = formation_data.tactic
-
-    formation.match_type = (
-        formation_data.match_type
+    validate_same_team(
+        current_user,
+        formation.team_id
     )
 
-    formation.team_id = formation_data.team_id
+    # =========================
+    # UPDATE FORMATION
+    # =========================
+    formation.name = formation_data.name.strip()
+
+    formation.tactic = formation_data.tactic.strip()
+
+    formation.match_type = (
+        formation_data.match_type.strip()
+    )
+
+    formation.team_id = (
+        formation_data.team_id
+    )
 
     # =========================
     # DELETE OLD PLAYERS
@@ -220,9 +294,32 @@ def update_formation(
 )
 def delete_formation(
     formation_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user=Depends(
+        get_current_user
+    )
 ):
 
+    # =========================
+    # VALIDATE ROLE
+    # =========================
+    if current_user.role not in [
+
+        "Administrador",
+
+        "Director",
+
+        "Tecnico",
+    ]:
+
+        raise HTTPException(
+            status_code=403,
+            detail="Sin permisos"
+        )
+
+    # =========================
+    # GET FORMATION
+    # =========================
     formation = db.query(
         Formation
     ).filter(
@@ -236,6 +333,17 @@ def delete_formation(
             detail="Formación no encontrada"
         )
 
+    # =========================
+    # SAME TEAM VALIDATION
+    # =========================
+    validate_same_team(
+        current_user,
+        formation.team_id
+    )
+
+    # =========================
+    # DELETE FORMATION
+    # =========================
     db.delete(formation)
 
     db.commit()

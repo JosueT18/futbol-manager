@@ -1,8 +1,7 @@
 from sqlalchemy import (
     Column,
     Integer,
-    String,
-    ForeignKey
+    ForeignKey,
 )
 
 from sqlalchemy.orm import relationship
@@ -14,35 +13,52 @@ class FormationPlayer(Base):
 
     __tablename__ = "formation_players"
 
+    # =========================
+    # ID
+    # =========================
     id = Column(
         Integer,
         primary_key=True,
         index=True
     )
 
+    # =========================
+    # RELATIONS
+    # =========================
     formation_id = Column(
         Integer,
-        ForeignKey("formations.id")
+        ForeignKey("formations.id"),
+        nullable=False
     )
 
     player_id = Column(
         Integer,
-        ForeignKey("players.id")
+        ForeignKey("players.id"),
+        nullable=False
     )
 
-    position_x = Column(
+    # =========================
+    # POSITION
+    # =========================
+    pos_x = Column(
         Integer,
         default=0
     )
 
-    position_y = Column(
+    pos_y = Column(
         Integer,
         default=0
     )
 
-    role = Column(String)
-
+    # =========================
+    # RELATIONSHIPS
+    # =========================
     formation = relationship(
         "Formation",
         back_populates="players"
+    )
+
+    player = relationship(
+        "Player",
+        back_populates="formations"
     )

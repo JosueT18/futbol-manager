@@ -1,4 +1,4 @@
-import axios from "axios"
+import api from "./axios"
 
 const API_URL =
   "http://127.0.0.1:8000/formations"
@@ -42,7 +42,7 @@ export interface FormationData {
 export async function getFormations() {
 
   const response =
-    await axios.get(API_URL)
+    await api.get(API_URL)
 
   return response.data
 }
@@ -56,7 +56,7 @@ export async function getFormation(
 ) {
 
   const response =
-    await axios.get(
+    await api.get(
       `${API_URL}/${id}`
     )
 
@@ -72,7 +72,7 @@ export async function createFormation(
 ) {
 
   const response =
-    await axios.post(
+    await api.post(
       API_URL,
       data
     )
@@ -90,7 +90,7 @@ export async function updateFormation(
 ) {
 
   const response =
-    await axios.put(
+    await api.put(
       `${API_URL}/${id}`,
       data
     )
@@ -107,7 +107,7 @@ export async function deleteFormation(
 ) {
 
   const response =
-    await axios.delete(
+    await api.delete(
       `${API_URL}/${id}`
     )
 

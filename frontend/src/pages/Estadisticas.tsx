@@ -1,257 +1,43 @@
-import { useState } from "react"
-
-import { useQuery } from "@tanstack/react-query"
-
-import {
-  getPlayers,
-  updatePlayer,
-} from "../api/players"
-
-import {
-  getTeams,
-  updateTeam,
-} from "../api/teams"
+import { useEffect, useState } from "react"
 
 import Card from "../components/ui/Card"
-import Button from "../components/ui/Button"
-import Modal from "../components/ui/Modal"
-import Input from "../components/ui/Input"
+
+import { getStats } from "../api/stats"
 
 function Estadisticas() {
 
-  // =========================
-  // ROLE
-  // =========================
-  const role =
-    localStorage.getItem("role") || ""
-
-  const canEditStats =
-    role === "Administrador"
-    ||
-    role === "Director"
-    ||
-    role === "Comision"
-
-  // =========================
-  // STATES
-  // =========================
-  const [teamModalOpen, setTeamModalOpen] =
-    useState(false)
-
-  const [playerModalOpen, setPlayerModalOpen] =
-    useState(false)
-
-  const [selectedTeam, setSelectedTeam] =
+  const [stats, setStats] =
     useState<any>(null)
 
-  const [selectedPlayer, setSelectedPlayer] =
-    useState<any>(null)
+  async function loadStats() {
 
-  // =========================
-  // FILTERS
-  // =========================
-  const [
-    playersTeamFilter,
-    setPlayersTeamFilter
-  ] = useState("all")
+    try {
 
-  const [
-    scorersTeamFilter,
-    setScorersTeamFilter
-  ] = useState("all")
+      const data =
+        await getStats()
 
-  // =========================
-  // TEAM STATS
-  // =========================
-  const [pj, setPj] = useState("")
-  const [pg, setPg] = useState("")
-  const [pe, setPe] = useState("")
-  const [pp, setPp] = useState("")
-  const [gf, setGf] = useState("")
-  const [gc, setGc] = useState("")
-  const [points, setPoints] = useState("")
+      setStats(data)
 
-  // =========================
-  // PLAYER STATS
-  // =========================
-  const [goals, setGoals] = useState("")
+    } catch (error) {
 
-  const [yellowCards, setYellowCards] =
-    useState("")
-
-  const [redCards, setRedCards] =
-    useState("")
-
-  const [matchesPlayed, setMatchesPlayed] =
-    useState("")
-
-  // =========================
-  // PLAYERS
-  // =========================
-  const {
-    data: players = [],
-    refetch: refetchPlayers,
-  } = useQuery({
-    queryKey: ["players"],
-    queryFn: getPlayers,
-  })
-
-  // =========================
-  // TEAMS
-  // =========================
-  const {
-    data: teams = [],
-    refetch: refetchTeams,
-  } = useQuery({
-    queryKey: ["teams"],
-    queryFn: getTeams,
-  })
-
-  // =========================
-  // APPROVED PLAYERS
-  // =========================
-  const approvedPlayers =
-    players.filter(
-      (player: any) =>
-        player.status === "approved"
-    )
-
-  // =========================
-  // SORTS
-  // =========================
-  const standings = [...teams]
-    .sort(
-      (a: any, b: any) =>
-        (b.points || 0)
-        -
-        (a.points || 0)
-    )
-
-  const topScorers = [...approvedPlayers]
-    .sort(
-      (a: any, b: any) =>
-        (b.goals || 0)
-        -
-        (a.goals || 0)
-    )
-
-  // =========================
-  // FILTER PLAYERS BY TEAM
-  // =========================
-  const filteredPlayersByTeam =
-    playersTeamFilter === "all"
-      ? approvedPlayers
-      : approvedPlayers.filter(
-          (player: any) =>
-            player.team_id?.toString() ===
-            playersTeamFilter
-        )
-
-  // =========================
-  // OPEN TEAM MODAL
-  // =========================
-  function openTeamModal(team: any) {
-
-    if (!canEditStats) {
-      return
+      console.error(error)
     }
-
-    setSelectedTeam(team)
-
-    setPj(team.pj?.toString() || "0")
-    setPg(team.pg?.toString() || "0")
-    setPe(team.pe?.toString() || "0")
-    setPp(team.pp?.toString() || "0")
-
-    setGf(team.gf?.toString() || "0")
-    setGc(team.gc?.toString() || "0")
-
-    setPoints(
-      team.points?.toString() || "0"
-    )
-
-    setTeamModalOpen(true)
   }
 
-  // =========================
-  // SAVE TEAM STATS
-  // =========================
-  async function saveTeamStats() {
+  useEffect(() => {
 
-    await updateTeam(
-      selectedTeam.id,
-      {
-        pj: Number(pj),
-        pg: Number(pg),
-        pe: Number(pe),
-        pp: Number(pp),
+    loadStats()
 
-        gf: Number(gf),
-        gc: Number(gc),
+  }, [])
 
-        points: Number(points),
-      }
+  if (!stats) {
+
+    return (
+
+      <div className="p-6">
+        Cargando estadísticas...
+      </div>
     )
-
-    setTeamModalOpen(false)
-
-    await refetchTeams()
-  }
-
-  // =========================
-  // OPEN PLAYER MODAL
-  // =========================
-  function openPlayerModal(player: any) {
-
-    if (!canEditStats) {
-      return
-    }
-
-    setSelectedPlayer(player)
-
-    setGoals(
-      player.goals?.toString() || "0"
-    )
-
-    setYellowCards(
-      player.yellow_cards?.toString() || "0"
-    )
-
-    setRedCards(
-      player.red_cards?.toString() || "0"
-    )
-
-    setMatchesPlayed(
-      player.matches_played?.toString() || "0"
-    )
-
-    setPlayerModalOpen(true)
-  }
-
-  // =========================
-  // SAVE PLAYER STATS
-  // =========================
-  async function savePlayerStats() {
-
-    await updatePlayer(
-      selectedPlayer.id,
-      {
-        goals: Number(goals),
-
-        yellow_cards:
-          Number(yellowCards),
-
-        red_cards:
-          Number(redCards),
-
-        matches_played:
-          Number(matchesPlayed),
-      }
-    )
-
-    setPlayerModalOpen(false)
-
-    await refetchPlayers()
   }
 
   return (
@@ -266,827 +52,177 @@ function Estadisticas() {
         </h1>
 
         <p className="text-gray-500 mt-2">
-          Gestión de estadísticas
+          Resumen general del torneo
         </p>
 
       </div>
 
-      {/* TABLA POSICIONES */}
-      <Card>
+      {/* CARDS */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 
-        <div
-          className="
-            flex
-            items-center
-            justify-between
-            mb-5
-          "
-        >
+        <Card>
 
-          <h2 className="text-2xl font-bold">
-            Tabla de Posiciones
+          <h2 className="text-lg font-semibold">
+            Jugadores
           </h2>
 
-        </div>
+          <p className="text-4xl font-bold mt-3">
+            {stats.total_players}
+          </p>
 
-        <div className="overflow-x-auto">
+        </Card>
 
-          <table className="w-full">
+        <Card>
 
-            <thead>
-
-              <tr
-                className="
-                  bg-gray-100
-                  text-sm
-                  text-gray-600
-                "
-              >
-
-                <th className="px-4 py-3 text-left">
-                  Equipo
-                </th>
-
-                <th className="px-4 py-3 text-center">
-                  PJ
-                </th>
-
-                <th className="px-4 py-3 text-center">
-                  PG
-                </th>
-
-                <th className="px-4 py-3 text-center">
-                  PE
-                </th>
-
-                <th className="px-4 py-3 text-center">
-                  PP
-                </th>
-
-                <th className="px-4 py-3 text-center">
-                  GF
-                </th>
-
-                <th className="px-4 py-3 text-center">
-                  GC
-                </th>
-
-                <th className="px-4 py-3 text-center">
-                  DG
-                </th>
-
-                <th className="px-4 py-3 text-center">
-                  PTS
-                </th>
-
-                {
-                  canEditStats && (
-
-                    <th className="px-4 py-3 text-center">
-                      Acción
-                    </th>
-                  )
-                }
-
-              </tr>
-
-            </thead>
-
-            <tbody>
-
-              {
-                standings.map(
-                  (team: any) => {
-
-                    const dg =
-                      (team.gf || 0)
-                      -
-                      (team.gc || 0)
-
-                    return (
-
-                      <tr
-                        key={team.id}
-                        className="
-                          border-t
-                          hover:bg-gray-50
-                        "
-                      >
-
-                        <td className="px-4 py-4 font-semibold">
-                          ⚽ {team.name}
-                        </td>
-
-                        <td className="text-center">
-                          {team.pj || 0}
-                        </td>
-
-                        <td className="text-center">
-                          {team.pg || 0}
-                        </td>
-
-                        <td className="text-center">
-                          {team.pe || 0}
-                        </td>
-
-                        <td className="text-center">
-                          {team.pp || 0}
-                        </td>
-
-                        <td className="text-center">
-                          {team.gf || 0}
-                        </td>
-
-                        <td className="text-center">
-                          {team.gc || 0}
-                        </td>
-
-                        <td className="text-center font-semibold">
-                          {dg}
-                        </td>
-
-                        <td
-                          className="
-                            text-center
-                            font-bold
-                            text-blue-600
-                          "
-                        >
-                          {team.points || 0}
-                        </td>
-
-                        {
-                          canEditStats && (
-
-                            <td className="text-center">
-
-                              <Button
-                                variant="secondary"
-                                onClick={() =>
-                                  openTeamModal(team)
-                                }
-                              >
-                                Editar
-                              </Button>
-
-                            </td>
-                          )
-                        }
-
-                      </tr>
-                    )
-                  }
-                )
-              }
-
-            </tbody>
-
-          </table>
-
-        </div>
-
-      </Card>
-
-      {/* ESTADISTICAS JUGADORES */}
-      <Card>
-
-        <div
-          className="
-            flex
-            flex-col
-            md:flex-row
-            md:items-center
-            md:justify-between
-            gap-4
-            mb-5
-          "
-        >
-
-          <h2 className="text-2xl font-bold">
-            Estadísticas Jugadores
+          <h2 className="text-lg font-semibold">
+            Equipos
           </h2>
 
-          <select
-            value={playersTeamFilter}
-            onChange={(e) =>
-              setPlayersTeamFilter(
-                e.target.value
-              )
-            }
-            className="
-              border
-              rounded-xl
-              px-4
-              py-3
-              bg-white
-            "
-          >
+          <p className="text-4xl font-bold mt-3">
+            {stats.total_teams}
+          </p>
 
-            <option value="all">
-              Todos los equipos
-            </option>
+        </Card>
 
-            {
-              teams.map((team: any) => (
+        <Card>
 
-                <option
-                  key={team.id}
-                  value={team.id}
-                >
-                  {team.name}
-                </option>
-              ))
-            }
+          <h2 className="text-lg font-semibold">
+            Partidos
+          </h2>
 
-          </select>
+          <p className="text-4xl font-bold mt-3">
+            {stats.total_matches}
+          </p>
 
-        </div>
+        </Card>
 
-        <div className="overflow-x-auto">
-
-          <table className="w-full">
-
-            <thead>
-
-              <tr
-                className="
-                  bg-gray-100
-                  text-sm
-                  text-gray-600
-                "
-              >
-
-                <th className="px-4 py-3 text-left">
-                  Jugador
-                </th>
-
-                <th className="px-4 py-3 text-center">
-                  Equipo
-                </th>
-
-                <th className="px-4 py-3 text-center">
-                  Posición
-                </th>
-
-                <th className="px-4 py-3 text-center">
-                  PJ
-                </th>
-
-                <th className="px-4 py-3 text-center">
-                  Goles
-                </th>
-
-                <th className="px-4 py-3 text-center">
-                  Amarillas
-                </th>
-
-                <th className="px-4 py-3 text-center">
-                  Rojas
-                </th>
-
-                {
-                  canEditStats && (
-
-                    <th className="px-4 py-3 text-center">
-                      Acción
-                    </th>
-                  )
-                }
-
-              </tr>
-
-            </thead>
-
-            <tbody>
-
-              {
-                filteredPlayersByTeam.map(
-                  (player: any) => {
-
-                    const team =
-                      teams.find(
-                        (t: any) =>
-                          t.id === player.team_id
-                      )
-
-                    return (
-
-                      <tr
-                        key={player.id}
-                        className="
-                          border-t
-                          hover:bg-gray-50
-                        "
-                      >
-
-                        <td className="px-4 py-4 font-semibold">
-                          ⚽ {player.name}
-                        </td>
-
-                        <td className="text-center">
-                          {team?.name || "-"}
-                        </td>
-
-                        <td className="text-center">
-                          {player.position}
-                        </td>
-
-                        <td className="text-center">
-                          {
-                            player.matches_played || 0
-                          }
-                        </td>
-
-                        <td className="text-center font-bold text-green-600">
-                          {player.goals || 0}
-                        </td>
-
-                        <td className="text-center">
-                          {player.yellow_cards || 0}
-                        </td>
-
-                        <td className="text-center">
-                          {player.red_cards || 0}
-                        </td>
-
-                        {
-                          canEditStats && (
-
-                            <td className="text-center">
-
-                              <Button
-                                variant="secondary"
-                                onClick={() =>
-                                  openPlayerModal(player)
-                                }
-                              >
-                                Editar
-                              </Button>
-
-                            </td>
-                          )
-                        }
-
-                      </tr>
-                    )
-                  }
-                )
-              }
-
-            </tbody>
-
-          </table>
-
-        </div>
-
-      </Card>
+      </div>
 
       {/* GOLEADORES */}
       <Card>
 
-        <div
-          className="
-            flex
-            flex-col
-            md:flex-row
-            md:items-center
-            md:justify-between
-            gap-4
-            mb-5
-          "
-        >
+        <h2 className="text-2xl font-bold mb-5">
+          Ranking de Goleadores
+        </h2>
 
-          <h2 className="text-2xl font-bold">
-            Ranking de Goleadores
-          </h2>
+        <div className="space-y-3">
 
-          <select
-            value={scorersTeamFilter}
-            onChange={(e) =>
-              setScorersTeamFilter(
-                e.target.value
-              )
-            }
-            className="
-              border
-              border-gray-300
-              rounded-xl
-              px-4
-              py-3
-              bg-white
-            "
-          >
+          {
+            stats.top_scorers?.length > 0 ? (
 
-            <option value="all">
-              Todos los equipos
-            </option>
+              stats.top_scorers.map(
+                (player: any) => (
 
-            {
-              teams.map((team: any) => (
+                  <div
+                    key={player.player_id}
+                    className="
+                      flex
+                      justify-between
+                      items-center
+                      border-b
+                      pb-3
+                    "
+                  >
 
-                <option
-                  key={team.id}
-                  value={team.id}
-                >
-                  {team.name}
-                </option>
-              ))
-            }
+                    <div>
 
-          </select>
+                      <p className="font-semibold">
 
-        </div>
+                        {player.name}
+                        {" "}
+                        {player.lastname}
 
-        {/* TOP GENERAL */}
-        <div className="mb-8">
+                      </p>
 
-          <h3 className="text-xl font-bold mb-4">
-            Top 10 General
-          </h3>
+                      <p className="text-sm text-gray-500">
 
-          <div className="space-y-3">
+                        {player.team}
 
-            {
-              topScorers
-                .slice(0, 10)
-                .map(
-                  (
-                    player: any,
-                    index: number
-                  ) => {
+                      </p>
 
-                    const team =
-                      teams.find(
-                        (t: any) =>
-                          t.id === player.team_id
-                      )
+                    </div>
 
-                    return (
+                    <div className="text-2xl font-bold">
 
-                      <div
-                        key={player.id}
-                        className="
-                          flex
-                          items-center
-                          justify-between
-                          bg-gray-50
-                          rounded-xl
-                          px-4
-                          py-3
-                        "
-                      >
+                      ⚽ {player.goals}
 
-                        <div className="flex items-center gap-4">
+                    </div>
 
-                          <div
-                            className="
-                              w-9
-                              h-9
-                              rounded-full
-                              bg-yellow-100
-                              text-yellow-700
-                              flex
-                              items-center
-                              justify-center
-                              font-bold
-                            "
-                          >
-                            {index + 1}
-                          </div>
-
-                          <div>
-
-                            <p className="font-semibold">
-                              ⚽ {player.name}
-                            </p>
-
-                            <p className="text-sm text-gray-500">
-                              {team?.name || "-"}
-                            </p>
-
-                          </div>
-
-                        </div>
-
-                        <div
-                          className="
-                            bg-green-100
-                            text-green-700
-                            px-4
-                            py-2
-                            rounded-full
-                            font-bold
-                          "
-                        >
-                          {player.goals || 0} goles
-                        </div>
-
-                      </div>
-                    )
-                  }
+                  </div>
                 )
-            }
+              )
 
-          </div>
+            ) : (
 
-        </div>
-
-        {/* GOLEADORES POR EQUIPO */}
-        <div>
-
-          <h3 className="text-xl font-bold mb-4">
-            Goleadores por Equipo
-          </h3>
-
-          <div className="overflow-x-auto">
-
-            <table className="w-full">
-
-              <thead>
-
-                <tr
-                  className="
-                    bg-gray-100
-                    text-sm
-                    text-gray-600
-                  "
-                >
-
-                  <th className="px-4 py-3 text-left">
-                    Jugador
-                  </th>
-
-                  <th className="px-4 py-3 text-center">
-                    Equipo
-                  </th>
-
-                  <th className="px-4 py-3 text-center">
-                    Posición
-                  </th>
-
-                  <th className="px-4 py-3 text-center">
-                    Goles
-                  </th>
-
-                </tr>
-
-              </thead>
-
-              <tbody>
-
-                {
-                  topScorers
-                    .filter((player: any) => {
-
-                      if (
-                        scorersTeamFilter === "all"
-                      ) {
-                        return true
-                      }
-
-                      return (
-                        player.team_id ===
-                        Number(scorersTeamFilter)
-                      )
-                    })
-                    .map((player: any) => {
-
-                      const team =
-                        teams.find(
-                          (t: any) =>
-                            t.id === player.team_id
-                        )
-
-                      return (
-
-                        <tr
-                          key={player.id}
-                          className="
-                            border-t
-                            hover:bg-gray-50
-                          "
-                        >
-
-                          <td className="px-4 py-4 font-semibold">
-                            ⚽ {player.name}
-                          </td>
-
-                          <td className="text-center">
-                            {team?.name || "-"}
-                          </td>
-
-                          <td className="text-center">
-                            {player.position}
-                          </td>
-
-                          <td
-                            className="
-                              text-center
-                              font-bold
-                              text-green-600
-                            "
-                          >
-                            {player.goals || 0}
-                          </td>
-
-                        </tr>
-                      )
-                    })
-                }
-
-              </tbody>
-
-            </table>
-
-          </div>
+              <p className="text-gray-500">
+                No hay goles registrados
+              </p>
+            )
+          }
 
         </div>
 
       </Card>
 
-      {/* TEAM MODAL */}
-      <Modal
-        open={teamModalOpen}
-        onClose={() =>
-          setTeamModalOpen(false)
-        }
-        title="Editar Estadísticas Equipo"
-      >
+      {/* GOLEADOR POR EQUIPO */}
+      <Card>
 
-        <div className="space-y-4">
+        <h2 className="text-2xl font-bold mb-5">
+          Goleador por Equipo
+        </h2>
 
-          <Input
-            type="number"
-            min={0}
-            placeholder="PJ"
-            value={pj}
-            onChange={(e) =>
-              setPj(e.target.value)
-            }
-          />
+        <div className="space-y-3">
 
-          <Input
-            type="number"
-            min={0}
-            placeholder="PG"
-            value={pg}
-            onChange={(e) =>
-              setPg(e.target.value)
-            }
-          />
+          {
+            stats.team_top_scorers?.length > 0 ? (
 
-          <Input
-            type="number"
-            min={0}
-            placeholder="PE"
-            value={pe}
-            onChange={(e) =>
-              setPe(e.target.value)
-            }
-          />
+              stats.team_top_scorers.map(
+                (team: any, index: number) => (
 
-          <Input
-            type="number"
-            min={0}
-            placeholder="PP"
-            value={pp}
-            onChange={(e) =>
-              setPp(e.target.value)
-            }
-          />
+                  <div
+                    key={index}
+                    className="
+                      flex
+                      justify-between
+                      items-center
+                      border-b
+                      pb-3
+                    "
+                  >
 
-          <Input
-            type="number"
-            min={0}
-            placeholder="Goles a favor"
-            value={gf}
-            onChange={(e) =>
-              setGf(e.target.value)
-            }
-          />
+                    <div>
 
-          <Input
-            type="number"
-            min={0}
-            placeholder="Goles en contra"
-            value={gc}
-            onChange={(e) =>
-              setGc(e.target.value)
-            }
-          />
+                      <p className="font-semibold">
+                        {team.team}
+                      </p>
 
-          <Input
-            type="number"
-            min={0}
-            placeholder="Puntos"
-            value={points}
-            onChange={(e) =>
-              setPoints(e.target.value)
-            }
-          />
+                      <p className="text-sm text-gray-500">
+                        {team.player}
+                      </p>
 
-          <div className="flex justify-end gap-3 pt-3">
+                    </div>
 
-            <Button
-              variant="secondary"
-              onClick={() =>
-                setTeamModalOpen(false)
-              }
-            >
-              Cancelar
-            </Button>
+                    <div className="text-xl font-bold">
 
-            <Button
-              onClick={saveTeamStats}
-            >
-              Guardar
-            </Button>
+                      ⚽ {team.goals}
 
-          </div>
+                    </div>
+
+                  </div>
+                )
+              )
+
+            ) : (
+
+              <p className="text-gray-500">
+                Sin datos
+              </p>
+            )
+          }
 
         </div>
 
-      </Modal>
-
-      {/* PLAYER MODAL */}
-      <Modal
-        open={playerModalOpen}
-        onClose={() =>
-          setPlayerModalOpen(false)
-        }
-        title="Editar Estadísticas Jugador"
-      >
-
-        <div className="space-y-4">
-
-          <Input
-            type="number"
-            min={0}
-            placeholder="Partidos Jugados"
-            value={matchesPlayed}
-            onChange={(e) =>
-              setMatchesPlayed(
-                e.target.value
-              )
-            }
-          />
-
-          <Input
-            type="number"
-            min={0}
-            placeholder="Goles"
-            value={goals}
-            onChange={(e) =>
-              setGoals(e.target.value)
-            }
-          />
-
-          <Input
-            type="number"
-            min={0}
-            placeholder="Amarillas"
-            value={yellowCards}
-            onChange={(e) =>
-              setYellowCards(
-                e.target.value
-              )
-            }
-          />
-
-          <Input
-            type="number"
-            min={0}
-            placeholder="Rojas"
-            value={redCards}
-            onChange={(e) =>
-              setRedCards(
-                e.target.value
-              )
-            }
-          />
-
-          <div className="flex justify-end gap-3 pt-3">
-
-            <Button
-              variant="secondary"
-              onClick={() =>
-                setPlayerModalOpen(false)
-              }
-            >
-              Cancelar
-            </Button>
-
-            <Button
-              onClick={savePlayerStats}
-            >
-              Guardar
-            </Button>
-
-          </div>
-
-        </div>
-
-      </Modal>
+      </Card>
 
     </div>
   )

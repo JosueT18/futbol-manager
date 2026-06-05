@@ -1,12 +1,14 @@
 const API_URL = "http://127.0.0.1:8000"
 
 // =========================
-// GET TOKEN
+// GET AUTH HEADERS
 // =========================
 function getAuthHeaders() {
 
   const token =
-    localStorage.getItem("token")
+    localStorage.getItem(
+      "token"
+    )
 
   return {
 
@@ -19,6 +21,53 @@ function getAuthHeaders() {
 }
 
 // =========================
+// HANDLE RESPONSE
+// =========================
+async function handleResponse(
+  response: Response
+) {
+
+  let result: any = {}
+
+  try {
+
+    result = await response.json()
+
+  } catch {
+
+    result = {}
+  }
+
+  // =========================
+  // UNAUTHORIZED
+  // =========================
+  if (response.status === 401) {
+
+    localStorage.removeItem(
+      "token"
+    )
+
+    throw new Error(
+      "Sesión expirada"
+    )
+  }
+
+  // =========================
+  // ERROR
+  // =========================
+  if (!response.ok) {
+
+    throw new Error(
+      result.detail ||
+      result.error ||
+      "Error en la solicitud"
+    )
+  }
+
+  return result
+}
+
+// =========================
 // GET PLAYERS
 // =========================
 export async function getPlayers() {
@@ -28,18 +77,14 @@ export async function getPlayers() {
     const response = await fetch(
       `${API_URL}/players`,
       {
-        headers: getAuthHeaders(),
+        headers:
+          getAuthHeaders(),
       }
     )
 
-    if (!response.ok) {
-
-      throw new Error(
-        "Error al obtener jugadores"
-      )
-    }
-
-    return await response.json()
+    return await handleResponse(
+      response
+    )
 
   } catch (error) {
 
@@ -69,23 +114,15 @@ export async function createPlayer(
         headers:
           getAuthHeaders(),
 
-        body: JSON.stringify(data),
+        body: JSON.stringify(
+          data
+        ),
       }
     )
 
-    if (!response.ok) {
-
-      const errorData =
-        await response.json()
-
-      throw new Error(
-        errorData.detail
-        ||
-        "Error al crear jugador"
-      )
-    }
-
-    return await response.json()
+    return await handleResponse(
+      response
+    )
 
   } catch (error) {
 
@@ -117,19 +154,9 @@ export async function deletePlayer(
       }
     )
 
-    if (!response.ok) {
-
-      const errorData =
-        await response.json()
-
-      throw new Error(
-        errorData.detail
-        ||
-        "Error al eliminar jugador"
-      )
-    }
-
-    return await response.json()
+    return await handleResponse(
+      response
+    )
 
   } catch (error) {
 
@@ -160,23 +187,15 @@ export async function updatePlayer(
         headers:
           getAuthHeaders(),
 
-        body: JSON.stringify(data),
+        body: JSON.stringify(
+          data
+        ),
       }
     )
 
-    if (!response.ok) {
-
-      const errorData =
-        await response.json()
-
-      throw new Error(
-        errorData.detail
-        ||
-        "Error al actualizar jugador"
-      )
-    }
-
-    return await response.json()
+    return await handleResponse(
+      response
+    )
 
   } catch (error) {
 
@@ -208,19 +227,9 @@ export async function approvePlayer(
       }
     )
 
-    if (!response.ok) {
-
-      const errorData =
-        await response.json()
-
-      throw new Error(
-        errorData.detail
-        ||
-        "Error al aprobar jugador"
-      )
-    }
-
-    return await response.json()
+    return await handleResponse(
+      response
+    )
 
   } catch (error) {
 
@@ -257,19 +266,9 @@ export async function rejectPlayer(
       }
     )
 
-    if (!response.ok) {
-
-      const errorData =
-        await response.json()
-
-      throw new Error(
-        errorData.detail
-        ||
-        "Error al rechazar jugador"
-      )
-    }
-
-    return await response.json()
+    return await handleResponse(
+      response
+    )
 
   } catch (error) {
 

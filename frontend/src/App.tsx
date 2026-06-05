@@ -19,6 +19,9 @@ import {
   useAuth,
 } from "./auth/AuthContext"
 
+import TablaPosiciones from "./pages/TablaPosiciones"
+import Dashboard from "./pages/Dashboard"
+
 function App() {
 
   const {
@@ -93,10 +96,10 @@ function App() {
 
         <Routes>
 
-          {/* HOME */}
+          {/* DASHBOARD */}
           <Route
             path="/"
-            element={<Home />}
+            element={<Dashboard />}
           />
 
           {/* EQUIPOS */}
@@ -166,6 +169,13 @@ function App() {
               <Navigate to="/" />
             }
           />
+
+          <Route
+            path="/tabla"
+            element={<TablaPosiciones />          
+          }
+
+          />          
 
         </Routes>
 

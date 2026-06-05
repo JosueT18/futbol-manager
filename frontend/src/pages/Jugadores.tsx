@@ -11,6 +11,8 @@ import {
   updatePlayer as updatePlayerApi,
 } from "../api/players"
 
+import { getTeams } from "../api/teams"
+
 import Button from "../components/ui/Button"
 import Input from "../components/ui/Input"
 import Badge from "../components/ui/Badge"
@@ -35,11 +37,16 @@ function Jugadores() {
     role === "Director"
     ||
     role === "Comision"
+    ||
+    role === "Tecnico"
 
   // =========================
   // CREATE STATES
   // =========================
   const [name, setName] =
+    useState("")
+
+  const [lastname, setLastname] =
     useState("")
 
   const [age, setAge] =
@@ -75,6 +82,9 @@ function Jugadores() {
   const [editName, setEditName] =
     useState("")
 
+  const [editLastname, setEditLastname] =
+    useState("")
+
   const [editAge, setEditAge] =
     useState("")
 
@@ -82,6 +92,9 @@ function Jugadores() {
     useState("")
 
   const [editNumber, setEditNumber] =
+    useState("")
+
+  const [editTeamId, setEditTeamId] =
     useState("")
 
   // =========================
@@ -135,9 +148,12 @@ function Jugadores() {
     playersArray.filter(
       (player: any) => {
 
+        const fullName =
+          `${player.name || ""} ${player.lastname || ""}`
+
         const matchesSearch =
-          player.name
-            ?.toLowerCase()
+          fullName
+            .toLowerCase()
             .includes(
               search.toLowerCase()
             )
@@ -165,20 +181,22 @@ function Jugadores() {
 
     try {
 
-      const response = await fetch(
-        "http://127.0.0.1:8000/teams"
-      )
-
-      const data = await response.json()
+      const data = await getTeams()
 
       if (Array.isArray(data)) {
 
         setTeams(data)
+
+      } else {
+
+        setTeams([])
       }
 
     } catch (error) {
 
       console.error(error)
+
+      setTeams([])
     }
   }
 
@@ -193,6 +211,7 @@ function Jugadores() {
 
     if (
       !name ||
+      !lastname ||
       !age ||
       !position ||
       !number ||
@@ -224,6 +243,8 @@ function Jugadores() {
 
         name,
 
+        lastname,
+
         age: Number(age),
 
         position,
@@ -240,6 +261,7 @@ function Jugadores() {
       setErrorMessage("")
 
       setName("")
+      setLastname("")
       setAge("")
       setPosition("")
       setNumber("")
@@ -249,11 +271,13 @@ function Jugadores() {
 
       await refetch()
 
-    } catch (error) {
+    } catch (error: any) {
 
       console.error(error)
 
       setErrorMessage(
+        error.message
+        ||
         "Error al crear jugador"
       )
     }
@@ -299,11 +323,13 @@ function Jugadores() {
 
       await refetch()
 
-    } catch (error) {
+    } catch (error: any) {
 
       console.error(error)
 
       setErrorMessage(
+        error.message
+        ||
         "Error al eliminar jugador"
       )
     }
@@ -318,6 +344,8 @@ function Jugadores() {
 
     setEditName(player.name || "")
 
+    setEditLastname(player.lastname || "")
+
     setEditAge(
       player.age?.toString() || ""
     )
@@ -330,6 +358,10 @@ function Jugadores() {
       player.number?.toString() || ""
     )
 
+    setEditTeamId(
+      player.team_id?.toString() || ""
+    )
+
     setEditModalOpen(true)
   }
 
@@ -337,6 +369,22 @@ function Jugadores() {
   // SAVE EDIT
   // =========================
   async function saveEditPlayer() {
+
+    if (
+      !editName ||
+      !editLastname ||
+      !editAge ||
+      !editPosition ||
+      !editNumber ||
+      !editTeamId
+    ) {
+
+      setErrorMessage(
+        "Completa todos los campos"
+      )
+
+      return
+    }
 
     if (
       Number(editAge) <= 0 ||
@@ -358,11 +406,15 @@ function Jugadores() {
 
           name: editName,
 
+          lastname: editLastname,
+
           age: Number(editAge),
 
           position: editPosition,
 
           number: Number(editNumber),
+
+          team_id: Number(editTeamId),
         }
       )
 
@@ -376,11 +428,13 @@ function Jugadores() {
 
       await refetch()
 
-    } catch (error) {
+    } catch (error: any) {
 
       console.error(error)
 
       setErrorMessage(
+        error.message
+        ||
         "Error al actualizar jugador"
       )
     }
@@ -565,13 +619,29 @@ function Jugadores() {
               <div>
 
                 <label className="block text-sm font-semibold mb-2 text-gray-700">
-                  Nombre y apellido
+                  Nombre
                 </label>
 
                 <Input
                   value={name}
                   onChange={(e) =>
                     setName(e.target.value)
+                  }
+                />
+
+              </div>
+
+              {/* APELLIDO */}
+              <div>
+
+                <label className="block text-sm font-semibold mb-2 text-gray-700">
+                  Apellido
+                </label>
+
+                <Input
+                  value={lastname}
+                  onChange={(e) =>
+                    setLastname(e.target.value)
                   }
                 />
 
@@ -610,15 +680,9 @@ function Jugadores() {
                   className="
                     w-full
                     border border-gray-300
-                    focus:border-black
-                    focus:ring-2
-                    focus:ring-black/10
-                    outline-none
                     p-3
                     rounded-xl
-                    text-sm
                     bg-white
-                    transition
                   "
                 >
 
@@ -826,6 +890,8 @@ function Jugadores() {
 
                               <td className="p-4">
                                 {player.name}
+                                {" "}
+                                {player.lastname}
                               </td>
 
                               <td className="p-4">
@@ -921,6 +987,14 @@ function Jugadores() {
           />
 
           <Input
+            placeholder="Apellido"
+            value={editLastname}
+            onChange={(e) =>
+              setEditLastname(e.target.value)
+            }
+          />
+
+          <Input
             type="number"
             min={1}
             placeholder="Edad"
@@ -930,13 +1004,69 @@ function Jugadores() {
             }
           />
 
-          <Input
-            placeholder="Posición"
+          <select
             value={editPosition}
             onChange={(e) =>
               setEditPosition(e.target.value)
             }
-          />
+            className="
+              w-full
+              border
+              p-3
+              rounded-xl
+              bg-white
+            "
+          >
+
+            <option value="">
+              Seleccionar posición
+            </option>
+
+            <option value="Arquero">
+              Arquero
+            </option>
+
+            <option value="Defensor Central">
+              Defensor Central
+            </option>
+
+            <option value="Lateral Derecho">
+              Lateral Derecho
+            </option>
+
+            <option value="Lateral Izquierdo">
+              Lateral Izquierdo
+            </option>
+
+            <option value="Volante Central">
+              Volante Central
+            </option>
+
+            <option value="Volante Derecho">
+              Volante Derecho
+            </option>
+
+            <option value="Volante Izquierdo">
+              Volante Izquierdo
+            </option>
+
+            <option value="Enganche">
+              Enganche
+            </option>
+
+            <option value="Extremo Derecho">
+              Extremo Derecho
+            </option>
+
+            <option value="Extremo Izquierdo">
+              Extremo Izquierdo
+            </option>
+
+            <option value="Delantero">
+              Delantero
+            </option>
+
+          </select>
 
           <Input
             type="number"
@@ -947,6 +1077,38 @@ function Jugadores() {
               setEditNumber(e.target.value)
             }
           />
+
+          <select
+            value={editTeamId}
+            onChange={(e) =>
+              setEditTeamId(e.target.value)
+            }
+            className="
+              w-full
+              border
+              p-3
+              rounded-xl
+              bg-white
+            "
+          >
+
+            <option value="">
+              Seleccionar equipo
+            </option>
+
+            {
+              teams.map((team: any) => (
+
+                <option
+                  key={team.id}
+                  value={team.id}
+                >
+                  {team.name}
+                </option>
+              ))
+            }
+
+          </select>
 
           <Button onClick={saveEditPlayer}>
             Guardar Cambios

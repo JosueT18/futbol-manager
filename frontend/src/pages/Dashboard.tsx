@@ -1,205 +1,633 @@
-import { useQuery } from "@tanstack/react-query"
+import { useEffect, useState } from "react"
+
+import { motion } from "framer-motion"
 
 import {
-  PieChart,
-  Pie,
-  Cell,
-  Tooltip,
+  Trophy,
+  CalendarDays,
+  Users,
+  Shield,
+  Goal,
+  Activity,
+} from "lucide-react"
+
+import {
   ResponsiveContainer,
   BarChart,
   Bar,
   XAxis,
   YAxis,
+  Tooltip,
   CartesianGrid,
 } from "recharts"
 
+import Card from "../components/ui/Card"
+
+import { getMatches } from "../api/matches"
+import { getTeams } from "../api/teams"
+import { getPlayers } from "../api/players"
+import { getStandings } from "../api/standings"
+import { getStats } from "../api/stats"
+
 function Dashboard() {
 
-  // =========================
-  // PLAYERS
-  // =========================
-  const {
-    data: players = [],
-  } = useQuery({
-    queryKey: ["players"],
-    queryFn: async () => {
+  const [matches, setMatches] =
+    useState<any[]>([])
 
-      const res = await fetch(
-        "http://127.0.0.1:8000/players"
+  const [teams, setTeams] =
+    useState<any[]>([])
+
+  const [players, setPlayers] =
+    useState<any[]>([])
+
+  const [standings, setStandings] =
+    useState<any[]>([])
+
+  const [stats, setStats] =
+    useState<any>(null)
+
+  useEffect(() => {
+
+    loadData()
+
+  }, [])
+
+  async function loadData() {
+
+    try {
+
+      const matchesData =
+        await getMatches()
+
+      const teamsData =
+        await getTeams()
+
+      const playersData =
+        await getPlayers()
+
+      const standingsData =
+        await getStandings()
+
+      const statsData =
+        await getStats()
+
+      setMatches(matchesData || [])
+
+      setTeams(teamsData || [])
+
+      setPlayers(playersData || [])
+
+      setStandings(standingsData || [])
+
+      setStats(statsData || null)
+
+    } catch (error) {
+
+      console.error(error)
+    }
+  }
+
+  // =========================
+  // TOTAL GOALS
+  // =========================
+  const totalGoals =
+    stats?.top_scorers?.reduce(
+      (
+        acc: number,
+        player: any
+      ) => acc + (player.goals || 0),
+      0
+    ) || 0
+
+  // =========================
+  // TOP SCORERS
+  // =========================
+  const topScorers =
+    stats?.top_scorers || []
+
+  // =========================
+  // FEATURED MATCH
+  // =========================
+  const featuredMatch =
+    matches.find(
+      (m) => m.status === "finished"
+    )
+
+  // =========================
+  // NEXT MATCHES
+  // =========================
+  const nextMatches =
+    matches
+      .filter(
+        (m) =>
+          m.status === "scheduled"
       )
-
-      return res.json()
-    },
-  })
+      .slice(0, 3)
 
   // =========================
-  // TEAMS
+  // GOALS BY TEAM CHART
   // =========================
-  const {
-    data: teams = [],
-  } = useQuery({
-    queryKey: ["teams"],
-    queryFn: async () => {
+  const goalsByTeam =
+    standings.map((team: any) => ({
 
-      const res = await fetch(
-        "http://127.0.0.1:8000/teams"
-      )
+      name:
+        team.team_name,
 
-      return res.json()
-    },
-  })
+      goals:
+        team.goals_for,
+    }))
 
   // =========================
-  // METRICS
+  // TOP SCORERS CHART
   // =========================
-  const pendingPlayers =
-    players.filter(
-      (p: any) =>
-        p.status === "pending"
-    )
+  const scorersChart =
+    topScorers
+      .slice(0, 5)
+      .map((player: any) => ({
 
-  const approvedPlayers =
-    players.filter(
-      (p: any) =>
-        p.status === "approved"
-    )
+        name:
+          player.name,
 
-  const rejectedPlayers =
-    players.filter(
-      (p: any) =>
-        p.status === "rejected"
-    )
-
-  // =========================
-  // PIE CHART DATA
-  // =========================
-  const pieData = [
-    {
-      name: "Pendientes",
-      value: pendingPlayers.length,
-      color: "#facc15",
-    },
-    {
-      name: "Aprobados",
-      value: approvedPlayers.length,
-      color: "#22c55e",
-    },
-    {
-      name: "Rechazados",
-      value: rejectedPlayers.length,
-      color: "#ef4444",
-    },
-  ]
-
-  // =========================
-  // BAR CHART DATA
-  // =========================
-  const barData = teams.map(
-    (team: any) => ({
-
-      name: team.name,
-
-      jugadores:
-        team.players?.filter(
-          (player: any) =>
-            player.status === "approved"
-        ).length || 0,
-    })
-  )
+        goals:
+          player.goals,
+      }))
 
   return (
 
-    <div className="p-6">
+    <div
+      className="
+        min-h-screen
+        bg-[#0f1720]
+        text-white
+        p-6
+      "
+    >
 
       {/* HEADER */}
-      <div className="mb-8">
+      <div className="mb-10">
 
-        <h1 className="text-4xl font-bold">
-          Dashboard
+        <h1 className="text-5xl font-black">
+          Futbol Manager
         </h1>
 
-        <p className="text-gray-500 mt-2">
-          Resumen general del sistema
+        <p className="text-zinc-400 mt-3">
+          Dashboard profesional del torneo
         </p>
 
       </div>
 
-      {/* METRICS */}
+      {/* HERO CARDS */}
       <div
         className="
           grid
           grid-cols-1
           md:grid-cols-2
-          xl:grid-cols-5
+          xl:grid-cols-4
           gap-5
-          mb-8
         "
       >
 
+        {/* MATCHES */}
+        <motion.div
+          whileHover={{ scale: 1.03 }}
+        >
+
+          <Card className="bg-[#18222f] border border-[#253041]">
+
+            <div className="flex justify-between items-center">
+
+              <div>
+
+                <p className="text-zinc-400">
+                  Partidos
+                </p>
+
+                <h2 className="text-4xl font-black mt-2">
+                  {matches.length}
+                </h2>
+
+              </div>
+
+              <CalendarDays
+                size={50}
+                className="text-blue-400"
+              />
+
+            </div>
+
+          </Card>
+
+        </motion.div>
+
         {/* TEAMS */}
-        <div className="bg-white rounded-2xl shadow-sm p-6">
+        <motion.div
+          whileHover={{ scale: 1.03 }}
+        >
 
-          <p className="text-gray-500 text-sm">
-            Equipos
-          </p>
+          <Card className="bg-[#18222f] border border-[#253041]">
 
-          <h2 className="text-5xl font-bold mt-3 text-green-600">
-            {teams.length}
-          </h2>
+            <div className="flex justify-between items-center">
 
-        </div>
+              <div>
+
+                <p className="text-zinc-400">
+                  Equipos
+                </p>
+
+                <h2 className="text-4xl font-black mt-2">
+                  {teams.length}
+                </h2>
+
+              </div>
+
+              <Shield
+                size={50}
+                className="text-green-400"
+              />
+
+            </div>
+
+          </Card>
+
+        </motion.div>
 
         {/* PLAYERS */}
-        <div className="bg-white rounded-2xl shadow-sm p-6">
+        <motion.div
+          whileHover={{ scale: 1.03 }}
+        >
 
-          <p className="text-gray-500 text-sm">
-            Jugadores Aprobados
-          </p>
+          <Card className="bg-[#18222f] border border-[#253041]">
 
-          <h2 className="text-5xl font-bold mt-3 text-blue-600">
-            {approvedPlayers.length}
-          </h2>
+            <div className="flex justify-between items-center">
+
+              <div>
+
+                <p className="text-zinc-400">
+                  Jugadores
+                </p>
+
+                <h2 className="text-4xl font-black mt-2">
+                  {players.length}
+                </h2>
+
+              </div>
+
+              <Users
+                size={50}
+                className="text-purple-400"
+              />
+
+            </div>
+
+          </Card>
+
+        </motion.div>
+
+        {/* GOALS */}
+        <motion.div
+          whileHover={{ scale: 1.03 }}
+        >
+
+          <Card className="bg-[#18222f] border border-[#253041]">
+
+            <div className="flex justify-between items-center">
+
+              <div>
+
+                <p className="text-zinc-400">
+                  Goles
+                </p>
+
+                <h2 className="text-4xl font-black mt-2">
+                  {totalGoals}
+                </h2>
+
+              </div>
+
+              <Goal
+                size={50}
+                className="text-red-400"
+              />
+
+            </div>
+
+          </Card>
+
+        </motion.div>
+
+      </div>
+
+      {/* MAIN GRID */}
+      <div
+        className="
+          grid
+          grid-cols-1
+          xl:grid-cols-3
+          gap-6
+          mt-8
+        "
+      >
+
+        {/* FEATURED MATCH */}
+        <div className="xl:col-span-2">
+
+          <Card className="bg-gradient-to-br from-[#18222f] to-[#243244] border border-[#253041]">
+
+            <div className="flex items-center gap-3 mb-6">
+
+              <Trophy className="text-yellow-400" />
+
+              <h2 className="text-3xl font-black">
+                Partido Destacado
+              </h2>
+
+            </div>
+
+            {
+              featuredMatch ? (
+
+                <div className="text-center py-10">
+
+                  <div className="grid grid-cols-3 items-center">
+
+                    <div>
+
+                      <h3 className="text-3xl font-bold">
+                        {featuredMatch.home_team}
+                      </h3>
+
+                    </div>
+
+                    <div>
+
+                      <div className="text-6xl font-black text-green-400">
+
+                        {featuredMatch.home_score}
+
+                        {" - "}
+
+                        {featuredMatch.away_score}
+
+                      </div>
+
+                    </div>
+
+                    <div>
+
+                      <h3 className="text-3xl font-bold">
+                        {featuredMatch.away_team}
+                      </h3>
+
+                    </div>
+
+                  </div>
+
+                </div>
+
+              ) : (
+
+                <div className="text-zinc-400">
+                  No hay partidos finalizados
+                </div>
+              )
+            }
+
+          </Card>
 
         </div>
 
-        {/* PENDING */}
-        <div className="bg-white rounded-2xl shadow-sm p-6">
+        {/* TOP SCORERS */}
+        <div>
 
-          <p className="text-gray-500 text-sm">
-            Pendientes
-          </p>
+          <Card className="bg-[#18222f] border border-[#253041]">
 
-          <h2 className="text-5xl font-bold mt-3 text-yellow-500">
-            {pendingPlayers.length}
-          </h2>
+            <div className="flex items-center gap-3 mb-6">
+
+              <Goal className="text-red-400" />
+
+              <h2 className="text-2xl font-black">
+                Goleadores
+              </h2>
+
+            </div>
+
+            <div className="space-y-4">
+
+              {
+                topScorers.length > 0 ? (
+
+                  topScorers
+                    .slice(0, 5)
+                    .map(
+                      (
+                        player: any,
+                        index: number
+                      ) => (
+
+                        <div
+                          key={player.player_id}
+                          className="
+                            flex
+                            justify-between
+                            items-center
+                            bg-[#243244]
+                            rounded-2xl
+                            p-4
+                          "
+                        >
+
+                          <div>
+
+                            <p className="font-bold">
+
+                              #{index + 1}
+
+                              {" · "}
+
+                              {player.name}
+
+                              {" "}
+
+                              {player.lastname}
+
+                            </p>
+
+                            <p className="text-sm text-zinc-400">
+
+                              {player.team}
+
+                            </p>
+
+                          </div>
+
+                          <div
+                            className="
+                              bg-red-500
+                              text-white
+                              px-4
+                              py-2
+                              rounded-xl
+                              font-black
+                            "
+                          >
+
+                            ⚽ {player.goals}
+
+                          </div>
+
+                        </div>
+                      )
+                    )
+
+                ) : (
+
+                  <p className="text-zinc-400">
+                    No hay goles registrados
+                  </p>
+                )
+              }
+
+            </div>
+
+          </Card>
 
         </div>
 
-        {/* APPROVED */}
-        <div className="bg-white rounded-2xl shadow-sm p-6">
+      </div>
 
-          <p className="text-gray-500 text-sm">
-            Aprobados
-          </p>
+      {/* LOWER GRID */}
+      <div
+        className="
+          grid
+          grid-cols-1
+          xl:grid-cols-2
+          gap-6
+          mt-8
+        "
+      >
 
-          <h2 className="text-5xl font-bold mt-3 text-green-500">
-            {approvedPlayers.length}
-          </h2>
+        {/* STANDINGS */}
+        <Card className="bg-[#18222f] border border-[#253041]">
 
-        </div>
+          <div className="flex items-center gap-3 mb-6">
 
-        {/* REJECTED */}
-        <div className="bg-white rounded-2xl shadow-sm p-6">
+            <Trophy className="text-yellow-400" />
 
-          <p className="text-gray-500 text-sm">
-            Rechazados
-          </p>
+            <h2 className="text-2xl font-black">
+              Tabla
+            </h2>
 
-          <h2 className="text-5xl font-bold mt-3 text-red-500">
-            {rejectedPlayers.length}
-          </h2>
+          </div>
 
-        </div>
+          <div className="space-y-3">
+
+            {
+              standings
+                .slice(0, 5)
+                .map(
+                  (
+                    team,
+                    index
+                  ) => (
+
+                    <div
+                      key={team.team_id}
+                      className="
+                        flex
+                        justify-between
+                        items-center
+                        bg-[#243244]
+                        p-4
+                        rounded-xl
+                      "
+                    >
+
+                      <div className="flex gap-3 items-center">
+
+                        <span className="font-black text-xl">
+                          #{index + 1}
+                        </span>
+
+                        <span className="font-semibold">
+                          {team.team_name}
+                        </span>
+
+                      </div>
+
+                      <div className="font-black text-green-400">
+                        {team.points} pts
+                      </div>
+
+                    </div>
+                  )
+                )
+            }
+
+          </div>
+
+        </Card>
+
+        {/* NEXT MATCHES */}
+        <Card className="bg-[#18222f] border border-[#253041]">
+
+          <div className="flex items-center gap-3 mb-6">
+
+            <Activity className="text-blue-400" />
+
+            <h2 className="text-2xl font-black">
+              Próximos Partidos
+            </h2>
+
+          </div>
+
+          <div className="space-y-4">
+
+            {
+              nextMatches.map((match) => (
+
+                <div
+                  key={match.id}
+                  className="
+                    bg-[#243244]
+                    rounded-2xl
+                    p-5
+                  "
+                >
+
+                  <div className="text-center">
+
+                    <p className="font-bold text-xl">
+                      {match.home_team}
+                    </p>
+
+                    <p className="text-zinc-400 my-2">
+                      VS
+                    </p>
+
+                    <p className="font-bold text-xl">
+                      {match.away_team}
+                    </p>
+
+                    <p className="text-sm text-zinc-400 mt-4">
+
+                      {
+                        match.match_date &&
+                        new Date(
+                          match.match_date
+                        ).toLocaleString()
+                      }
+
+                    </p>
+
+                  </div>
+
+                </div>
+              ))
+            }
+
+          </div>
+
+        </Card>
 
       </div>
 
@@ -210,90 +638,47 @@ function Dashboard() {
           grid-cols-1
           xl:grid-cols-2
           gap-6
+          mt-8
         "
       >
 
-        {/* PIE CHART */}
-        <div
-          className="
-            bg-white
-            rounded-2xl
-            shadow-sm
-            p-6
-          "
-        >
+        {/* GOALS BY TEAM */}
+        <Card className="bg-[#18222f] border border-[#253041]">
 
-          <h2 className="text-2xl font-bold mb-6">
-            Estado de Jugadores
+          <h2 className="text-2xl font-black mb-6">
+            Goles por Equipo
           </h2>
 
           <div className="h-[350px]">
 
-            <ResponsiveContainer>
+            <ResponsiveContainer
+              width="100%"
+              height="100%"
+            >
 
-              <PieChart>
+              <BarChart
+                data={goalsByTeam}
+              >
 
-                <Pie
-                  data={pieData}
-                  dataKey="value"
-                  nameKey="name"
-                  outerRadius={120}
-                  label
-                >
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="#253041"
+                />
 
-                  {
-                    pieData.map((entry, index) => (
+                <XAxis
+                  dataKey="name"
+                  stroke="#9ca3af"
+                />
 
-                      <Cell
-                        key={index}
-                        fill={entry.color}
-                      />
-                    ))
-                  }
-
-                </Pie>
-
-                <Tooltip />
-
-              </PieChart>
-
-            </ResponsiveContainer>
-
-          </div>
-
-        </div>
-
-        {/* BAR CHART */}
-        <div
-          className="
-            bg-white
-            rounded-2xl
-            shadow-sm
-            p-6
-          "
-        >
-
-          <h2 className="text-2xl font-bold mb-6">
-            Jugadores Aprobados por Equipo
-          </h2>
-
-          <div className="h-[350px]">
-
-            <ResponsiveContainer>
-
-              <BarChart data={barData}>
-
-                <CartesianGrid strokeDasharray="3 3" />
-
-                <XAxis dataKey="name" />
-
-                <YAxis />
+                <YAxis
+                  stroke="#9ca3af"
+                />
 
                 <Tooltip />
 
                 <Bar
-                  dataKey="jugadores"
-                  fill="#3b82f6"
+                  dataKey="goals"
+                  fill="#10b981"
                   radius={[8, 8, 0, 0]}
                 />
 
@@ -303,96 +688,55 @@ function Dashboard() {
 
           </div>
 
-        </div>
+        </Card>
 
-      </div>
+        {/* TOP SCORERS CHART */}
+        <Card className="bg-[#18222f] border border-[#253041]">
 
-      {/* REJECTED PLAYERS */}
-      <div className="mt-8">
-
-        <div
-          className="
-            bg-white
-            rounded-2xl
-            shadow-sm
-            p-6
-          "
-        >
-
-          <h2 className="text-2xl font-bold mb-5 text-red-500">
-            Jugadores Rechazados
+          <h2 className="text-2xl font-black mb-6">
+            Top Goleadores
           </h2>
 
-          {
-            rejectedPlayers.length > 0
-              ? (
+          <div className="h-[350px]">
 
-                <div className="space-y-3">
+            <ResponsiveContainer
+              width="100%"
+              height="100%"
+            >
 
-                  {
-                    rejectedPlayers.map(
-                      (player: any) => (
+              <BarChart
+                data={scorersChart}
+              >
 
-                        <div
-                          key={player.id}
-                          className="
-                            border
-                            border-red-100
-                            bg-red-50
-                            rounded-xl
-                            p-4
-                          "
-                        >
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="#253041"
+                />
 
-                          <div className="flex justify-between items-center">
+                <XAxis
+                  dataKey="name"
+                  stroke="#9ca3af"
+                />
 
-                            <div>
+                <YAxis
+                  stroke="#9ca3af"
+                />
 
-                              <p className="font-semibold text-gray-800">
-                                ⚽ {player.name}
-                              </p>
+                <Tooltip />
 
-                              <p className="text-sm text-gray-500">
-                                {player.position}
-                              </p>
+                <Bar
+                  dataKey="goals"
+                  fill="#22c55e"
+                  radius={[8, 8, 0, 0]}
+                />
 
-                            </div>
+              </BarChart>
 
-                            <div
-                              className="
-                                text-sm
-                                text-red-600
-                                font-medium
-                              "
-                            >
+            </ResponsiveContainer>
 
-                              Motivo:
-                              {" "}
-                              {
-                                player.rejection_reason
-                                || "Sin motivo"
-                              }
+          </div>
 
-                            </div>
-
-                          </div>
-
-                        </div>
-                      )
-                    )
-                  }
-
-                </div>
-              )
-              : (
-
-                <p className="text-gray-400">
-                  No hay jugadores rechazados
-                </p>
-              )
-          }
-
-        </div>
+        </Card>
 
       </div>
 

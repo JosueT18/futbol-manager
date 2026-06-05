@@ -1,15 +1,22 @@
 import { useState, useEffect } from "react"
+
 import Swal from "sweetalert2"
-import { useQuery, useQueryClient } from "@tanstack/react-query"
+
+import {
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query"
+
+import { getHeaders } from "../api/api"
 
 function Solicitudes() {
 
   const queryClient = useQueryClient()
 
-  const [teams, setTeams] = useState([])
+  const [teams, setTeams] = useState<any[]>([])
 
   // =========================
-  // PLAYERS PENDING
+  // LOAD PLAYERS
   // =========================
   const {
     data: players = [],
@@ -19,12 +26,33 @@ function Solicitudes() {
     queryFn: async () => {
 
       const response = await fetch(
-        "http://127.0.0.1:8000/players"
+        "http://127.0.0.1:8000/players",
+        {
+          headers: getHeaders(),
+        }
       )
+
+      // =========================
+      // UNAUTHORIZED
+      // =========================
+      if (response.status === 401) {
+
+        return []
+      }
 
       const data = await response.json()
 
-      // 🔥 SOLO PENDIENTES
+      // =========================
+      // VALIDATE ARRAY
+      // =========================
+      if (!Array.isArray(data)) {
+
+        return []
+      }
+
+      // =========================
+      // ONLY PENDING
+      // =========================
       return data.filter(
         (player: any) =>
           player.status === "pending"
@@ -40,23 +68,53 @@ function Solicitudes() {
     try {
 
       const response = await fetch(
-        "http://127.0.0.1:8000/teams"
+        "http://127.0.0.1:8000/teams",
+        {
+          headers: getHeaders(),
+        }
       )
+
+      // =========================
+      // UNAUTHORIZED
+      // =========================
+      if (response.status === 401) {
+
+        setTeams([])
+
+        return
+      }
 
       const data = await response.json()
 
-      setTeams(data)
+      // =========================
+      // VALIDATE ARRAY
+      // =========================
+      if (Array.isArray(data)) {
+
+        setTeams(data)
+
+      } else {
+
+        setTeams([])
+      }
 
     } catch (error) {
 
-      console.error(error)
+      console.error(
+        "LOAD TEAMS ERROR:",
+        error
+      )
+
+      setTeams([])
     }
   }
 
   // =========================
   // APPROVE PLAYER
   // =========================
-  async function approvePlayer(id: number) {
+  async function approvePlayer(
+    id: number
+  ) {
 
     try {
 
@@ -64,6 +122,8 @@ function Solicitudes() {
         `http://127.0.0.1:8000/players/${id}/approve`,
         {
           method: "PUT",
+
+          headers: getHeaders(),
         }
       )
 
@@ -81,14 +141,19 @@ function Solicitudes() {
         showConfirmButton: false,
       })
 
-      // 🔥 RECARGAR PLAYERS
+      // =========================
+      // RELOAD PLAYERS
+      // =========================
       queryClient.invalidateQueries({
         queryKey: ["players"],
       })
 
     } catch (error) {
 
-      console.error(error)
+      console.error(
+        "APPROVE ERROR:",
+        error
+      )
 
       Swal.fire({
         icon: "error",
@@ -101,24 +166,39 @@ function Solicitudes() {
   // =========================
   // REJECT PLAYER
   // =========================
-  async function rejectPlayer(id: number) {
+  async function rejectPlayer(
+    id: number
+  ) {
 
     const result = await Swal.fire({
+
       title: "Motivo de rechazo",
+
       input: "text",
+
       inputPlaceholder:
         "Ingrese el motivo...",
+
       showCancelButton: true,
-      confirmButtonText: "Rechazar",
-      cancelButtonText: "Cancelar",
+
+      confirmButtonText:
+        "Rechazar",
+
+      cancelButtonText:
+        "Cancelar",
     })
 
-    // 🔥 SI CANCELA
+    // =========================
+    // CANCEL
+    // =========================
     if (!result.isConfirmed) {
+
       return
     }
 
-    // 🔥 VALIDAR MOTIVO
+    // =========================
+    // EMPTY REASON
+    // =========================
     if (!result.value) {
 
       Swal.fire({
@@ -136,9 +216,7 @@ function Solicitudes() {
         {
           method: "PUT",
 
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: getHeaders(),
 
           body: JSON.stringify({
             reason: result.value,
@@ -160,14 +238,19 @@ function Solicitudes() {
         showConfirmButton: false,
       })
 
-      // 🔥 RECARGAR PLAYERS
+      // =========================
+      // RELOAD PLAYERS
+      // =========================
       queryClient.invalidateQueries({
         queryKey: ["players"],
       })
 
     } catch (error) {
 
-      console.error(error)
+      console.error(
+        "REJECT ERROR:",
+        error
+      )
 
       Swal.fire({
         icon: "error",
@@ -191,13 +274,23 @@ function Solicitudes() {
     <div className="p-10">
 
       <h1 className="text-4xl font-bold mb-8">
+
         Solicitudes de Jugadores
+
       </h1>
 
       {
         isLoading && (
 
-          <div className="mb-5 bg-yellow-100 text-yellow-800 p-4 rounded-xl">
+          <div
+            className="
+              mb-5
+              bg-yellow-100
+              text-yellow-800
+              p-4
+              rounded-xl
+            "
+          >
 
             ⏳ Cargando solicitudes...
 
@@ -205,15 +298,56 @@ function Solicitudes() {
         )
       }
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* ========================= */}
+      {/* EMPTY */}
+      {/* ========================= */}
+      {
+        !isLoading &&
+        players.length === 0 && (
+
+          <div
+            className="
+              bg-white
+              rounded-2xl
+              p-8
+              shadow-md
+              text-center
+            "
+          >
+
+            <p className="text-xl">
+
+              ✅ No hay solicitudes pendientes
+
+            </p>
+
+          </div>
+        )
+      }
+
+      <div
+        className="
+          grid
+          grid-cols-1
+          md:grid-cols-3
+          gap-6
+        "
+      >
 
         {
           players.map((player: any) => {
 
-            const team: any = teams.find(
-              (t: any) =>
-                t.id === player.team_id
-            )
+            // =========================
+            // SAFE TEAM SEARCH
+            // =========================
+            const team = Array.isArray(teams)
+
+              ? teams.find(
+                  (t: any) =>
+                    t.id === player.team_id
+                )
+
+              : null
 
             return (
 
@@ -242,21 +376,38 @@ function Solicitudes() {
 
                 <p className="mt-2 text-gray-700">
 
-                  🛡️ {team?.name}
+                  🛡️ {
+                    team?.name ||
+                    "Sin equipo"
+                  }
 
                 </p>
 
-                <p className="mt-4 font-bold text-yellow-600">
+                <p
+                  className="
+                    mt-4
+                    font-bold
+                    text-yellow-600
+                  "
+                >
 
                   ⏳ Pendiente
 
                 </p>
 
-                <div className="flex gap-3 mt-6">
+                <div
+                  className="
+                    flex
+                    gap-3
+                    mt-6
+                  "
+                >
 
                   <button
                     onClick={() =>
-                      approvePlayer(player.id)
+                      approvePlayer(
+                        player.id
+                      )
                     }
                     className="
                       bg-green-600
@@ -268,12 +419,16 @@ function Solicitudes() {
                       transition
                     "
                   >
+
                     Aprobar
+
                   </button>
 
                   <button
                     onClick={() =>
-                      rejectPlayer(player.id)
+                      rejectPlayer(
+                        player.id
+                      )
                     }
                     className="
                       bg-red-600
@@ -285,7 +440,9 @@ function Solicitudes() {
                       transition
                     "
                   >
+
                     Rechazar
+
                   </button>
 
                 </div>

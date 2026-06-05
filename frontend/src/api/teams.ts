@@ -3,6 +3,51 @@ import { getHeaders } from "./api"
 const API_URL = "http://127.0.0.1:8000"
 
 // =========================
+// HANDLE RESPONSE
+// =========================
+async function handleResponse(
+  response: Response
+) {
+
+  let result: any = {}
+
+  try {
+
+    result = await response.json()
+
+  } catch {
+
+    result = {}
+  }
+
+  // =========================
+  // UNAUTHORIZED
+  // =========================
+  if (response.status === 401) {
+
+    localStorage.removeItem("token")
+
+    throw new Error(
+      "Sesión expirada"
+    )
+  }
+
+  // =========================
+  // ERROR
+  // =========================
+  if (!response.ok) {
+
+    throw new Error(
+      result.detail ||
+      result.error ||
+      "Error en la solicitud"
+    )
+  }
+
+  return result
+}
+
+// =========================
 // GET TEAMS
 // =========================
 export async function getTeams() {
@@ -16,14 +61,9 @@ export async function getTeams() {
       }
     )
 
-    if (!response.ok) {
-
-      throw new Error(
-        "Error obteniendo equipos"
-      )
-    }
-
-    return await response.json()
+    return await handleResponse(
+      response
+    )
 
   } catch (error) {
 
@@ -56,21 +96,9 @@ export async function createTeam(
       }
     )
 
-    const result =
-      await response.json()
-
-    if (!response.ok) {
-
-      throw new Error(
-        result.detail
-        ||
-        result.error
-        ||
-        "Error creando equipo"
-      )
-    }
-
-    return result
+    return await handleResponse(
+      response
+    )
 
   } catch (error) {
 
@@ -101,21 +129,9 @@ export async function deleteTeam(
       }
     )
 
-    const result =
-      await response.json()
-
-    if (!response.ok) {
-
-      throw new Error(
-        result.detail
-        ||
-        result.error
-        ||
-        "Error eliminando equipo"
-      )
-    }
-
-    return result
+    return await handleResponse(
+      response
+    )
 
   } catch (error) {
 
@@ -149,21 +165,9 @@ export async function updateTeam(
       }
     )
 
-    const result =
-      await response.json()
-
-    if (!response.ok) {
-
-      throw new Error(
-        result.detail
-        ||
-        result.error
-        ||
-        "Error actualizando equipo"
-      )
-    }
-
-    return result
+    return await handleResponse(
+      response
+    )
 
   } catch (error) {
 
@@ -190,6 +194,23 @@ export async function uploadLogo(
         "token"
       )
 
+    // =========================
+    // VALIDATE TOKEN
+    // =========================
+    if (
+      !token ||
+      token === "undefined" ||
+      token === "null"
+    ) {
+
+      throw new Error(
+        "No autenticado"
+      )
+    }
+
+    // =========================
+    // FORM DATA
+    // =========================
     const formData =
       new FormData()
 
@@ -198,12 +219,18 @@ export async function uploadLogo(
       file
     )
 
+    // =========================
+    // REQUEST
+    // =========================
     const response = await fetch(
       `${API_URL}/teams/upload-logo`,
       {
         method: "POST",
 
         headers: {
+
+          // ⚠️ NO CONTENT-TYPE
+          // EL BROWSER LO GENERA SOLO
           Authorization:
             `Bearer ${token}`,
         },
@@ -212,19 +239,12 @@ export async function uploadLogo(
       }
     )
 
-    const result =
-      await response.json()
-
-    if (!response.ok) {
-
-      throw new Error(
-        result.detail
-        ||
-        "Error subiendo logo"
-      )
-    }
-
-    return result
+    // =========================
+    // HANDLE RESPONSE
+    // =========================
+    return await handleResponse(
+      response
+    )
 
   } catch (error) {
 

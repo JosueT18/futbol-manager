@@ -1,9 +1,8 @@
-from sqlalchemy import (
-    Column,
-    Integer,
-    String,
-    ForeignKey,
-)
+from sqlalchemy import Column
+from sqlalchemy import Integer
+from sqlalchemy import String
+from sqlalchemy import DateTime
+from sqlalchemy import ForeignKey
 
 from sqlalchemy.orm import relationship
 
@@ -14,49 +13,96 @@ class Match(Base):
 
     __tablename__ = "matches"
 
+    # =========================
+    # ID
+    # =========================
     id = Column(
         Integer,
-        primary_key=True
+        primary_key=True,
+        index=True
     )
 
+    # =========================
+    # TEAMS
+    # =========================
     home_team_id = Column(
         Integer,
-        ForeignKey("teams.id")
+        ForeignKey("teams.id"),
+        nullable=False
     )
 
     away_team_id = Column(
         Integer,
-        ForeignKey("teams.id")
+        ForeignKey("teams.id"),
+        nullable=False
     )
 
-    home_score = Column(
-        Integer,
-        default=0
-    )
-
-    away_score = Column(
-        Integer,
-        default=0
-    )
-
-    date = Column(String)
-
-    stadium = Column(String)
-
-    status = Column(
-        String,
-        default="scheduled"
+    # =================
+    # EVENTS
+    #==================
+    events = relationship(
+        "MatchEvent",
+        back_populates="match",
+        cascade="all,delete"
     )
 
     # =========================
-    # RELATIONS
+    # RELATIONSHIPS
     # =========================
     home_team = relationship(
         "Team",
-        foreign_keys=[home_team_id]
+        foreign_keys=[home_team_id],
+        back_populates="home_matches"
     )
 
     away_team = relationship(
         "Team",
-        foreign_keys=[away_team_id]
+        foreign_keys=[away_team_id],
+        back_populates="away_matches"
+    )
+
+    # =========================
+    # FIXTURE
+    # =========================
+    round_number = Column(
+        Integer,
+        default=1,
+        nullable=False
+    )
+
+    match_date = Column(
+        DateTime,
+        nullable=True
+    )
+
+    stadium = Column(
+        String,
+        nullable=True
+    )
+
+    # =========================
+    # RESULT
+    # =========================
+    home_score = Column(
+        Integer,
+        default=0,
+        nullable=False
+    )
+
+    away_score = Column(
+        Integer,
+        default=0,
+        nullable=False
+    )
+
+    # =========================
+    # STATUS
+    # scheduled
+    # live
+    # finished
+    # =========================
+    status = Column(
+        String,
+        default="scheduled",
+        nullable=False
     )

@@ -1,6 +1,8 @@
-from sqlalchemy import Column
-from sqlalchemy import Integer
-from sqlalchemy import String
+from sqlalchemy import (
+    Column,
+    Integer,
+    String,
+)
 
 from sqlalchemy.orm import relationship
 
@@ -11,6 +13,9 @@ class Team(Base):
 
     __tablename__ = "teams"
 
+    # =========================
+    # BASIC DATA
+    # =========================
     id = Column(
         Integer,
         primary_key=True,
@@ -19,6 +24,7 @@ class Team(Base):
 
     name = Column(
         String,
+        unique=True,
         nullable=False
     )
 
@@ -37,6 +43,9 @@ class Team(Base):
         nullable=True
     )
 
+    # =========================
+    # STATS
+    # =========================
     pj = Column(
         Integer,
         default=0
@@ -57,6 +66,16 @@ class Team(Base):
         default=0
     )
 
+    gf = Column(
+        Integer,
+        default=0
+    )
+
+    gc = Column(
+        Integer,
+        default=0
+    )
+
     points = Column(
         Integer,
         default=0
@@ -67,7 +86,8 @@ class Team(Base):
     # =========================
     players = relationship(
         "Player",
-        back_populates="team"
+        back_populates="team",
+        cascade="all, delete"
     )
 
     # =========================
@@ -85,4 +105,29 @@ class Team(Base):
         "Formation",
         back_populates="team",
         cascade="all, delete"
+    )
+
+    # =========================
+    # HOME MATCHES
+    # =========================
+    home_matches = relationship(
+        "Match",
+        foreign_keys="Match.home_team_id",
+        back_populates="home_team"
+    )
+
+    # =========================
+    # AWAY MATCHES
+    # =========================
+    away_matches = relationship(
+        "Match",
+        foreign_keys="Match.away_team_id",
+        back_populates="away_team"
+    )
+     # =========================
+    # EVENTS
+    # =========================
+    events = relationship(
+        "MatchEvent",
+        back_populates="team"
     )

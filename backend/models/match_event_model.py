@@ -1,9 +1,7 @@
-from sqlalchemy import (
-    Column,
-    Integer,
-    String,
-    ForeignKey
-)
+from sqlalchemy import Column
+from sqlalchemy import Integer
+from sqlalchemy import String
+from sqlalchemy import ForeignKey
 
 from sqlalchemy.orm import relationship
 
@@ -16,12 +14,9 @@ class MatchEvent(Base):
 
     id = Column(
         Integer,
-        primary_key=True
+        primary_key=True,
+        index=True
     )
-
-    minute = Column(Integer)
-
-    event_type = Column(String)
 
     match_id = Column(
         Integer,
@@ -38,16 +33,29 @@ class MatchEvent(Base):
         ForeignKey("teams.id")
     )
 
-    match = relationship(
-       "Match",
-      back_populates="events"
+    event_type = Column(
+        String
     )
-      
+
+    minute = Column(
+        Integer
+    )
+
+    # =========================
+    # RELATIONSHIPS
+    # =========================
+    match = relationship(
+        "Match",
+        back_populates="events"
+    )
 
     player = relationship(
-        "Player"
+        "Player",
+        back_populates="events",
+        overlaps="events"
     )
 
     team = relationship(
-        "Team"
+        "Team",
+        back_populates="events"
     )

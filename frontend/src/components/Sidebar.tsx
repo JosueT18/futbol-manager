@@ -28,20 +28,11 @@ function Sidebar() {
     logout,
   } = useAuth()
 
-  // =========================
-  // ROLE
-  // =========================
   const role =
     user?.role || ""
 
-  // =========================
-  // MENU
-  // =========================
   const menu = [
 
-    // =========================
-    // HOME
-    // =========================
     {
       label: "Inicio",
       icon: Home,
@@ -55,9 +46,6 @@ function Sidebar() {
       ],
     },
 
-    // =========================
-    // EQUIPOS
-    // =========================
     {
       label: "Equipos",
       icon: Shield,
@@ -68,9 +56,6 @@ function Sidebar() {
       ],
     },
 
-    // =========================
-    // JUGADORES
-    // =========================
     {
       label: "Jugadores",
       icon: Users,
@@ -84,9 +69,6 @@ function Sidebar() {
       ],
     },
 
-    // =========================
-    // SOLICITUDES
-    // =========================
     {
       label: "Solicitudes",
       icon: ClipboardList,
@@ -98,9 +80,6 @@ function Sidebar() {
       ],
     },
 
-    // =========================
-    // FORMACION
-    // =========================
     {
       label: "Formación",
       icon: Trophy,
@@ -114,9 +93,6 @@ function Sidebar() {
       ],
     },
 
-    // =========================
-    // PARTIDOS
-    // =========================
     {
       label: "Partidos",
       icon: Calendar,
@@ -129,9 +105,19 @@ function Sidebar() {
       ],
     },
 
-    // =========================
-    // ESTADISTICAS
-    // =========================
+    {
+      label: "Tabla",
+      icon: Trophy,
+      path: "/TablaPosiciones",
+      roles: [
+        "Administrador",
+        "Director",
+        "Comision",
+        "Tecnico",
+        "Jugador",
+      ],
+    },
+
     {
       label: "Estadísticas",
       icon: BarChart3,
@@ -150,14 +136,18 @@ function Sidebar() {
 
     <div
       className="
-        w-[260px]
+        w-[280px]
         min-h-screen
-        bg-black
+        bg-[#111827]
+        border-r
+        border-[#1f2937]
         text-white
         flex
         flex-col
         justify-between
-        p-5
+        px-5
+        py-6
+        shadow-2xl
       "
     >
 
@@ -167,28 +157,45 @@ function Sidebar() {
         {/* LOGO */}
         <div className="mb-10">
 
-          <h1 className="text-2xl font-bold">
-            Futbol Manager
-          </h1>
+          <div
+            className="
+              flex
+              items-center
+              gap-3
+            "
+          >
 
-          <p className="text-gray-400 text-sm mt-1">
+            <div
+              className="
+                w-12
+                h-12
+                rounded-2xl
+                bg-emerald-500
+                flex
+                items-center
+                justify-center
+                shadow-lg
+                shadow-emerald-500/40
+              "
+            >
 
-            Rol:
-            {" "}
-            {role || "Sin rol"}
+              ⚽
 
-          </p>
+            </div>
 
-          {
-            user?.team_id && (
+            <div>
 
-              <p className="text-gray-500 text-xs mt-1">
-                Equipo ID:
-                {" "}
-                {user.team_id}
+              <h1 className="text-2xl font-black">
+                Futbol Manager
+              </h1>
+
+              <p className="text-xs text-zinc-400 mt-1">
+                Professional League
               </p>
-            )
-          }
+
+            </div>
+
+          </div>
 
         </div>
 
@@ -216,31 +223,61 @@ function Sidebar() {
                     key={item.path}
                     to={item.path}
                     className={`
+                      group
+                      relative
                       flex
                       items-center
-                      gap-3
+                      gap-4
                       px-4
-                      py-3
-                      rounded-xl
-                      transition
+                      py-4
+                      rounded-2xl
+                      transition-all
+                      duration-300
 
                       ${
                         active
                           ? `
-                            bg-white
-                            text-black
+                            bg-emerald-500
+                            text-white
                             shadow-lg
+                            shadow-emerald-500/30
                           `
                           : `
-                            hover:bg-gray-800
+                            hover:bg-[#1f2937]
+                            text-zinc-300
                           `
                       }
                     `}
                   >
 
-                    <Icon size={18} />
+                    {/* ACTIVE LINE */}
+                    {
+                      active && (
 
-                    <span className="font-medium">
+                        <div
+                          className="
+                            absolute
+                            left-0
+                            top-2
+                            bottom-2
+                            w-1
+                            rounded-r-full
+                            bg-white
+                          "
+                        />
+                      )
+                    }
+
+                    <Icon
+                      size={20}
+                      className="
+                        transition-transform
+                        duration-300
+                        group-hover:scale-110
+                      "
+                    />
+
+                    <span className="font-semibold text-[15px]">
                       {item.label}
                     </span>
 
@@ -253,27 +290,61 @@ function Sidebar() {
 
       </div>
 
-      {/* USER INFO + LOGOUT */}
+      {/* USER */}
       <div className="space-y-4">
 
-        {/* USER */}
         <div
           className="
-            bg-gray-900
-            rounded-2xl
-            p-4
+            bg-[#18222f]
             border
-            border-gray-800
+            border-[#253041]
+            rounded-3xl
+            p-5
           "
         >
 
-          <p className="font-semibold">
-            {user?.name || "Usuario"}
-          </p>
+          <div className="flex items-center gap-4">
 
-          <p className="text-sm text-gray-400 mt-1">
-            {user?.email}
-          </p>
+            {/* AVATAR */}
+            <div
+              className="
+                w-14
+                h-14
+                rounded-2xl
+                bg-emerald-500
+                flex
+                items-center
+                justify-center
+                font-black
+                text-xl
+                shadow-lg
+                shadow-emerald-500/30
+              "
+            >
+
+              {
+                user?.name?.charAt(0)
+              }
+
+            </div>
+
+            <div>
+
+              <p className="font-bold text-lg">
+                {user?.name}
+              </p>
+
+              <p className="text-sm text-zinc-400">
+                {user?.email}
+              </p>
+
+              <p className="text-xs text-emerald-400 mt-1">
+                {role}
+              </p>
+
+            </div>
+
+          </div>
 
         </div>
 
@@ -284,12 +355,18 @@ function Sidebar() {
             w-full
             flex
             items-center
+            justify-center
             gap-3
             px-4
-            py-3
-            rounded-xl
+            py-4
+            rounded-2xl
+            bg-red-500
             hover:bg-red-600
-            transition
+            transition-all
+            duration-300
+            font-semibold
+            shadow-lg
+            shadow-red-500/20
           "
         >
 
