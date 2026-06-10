@@ -64,7 +64,9 @@ function App() {
 
   const canViewFormacion =
     isAdmin ||
-    isDirector
+    isDirector||
+    isCommission ||
+    isPlayer
 
   const canViewEstadisticas =
     isAdmin ||
@@ -171,7 +173,7 @@ function App() {
           />
 
           <Route
-            path="/tabla"
+            path="/tabla-posiciones"
             element={<TablaPosiciones />          
           }
 

@@ -5,6 +5,8 @@ from pydantic import (
 )
 
 from typing import Optional
+from typing import List
+from schemas.player_schema import PlayerResponse
 
 
 # =========================
@@ -163,6 +165,8 @@ class TeamResponse(BaseModel):
     gc: int
 
     points: int
+
+    players: list[PlayerResponse] = []
 
     # =========================
     # ORM MODE

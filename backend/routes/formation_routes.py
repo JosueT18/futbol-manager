@@ -4,7 +4,10 @@ from fastapi import (
     HTTPException,
 )
 
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import (
+    Session,
+    joinedload,
+)
 
 from database.connection import get_db
 
@@ -24,6 +27,15 @@ from utils.dependencies import (
 
 router = APIRouter()
 
+# =========================
+# ROLES
+# =========================
+ALLOWED_ROLES = [
+    "Administrador",
+    "Director",
+    "Comision",
+    "Tecnico",
+]
 
 # =========================
 # CREATE FORMATION
@@ -35,24 +47,13 @@ router = APIRouter()
 def create_formation(
     formation: FormationCreate,
     db: Session = Depends(get_db),
-    current_user=Depends(
-        get_current_user
-    )
+    current_user=Depends(get_current_user)
 ):
 
     # =========================
     # VALIDATE ROLE
     # =========================
-    if current_user.role not in [
-
-        "Administrador",
-
-        "Director",
-
-        "Tecnico",
-
-        "Comision",
-    ]:
+    if current_user.role not in ALLOWED_ROLES:
 
         raise HTTPException(
             status_code=403,
@@ -76,10 +77,12 @@ def create_formation(
     # =========================
     # SAME TEAM VALIDATION
     # =========================
-    validate_same_team(
-        current_user,
-        formation.team_id
-    )
+    if current_user.role != "Administrador":
+
+        validate_same_team(
+            current_user,
+            formation.team_id
+        )
 
     # =========================
     # CREATE FORMATION
@@ -90,7 +93,7 @@ def create_formation(
 
         tactic=formation.tactic.strip(),
 
-        match_type=formation.match_type.strip(),
+        match_type=formation.match_type,
 
         team_id=formation.team_id
     )
@@ -102,7 +105,7 @@ def create_formation(
     db.refresh(new_formation)
 
     # =========================
-    # PLAYERS
+    # SAVE PLAYERS
     # =========================
     for player in formation.players:
 
@@ -123,9 +126,21 @@ def create_formation(
 
     db.commit()
 
-    db.refresh(new_formation)
+    # =========================
+    # RELOAD WITH PLAYERS
+    # =========================
+    formation_saved = (
+        db.query(Formation)
+        .options(
+            joinedload(Formation.players)
+        )
+        .filter(
+            Formation.id == new_formation.id
+        )
+        .first()
+    )
 
-    return new_formation
+    return formation_saved
 
 
 # =========================
@@ -136,12 +151,45 @@ def create_formation(
     response_model=list[FormationResponse]
 )
 def get_formations(
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
 ):
 
-    formations = db.query(
-        Formation
-    ).all()
+    # =========================
+    # BASE QUERY
+    # =========================
+    query = (
+        db.query(Formation)
+        .options(
+            joinedload(Formation.players)
+        )
+    )
+
+    # =========================
+    # ADMIN VE TODO
+    # =========================
+    if current_user.role == "Administrador":
+
+        formations = (
+            query
+            .order_by(Formation.id.desc())
+            .all()
+        )
+
+        return formations
+
+    # =========================
+    # USERS TEAM
+    # =========================
+    formations = (
+        query
+        .filter(
+            Formation.team_id ==
+            current_user.team_id
+        )
+        .order_by(Formation.id.desc())
+        .all()
+    )
 
     return formations
 
@@ -155,20 +203,36 @@ def get_formations(
 )
 def get_formation(
     formation_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
 ):
 
-    formation = db.query(
-        Formation
-    ).filter(
-        Formation.id == formation_id
-    ).first()
+    formation = (
+        db.query(Formation)
+        .options(
+            joinedload(Formation.players)
+        )
+        .filter(
+            Formation.id == formation_id
+        )
+        .first()
+    )
 
     if not formation:
 
         raise HTTPException(
             status_code=404,
             detail="Formación no encontrada"
+        )
+
+    # =========================
+    # VALIDATE TEAM
+    # =========================
+    if current_user.role != "Administrador":
+
+        validate_same_team(
+            current_user,
+            formation.team_id
         )
 
     return formation
@@ -185,24 +249,13 @@ def update_formation(
     formation_id: int,
     formation_data: FormationCreate,
     db: Session = Depends(get_db),
-    current_user=Depends(
-        get_current_user
-    )
+    current_user=Depends(get_current_user)
 ):
 
     # =========================
     # VALIDATE ROLE
     # =========================
-    if current_user.role not in [
-
-        "Administrador",
-
-        "Director",
-
-        "Tecnico",
-
-        "Comision",
-    ]:
+    if current_user.role not in ALLOWED_ROLES:
 
         raise HTTPException(
             status_code=403,
@@ -212,11 +265,16 @@ def update_formation(
     # =========================
     # GET FORMATION
     # =========================
-    formation = db.query(
-        Formation
-    ).filter(
-        Formation.id == formation_id
-    ).first()
+    formation = (
+        db.query(Formation)
+        .options(
+            joinedload(Formation.players)
+        )
+        .filter(
+            Formation.id == formation_id
+        )
+        .first()
+    )
 
     if not formation:
 
@@ -226,36 +284,31 @@ def update_formation(
         )
 
     # =========================
-    # SAME TEAM VALIDATION
+    # VALIDATE TEAM
     # =========================
-    validate_same_team(
-        current_user,
-        formation.team_id
-    )
+    if current_user.role != "Administrador":
+
+        validate_same_team(
+            current_user,
+            formation.team_id
+        )
 
     # =========================
-    # UPDATE FORMATION
+    # UPDATE DATA
     # =========================
     formation.name = formation_data.name.strip()
 
     formation.tactic = formation_data.tactic.strip()
 
-    formation.match_type = (
-        formation_data.match_type.strip()
-    )
+    formation.match_type = formation_data.match_type
 
-    formation.team_id = (
-        formation_data.team_id
-    )
+    formation.team_id = formation_data.team_id
 
     # =========================
     # DELETE OLD PLAYERS
     # =========================
-    db.query(
-        FormationPlayer
-    ).filter(
-        FormationPlayer.formation_id
-        ==
+    db.query(FormationPlayer).filter(
+        FormationPlayer.formation_id ==
         formation.id
     ).delete()
 
@@ -281,9 +334,21 @@ def update_formation(
 
     db.commit()
 
-    db.refresh(formation)
+    # =========================
+    # RELOAD UPDATED
+    # =========================
+    updated_formation = (
+        db.query(Formation)
+        .options(
+            joinedload(Formation.players)
+        )
+        .filter(
+            Formation.id == formation.id
+        )
+        .first()
+    )
 
-    return formation
+    return updated_formation
 
 
 # =========================
@@ -295,22 +360,13 @@ def update_formation(
 def delete_formation(
     formation_id: int,
     db: Session = Depends(get_db),
-    current_user=Depends(
-        get_current_user
-    )
+    current_user=Depends(get_current_user)
 ):
 
     # =========================
     # VALIDATE ROLE
     # =========================
-    if current_user.role not in [
-
-        "Administrador",
-
-        "Director",
-
-        "Tecnico",
-    ]:
+    if current_user.role not in ALLOWED_ROLES:
 
         raise HTTPException(
             status_code=403,
@@ -320,9 +376,7 @@ def delete_formation(
     # =========================
     # GET FORMATION
     # =========================
-    formation = db.query(
-        Formation
-    ).filter(
+    formation = db.query(Formation).filter(
         Formation.id == formation_id
     ).first()
 
@@ -334,12 +388,22 @@ def delete_formation(
         )
 
     # =========================
-    # SAME TEAM VALIDATION
+    # VALIDATE TEAM
     # =========================
-    validate_same_team(
-        current_user,
-        formation.team_id
-    )
+    if current_user.role != "Administrador":
+
+        validate_same_team(
+            current_user,
+            formation.team_id
+        )
+
+    # =========================
+    # DELETE PLAYERS
+    # =========================
+    db.query(FormationPlayer).filter(
+        FormationPlayer.formation_id ==
+        formation.id
+    ).delete()
 
     # =========================
     # DELETE FORMATION

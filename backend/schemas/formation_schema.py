@@ -1,66 +1,30 @@
 from pydantic import BaseModel
 
-from typing import List
-
-
 # =========================
-# FORMATION PLAYER CREATE
+# PLAYER
 # =========================
-class FormationPlayerCreate(BaseModel):
+class FormationPlayerBase(BaseModel):
 
-    # ID jugador
     player_id: int
 
-    # Posición en cancha
-    position_x: int
-
-    position_y: int
-
-    # starter / substitute
     role: str
 
+    position_x: float
 
-# =========================
-# FORMATION CREATE
-# =========================
-class FormationCreate(BaseModel):
-
-    # Nombre personalizado
-    name: str
-
-    # Ej:
-    # 4-3-3
-    # 4-4-2
-    # custom
-    tactic: str
-
-    # Tipo:
-    # 11 / 9 / 7 / 5
-    match_type: int
-
-    # Equipo
-    team_id: int
-
-    # Lista jugadores
-    players: List[
-        FormationPlayerCreate
-    ]
+    position_y: float
 
 
-# =========================
-# FORMATION PLAYER RESPONSE
-# =========================
-class FormationPlayerResponse(BaseModel):
+class FormationPlayerCreate(
+    FormationPlayerBase
+):
+    pass
+
+
+class FormationPlayerResponse(
+    FormationPlayerBase
+):
 
     id: int
-
-    player_id: int
-
-    position_x: int
-
-    position_y: int
-
-    role: str
 
     class Config:
 
@@ -68,11 +32,9 @@ class FormationPlayerResponse(BaseModel):
 
 
 # =========================
-# FORMATION RESPONSE
+# FORMATION
 # =========================
-class FormationResponse(BaseModel):
-
-    id: int
+class FormationBase(BaseModel):
 
     name: str
 
@@ -82,9 +44,25 @@ class FormationResponse(BaseModel):
 
     team_id: int
 
-    players: List[
-        FormationPlayerResponse
+
+class FormationCreate(
+    FormationBase
+):
+
+    players: list[
+        FormationPlayerCreate
     ]
+
+
+class FormationResponse(
+    FormationBase
+):
+
+    id: int
+
+    players: list[
+        FormationPlayerResponse
+    ] = []
 
     class Config:
 

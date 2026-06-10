@@ -5,6 +5,17 @@ import Swal from "sweetalert2"
 import { useQuery } from "@tanstack/react-query"
 
 import {
+  Shield,
+  MapPin,
+  Users,
+  UserCog,
+  Pencil,
+  Trash2,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react"
+
+import {
   getTeams,
   createTeam as createTeamApi,
   deleteTeam as deleteTeamApi,
@@ -24,10 +35,11 @@ function Equipos() {
   const role =
     localStorage.getItem("role") || ""
 
+  // =========================
+  // SOLO ADMIN
+  // =========================
   const canManageTeams =
     role === "Administrador"
-    ||
-    role === "Director"
 
   // =========================
   // STATES
@@ -66,11 +78,19 @@ function Equipos() {
         file
       )
 
+      const token =
+        localStorage.getItem("token")
+
       const response =
         await fetch(
           "http://localhost:8000/teams/upload-logo",
           {
             method: "POST",
+
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+
             body: formData,
           }
         )
@@ -78,15 +98,24 @@ function Equipos() {
       const data =
         await response.json()
 
+      if (!response.ok) {
+
+        throw new Error(
+          data.detail ||
+          "Error al subir logo"
+        )
+      }
+
       setLogo(
         data.logo
       )
 
-    } catch (error) {
+    } catch (error: any) {
 
       console.error(error)
 
       setErrorMessage(
+        error.message ||
         "Error al subir logo"
       )
     }
@@ -96,13 +125,26 @@ function Equipos() {
   // TEAMS
   // =========================
   const {
-    data: teams = [],
-    isLoading,
-    refetch,
-  } = useQuery({
-    queryKey: ["teams"],
-    queryFn: getTeams,
-  })
+  data: allTeams = [],
+  isLoading,
+  refetch,
+} = useQuery({
+  queryKey: ["teams"],
+  queryFn: getTeams,
+})
+
+const userTeamId =
+  Number(localStorage.getItem("team_id"))
+
+const teams =
+  role === "Director"
+  ||
+  role === "Jugador"
+    ? allTeams.filter(
+        (team: any) =>
+          team.id === userTeamId
+      )
+    : allTeams
 
   // =========================
   // CREATE TEAM
@@ -175,15 +217,6 @@ function Equipos() {
   // =========================
   async function deleteTeam(id: number) {
 
-    if (!canManageTeams) {
-
-      setErrorMessage(
-        "No tenés permisos"
-      )
-
-      return
-    }
-
     const result = await Swal.fire({
 
       title: "¿Eliminar equipo?",
@@ -200,6 +233,10 @@ function Equipos() {
 
       cancelButtonText:
         "Cancelar",
+
+      background: "#18222f",
+
+      color: "#fff",
     })
 
     if (!result.isConfirmed) {
@@ -234,35 +271,71 @@ function Equipos() {
   // =========================
   async function updateTeam(team: any) {
 
-    if (!canManageTeams) {
+    const {
+      value: formValues
+    } = await Swal.fire({
 
-      setErrorMessage(
-        "No tenés permisos"
-      )
+      title: "Editar equipo",
 
-      return
-    }
+      background: "#18222f",
 
-    const newName = prompt(
-      "Nuevo nombre",
-      team.name
-    )
+      color: "#fff",
 
-    const newCity = prompt(
-      "Nueva ciudad",
-      team.city
-    )
+      html: `
 
-    const newTecnico = prompt(
-      "Nuevo técnico",
-      team.tecnico
-    )
+        <input
+          id="swal-name"
+          class="swal2-input"
+          placeholder="Nombre"
+          value="${team.name}"
+        >
 
-    if (
-      !newName ||
-      !newCity ||
-      !newTecnico
-    ) {
+        <input
+          id="swal-city"
+          class="swal2-input"
+          placeholder="Ciudad"
+          value="${team.city}"
+        >
+
+        <input
+          id="swal-tecnico"
+          class="swal2-input"
+          placeholder="Director Técnico"
+          value="${team.tecnico}"
+        >
+      `,
+
+      focusConfirm: false,
+
+      preConfirm: () => {
+
+        return {
+
+          name:
+            (
+              document.getElementById(
+                "swal-name"
+              ) as HTMLInputElement
+            ).value,
+
+          city:
+            (
+              document.getElementById(
+                "swal-city"
+              ) as HTMLInputElement
+            ).value,
+
+          tecnico:
+            (
+              document.getElementById(
+                "swal-tecnico"
+              ) as HTMLInputElement
+            ).value,
+        }
+      }
+    })
+
+    if (!formValues) {
       return
     }
 
@@ -272,13 +345,17 @@ function Equipos() {
         team.id,
         {
 
-          name: newName,
+          name:
+            formValues.name,
 
-          city: newCity,
+          city:
+            formValues.city,
 
-          tecnico: newTecnico,
+          tecnico:
+            formValues.tecnico,
 
-          logo: team.logo,
+          logo:
+            team.logo,
         }
       )
 
@@ -290,11 +367,12 @@ function Equipos() {
 
       await refetch()
 
-    } catch (error) {
+    } catch (error: any) {
 
       console.error(error)
 
       setErrorMessage(
+        error.message ||
         "Error al actualizar equipo"
       )
     }
@@ -338,7 +416,14 @@ function Equipos() {
 
   return (
 
-    <div className="p-6">
+    <div
+      className="
+        min-h-screen
+        bg-[#0f1720]
+        text-white
+        p-6
+      "
+    >
 
       {/* SUCCESS */}
       {
@@ -347,10 +432,12 @@ function Equipos() {
           <div
             className="
               mb-5
-              bg-green-100
-              text-green-800
+              bg-emerald-500/20
+              border
+              border-emerald-500/30
+              text-emerald-300
               p-4
-              rounded-xl
+              rounded-2xl
             "
           >
             ✅ {successMessage}
@@ -365,10 +452,12 @@ function Equipos() {
           <div
             className="
               mb-5
-              bg-red-100
-              text-red-800
+              bg-red-500/20
+              border
+              border-red-500/30
+              text-red-300
               p-4
-              rounded-xl
+              rounded-2xl
             "
           >
             ❌ {errorMessage}
@@ -382,18 +471,18 @@ function Equipos() {
           flex
           items-center
           justify-between
-          mb-6
+          mb-8
         "
       >
 
         <div>
 
-          <h1 className="text-4xl font-bold">
+          <h1 className="text-5xl font-black">
             Equipos
           </h1>
 
-          <p className="text-gray-500 mt-1">
-            Gestión de equipos
+          <p className="text-zinc-400 mt-2">
+            Gestión profesional de equipos
           </p>
 
         </div>
@@ -423,9 +512,9 @@ function Equipos() {
       {
         showForm && canManageTeams && (
 
-          <Card>
+          <Card className="bg-[#18222f] border border-[#253041] mb-8">
 
-            <h2 className="text-2xl font-bold mb-5">
+            <h2 className="text-3xl font-black mb-6">
               Nuevo Equipo
             </h2>
 
@@ -434,19 +523,18 @@ function Equipos() {
                 grid
                 grid-cols-1
                 md:grid-cols-2
-                gap-4
+                gap-5
               "
             >
 
-              {/* NOMBRE */}
               <div>
 
-                <label className="block text-sm font-semibold mb-2">
-                  Nombre del Equipo
+                <label className="block mb-2 text-sm text-zinc-400">
+                  Nombre
                 </label>
 
                 <Input
-                  placeholder="Ej: River Plate"
+                  placeholder="River Plate"
                   value={name}
                   onChange={(e) =>
                     setName(e.target.value)
@@ -455,15 +543,14 @@ function Equipos() {
 
               </div>
 
-              {/* CIUDAD */}
               <div>
 
-                <label className="block text-sm font-semibold mb-2">
+                <label className="block mb-2 text-sm text-zinc-400">
                   Ciudad
                 </label>
 
                 <Input
-                  placeholder="Ej: Buenos Aires"
+                  placeholder="Buenos Aires"
                   value={city}
                   onChange={(e) =>
                     setCity(e.target.value)
@@ -472,15 +559,14 @@ function Equipos() {
 
               </div>
 
-              {/* TECNICO */}
               <div>
 
-                <label className="block text-sm font-semibold mb-2">
+                <label className="block mb-2 text-sm text-zinc-400">
                   Director Técnico
                 </label>
 
                 <Input
-                  placeholder="Nombre del DT"
+                  placeholder="DT"
                   value={tecnico}
                   onChange={(e) =>
                     setTecnico(e.target.value)
@@ -489,18 +575,10 @@ function Equipos() {
 
               </div>
 
-              {/* UPLOAD */}
               <div>
 
-                <label
-                  className="
-                    block
-                    text-sm
-                    font-semibold
-                    mb-2
-                  "
-                >
-                  Escudo del Equipo
+                <label className="block mb-2 text-sm text-zinc-400">
+                  Escudo
                 </label>
 
                 <input
@@ -518,10 +596,12 @@ function Equipos() {
                   }}
                   className="
                     w-full
+                    bg-[#243244]
                     border
+                    border-[#344256]
                     rounded-xl
                     p-3
-                    bg-white
+                    text-sm
                   "
                 />
 
@@ -529,29 +609,21 @@ function Equipos() {
 
             </div>
 
-            {/* PREVIEW */}
             {
               logo && (
 
-                <div
-                  className="
-                    mt-6
-                    flex
-                    justify-center
-                  "
-                >
+                <div className="mt-8 flex justify-center">
 
                   <img
                     src={`http://localhost:8000${logo}`}
                     alt="logo"
                     className="
-                      w-28
-                      h-28
-                      object-cover
+                      w-32
+                      h-32
                       rounded-full
+                      object-cover
                       border-4
-                      border-gray-200
-                      shadow-md
+                      border-emerald-500/40
                     "
                   />
 
@@ -559,7 +631,7 @@ function Equipos() {
               )
             }
 
-            <div className="mt-6">
+            <div className="mt-8">
 
               <Button onClick={createTeam}>
                 Crear Equipo
@@ -577,11 +649,13 @@ function Equipos() {
 
           <div
             className="
-              my-5
-              bg-yellow-100
-              text-yellow-800
+              bg-yellow-500/20
+              border
+              border-yellow-500/30
+              text-yellow-300
               p-4
-              rounded-xl
+              rounded-2xl
+              mb-6
             "
           >
             ⏳ Cargando equipos...
@@ -590,14 +664,7 @@ function Equipos() {
       }
 
       {/* TABLE */}
-      <div
-        className="
-          bg-white
-          rounded-2xl
-          shadow-sm
-          overflow-hidden
-        "
-      >
+      <Card className="bg-[#18222f] border border-[#253041]">
 
         <TableContainer>
 
@@ -605,34 +672,33 @@ function Equipos() {
 
             <thead
               className="
-                bg-gray-50
-                text-gray-600
-                text-sm
+                border-b
+                border-[#253041]
               "
             >
 
-              <tr>
+              <tr className="text-zinc-400 text-sm">
 
-                <th className="text-left py-3 px-4">
+                <th className="text-left py-4 px-4">
                   Equipo
                 </th>
 
-                <th className="text-left py-3 px-4">
+                <th className="text-left py-4 px-4">
                   Ciudad
                 </th>
 
-                <th className="text-left py-3 px-4">
+                <th className="text-left py-4 px-4">
                   Técnico
                 </th>
 
-                <th className="text-left py-3 px-4">
+                <th className="text-left py-4 px-4">
                   Jugadores
                 </th>
 
                 {
                   canManageTeams && (
 
-                    <th className="text-left py-3 px-4">
+                    <th className="text-left py-4 px-4">
                       Acciones
                     </th>
                   )
@@ -651,14 +717,15 @@ function Equipos() {
 
                     <tr
                       className="
-                        border-t
-                        hover:bg-gray-50
-                        transition-colors
+                        border-b
+                        border-[#253041]
+                        hover:bg-[#1d2a3a]
+                        transition-all
                       "
                     >
 
                       {/* TEAM */}
-                      <td className="py-4 px-4">
+                      <td className="py-5 px-4">
 
                         <button
                           onClick={() =>
@@ -671,6 +738,9 @@ function Equipos() {
                             )
                           }
                           className="
+                            flex
+                            items-center
+                            gap-4
                             text-left
                             w-full
                           "
@@ -678,61 +748,64 @@ function Equipos() {
 
                           <div
                             className="
+                              w-16
+                              h-16
+                              rounded-2xl
+                              overflow-hidden
+                              bg-[#243244]
+                              border
+                              border-[#344256]
                               flex
                               items-center
-                              gap-3
+                              justify-center
                             "
                           >
 
-                            {/* LOGO */}
-                            <div
+                            {
+                              team.logo ? (
+
+                                <img
+                                  src={`http://localhost:8000${team.logo}`}
+                                  alt={team.name}
+                                  className="
+                                    w-full
+                                    h-full
+                                    object-cover
+                                  "
+                                />
+
+                              ) : (
+
+                                <Shield
+                                  className="text-emerald-400"
+                                />
+                              )
+                            }
+
+                          </div>
+
+                          <div>
+
+                            <p
                               className="
-                                w-14
-                                h-14
-                                rounded-full
-                                overflow-hidden
-                                border
-                                bg-gray-100
-                                flex
-                                items-center
-                                justify-center
+                                text-xl
+                                font-bold
+                                text-gray-900
+                                group-hover:text-white
                               "
                             >
+                              {team.name}
+                            </p>
+
+                            <div className="flex items-center gap-2 text-zinc-400 text-sm mt-1">
 
                               {
-                                team.logo ? (
-
-                                  <img
-                                    src={`http://localhost:8000${team.logo}`}
-                                    alt={team.name}
-                                    className="
-                                      w-full
-                                      h-full
-                                      object-cover
-                                    "
-                                  />
-
-                                ) : (
-
-                                  <span className="text-2xl">
-                                    ⚽
-                                  </span>
-                                )
+                                openTeamId === team.id
+                                  ? <ChevronUp size={16} />
+                                  : <ChevronDown size={16} />
                               }
 
-                            </div>
-
-                            <div>
-
-                              <p
-                                className="
-                                  text-lg
-                                  font-bold
-                                  text-gray-800
-                                "
-                              >
-                                {team.name}
-                              </p>
+                              Ver jugadores
 
                             </div>
 
@@ -743,30 +816,56 @@ function Equipos() {
                       </td>
 
                       {/* CITY */}
-                      <td className="py-4 px-4">
-                        📍 {team.city}
+                      <td className="px-4">
+
+                        <div className="flex items-center gap-2">
+
+                          <MapPin
+                            size={16}
+                            className="text-emerald-400"
+                          />
+
+                          {team.city}
+
+                        </div>
+
                       </td>
 
                       {/* TECNICO */}
-                      <td className="py-4 px-4">
-                        👨‍🏫 {team.tecnico}
+                      <td className="px-4">
+
+                        <div className="flex items-center gap-2">
+
+                          <UserCog
+                            size={16}
+                            className="text-blue-400"
+                          />
+
+                          {team.tecnico}
+
+                        </div>
+
                       </td>
 
-                      {/* COUNT */}
-                      <td className="py-4 px-4">
+                      {/* PLAYERS */}
+                      <td className="px-4">
 
                         <div
                           className="
-                            bg-blue-100
-                            text-blue-700
+                            inline-flex
+                            items-center
+                            gap-2
+                            bg-emerald-500/20
+                            text-emerald-300
                             px-3
-                            py-1
-                            rounded-full
-                            inline-block
-                            font-semibold
+                            py-2
+                            rounded-xl
                             text-sm
+                            font-semibold
                           "
                         >
+
+                          <Users size={16} />
 
                           {
                             team.players?.filter(
@@ -783,27 +882,49 @@ function Equipos() {
                       {
                         canManageTeams && (
 
-                          <td className="py-4 px-4">
+                          <td className="px-4">
 
                             <div className="flex gap-2">
 
-                              <Button
-                                variant="secondary"
+                              <button
                                 onClick={() =>
                                   updateTeam(team)
                                 }
+                                className="
+                                  p-3
+                                  rounded-xl
+                                  bg-blue-500/20
+                                  hover:bg-blue-500/30
+                                  transition-all
+                                "
                               >
-                                Editar
-                              </Button>
 
-                              <Button
-                                variant="danger"
+                                <Pencil
+                                  size={18}
+                                  className="text-blue-300"
+                                />
+
+                              </button>
+
+                              <button
                                 onClick={() =>
                                   deleteTeam(team.id)
                                 }
+                                className="
+                                  p-3
+                                  rounded-xl
+                                  bg-red-500/20
+                                  hover:bg-red-500/30
+                                  transition-all
+                                "
                               >
-                                Eliminar
-                              </Button>
+
+                                <Trash2
+                                  size={18}
+                                  className="text-red-300"
+                                />
+
+                              </button>
 
                             </div>
 
@@ -825,23 +946,35 @@ function Equipos() {
                                 ? 5
                                 : 4
                             }
-                            className="bg-gray-50 p-5"
+                            className="
+                              bg-[#111827]
+                              p-6
+                            "
                           >
 
-                            <h3 className="font-bold text-lg mb-4">
-                              Jugadores
+                            <h3
+                              className="
+                                text-2xl
+                                font-black
+                                mb-5
+                              "
+                            >
+                              Plantel
                             </h3>
 
                             {
-                              team.players?.length > 0 ? (
+                              team.players?.filter(
+                                (player: any) =>
+                                  player.status === "approved"
+                              ).length > 0 ? (
 
                                 <div
                                   className="
                                     grid
                                     grid-cols-1
                                     md:grid-cols-2
-                                    lg:grid-cols-3
-                                    gap-3
+                                    xl:grid-cols-3
+                                    gap-4
                                   "
                                 >
 
@@ -856,24 +989,47 @@ function Equipos() {
                                         <div
                                           key={player.id}
                                           className="
-                                            bg-white
-                                            rounded-xl
-                                            p-4
+                                            bg-[#18222f]
                                             border
+                                            border-[#253041]
+                                            rounded-2xl
+                                            p-5
                                           "
                                         >
 
-                                          <p className="font-bold">
-                                            {player.name}
-                                          </p>
+                                          <div className="flex justify-between items-start">
 
-                                          <p className="text-sm text-gray-500">
-                                            {player.position}
-                                          </p>
+                                            <div>
 
-                                          <p className="text-sm mt-1">
-                                            #{player.number}
-                                          </p>
+                                              <p className="font-bold text-lg">
+                                                {player.name}
+                                              </p>
+
+                                              <p className="text-zinc-400 mt-1">
+                                                {player.position}
+                                              </p>
+
+                                            </div>
+
+                                            <div
+                                              className="
+                                                w-12
+                                                h-12
+                                                rounded-xl
+                                                bg-emerald-500
+                                                flex
+                                                items-center
+                                                justify-center
+                                                font-black
+                                                text-lg
+                                              "
+                                            >
+
+                                              #{player.number}
+
+                                            </div>
+
+                                          </div>
 
                                         </div>
                                       ))
@@ -883,7 +1039,7 @@ function Equipos() {
 
                               ) : (
 
-                                <p className="text-gray-500">
+                                <p className="text-zinc-400">
                                   No hay jugadores aprobados
                                 </p>
                               )
@@ -905,7 +1061,7 @@ function Equipos() {
 
         </TableContainer>
 
-      </div>
+      </Card>
 
     </div>
   )

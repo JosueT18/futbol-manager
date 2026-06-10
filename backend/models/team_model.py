@@ -13,9 +13,6 @@ class Team(Base):
 
     __tablename__ = "teams"
 
-    # =========================
-    # BASIC DATA
-    # =========================
     id = Column(
         Integer,
         primary_key=True,
@@ -24,70 +21,62 @@ class Team(Base):
 
     name = Column(
         String,
-        unique=True,
         nullable=False
     )
 
     city = Column(
         String,
-        nullable=False
+        nullable=True
     )
 
-    tecnico = Column(
-        String,
-        nullable=False
-    )
-
-    logo = Column(
+    category = Column(
         String,
         nullable=True
     )
 
-    # =========================
-    # STATS
-    # =========================
+    tecnico = Column(
+        String,
+        nullable=True
+    )
+
+    #===============
+    # ESTADISTICAS
+    #===============
     pj = Column(
         Integer,
         default=0
     )
-
     pg = Column(
         Integer,
         default=0
     )
-
     pe = Column(
         Integer,
         default=0
     )
-
     pp = Column(
         Integer,
         default=0
     )
-
     gf = Column(
         Integer,
         default=0
     )
-
     gc = Column(
         Integer,
         default=0
     )
-
     points = Column(
         Integer,
         default=0
     )
 
-    # =========================
-    # PLAYERS
-    # =========================
-    players = relationship(
-        "Player",
-        back_populates="team",
-        cascade="all, delete"
+    #==========
+    # LOGO
+    #==========
+    logo = Column(
+        String,
+        nullable=True
     )
 
     # =========================
@@ -99,12 +88,19 @@ class Team(Base):
     )
 
     # =========================
+    # PLAYERS
+    # =========================
+    players = relationship(
+        "Player",
+        back_populates="team"
+    )
+
+    # =========================
     # FORMATIONS
     # =========================
     formations = relationship(
         "Formation",
-        back_populates="team",
-        cascade="all, delete"
+        back_populates="team"
     )
 
     # =========================
@@ -112,7 +108,7 @@ class Team(Base):
     # =========================
     home_matches = relationship(
         "Match",
-        foreign_keys="Match.home_team_id",
+        foreign_keys="[Match.home_team_id]",
         back_populates="home_team"
     )
 
@@ -121,10 +117,11 @@ class Team(Base):
     # =========================
     away_matches = relationship(
         "Match",
-        foreign_keys="Match.away_team_id",
+        foreign_keys="[Match.away_team_id]",
         back_populates="away_team"
     )
-     # =========================
+
+    # =========================
     # EVENTS
     # =========================
     events = relationship(

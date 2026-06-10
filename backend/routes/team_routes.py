@@ -8,6 +8,7 @@ from fastapi import (
 )
 
 from sqlalchemy.orm import Session
+from sqlalchemy.orm import joinedload
 
 import shutil
 import uuid
@@ -17,12 +18,11 @@ from database.connection import get_db
 
 from models.team_model import Team
 
-from schemas.team_schema import TeamCreate
+from schemas.team_schema import (TeamCreate,TeamResponse,)
 
 from utils.dependencies import (
     admin_required,
     get_current_user,
-    validate_same_team,
 )
 
 router = APIRouter()
@@ -36,9 +36,7 @@ router = APIRouter()
 def create_team(
     team: TeamCreate,
     db: Session = Depends(get_db),
-    current_user=Depends(
-        admin_required
-    )
+    current_user=Depends(admin_required)
 ):
 
     existing_team = db.query(Team).filter(
@@ -110,114 +108,56 @@ def create_team(
 
 # =========================
 # GET TEAMS
-# FILTER BY ROLE
+# TODOS PUEDEN VER
 # =========================
-@router.get("/teams")
+@router.get("/teams",
+            response_model=list[TeamResponse])
 def get_teams(
     db: Session = Depends(get_db),
-    current_user=Depends(
-        get_current_user
-    )
+    current_user = Depends(get_current_user)
 ):
 
-    # =========================
-    # ADMIN + COMISION
-    # VE TODOS LOS EQUIPOS
-    # =========================
-    if current_user.role in [
+    # Administrador ve todos los equipos
+    if current_user.role == "Administrador":
+        teams = (
+            db.query(Team)
+            .options(
+                joinedload(Team.players)
+            )
+            .all()
+        )
 
-        "Administrador",
+        return teams
 
-        "Comision",
-    ]:
+    # Usuarios asociados a equipo
+    if current_user.team_id:
 
-        teams = db.query(Team).all()
+        team = (
+            db.query(Team)
+            .options(
+                joinedload(Team.players)
+            )
+            .filter(
+                Team.id == current_user.team_id
+            )
+            .all()
+        )
 
-    # =========================
-    # DIRECTOR + TECNICO + JUGADOR
-    # SOLO SU EQUIPO
-    # =========================
-    else:
+        return team
 
-        teams = db.query(Team).filter(
-            Team.id ==
-            current_user.team_id
-        ).all()
-
-    # =========================
-    # RESPONSE
-    # =========================
-    result = []
-
-    for team in teams:
-
-        approved_players = [
-
-            player
-
-            for player in team.players
-
-            if player.status == "approved"
-        ]
-
-        result.append({
-
-            "id": team.id,
-
-            "name": team.name,
-
-            "city": team.city,
-
-            "tecnico": team.tecnico,
-
-            "pj": team.pj,
-
-            "pg": team.pg,
-
-            "pe": team.pe,
-
-            "pp": team.pp,
-
-            "gf": team.gf,
-
-            "gc": team.gc,
-
-            "points": team.points,
-
-            "logo": team.logo,
-
-            "players": approved_players,
-        })
-
-    return result
+    return []
 
 # =========================
 # UPDATE TEAM
-# ADMIN + DIRECTOR + TECNICO
+# ADMIN ONLY
 # =========================
 @router.put("/teams/{team_id}")
 def update_team(
     team_id: int,
     data: dict = Body(...),
     db: Session = Depends(get_db),
-    current_user=Depends(
-        get_current_user
-    )
+    current_user=Depends(admin_required)
 ):
-
-    if current_user.role not in [
-
-        "Administrador",
-
-        "Director",
-
-        "Tecnico",
-    ]:
-
-        raise HTTPException(
-            status_code=403,
-            detail="Sin permisos"
-        )
 
     team = db.query(Team).filter(
         Team.id == team_id
@@ -229,14 +169,6 @@ def update_team(
             status_code=404,
             detail="Equipo no encontrado"
         )
-
-    # =========================
-    # VALIDAR MISMO EQUIPO
-    # =========================
-    validate_same_team(
-        current_user,
-        team.id
-    )
 
     # =========================
     # VALIDAR NOMBRE DUPLICADO
@@ -323,33 +255,6 @@ def update_team(
         team.logo = data["logo"]
 
     # =========================
-    # VALIDAR POSITIVOS
-    # =========================
-    numeric_fields = [
-
-        team.pj,
-
-        team.pg,
-
-        team.pe,
-
-        team.pp,
-
-        team.gf,
-
-        team.gc,
-    ]
-
-    for value in numeric_fields:
-
-        if value < 0:
-
-            raise HTTPException(
-                status_code=400,
-                detail="Los valores no pueden ser negativos"
-            )
-
-    # =========================
     # AUTO POINTS
     # =========================
     team.points = (
@@ -372,9 +277,7 @@ def update_team(
 def delete_team(
     team_id: int,
     db: Session = Depends(get_db),
-    current_user=Depends(
-        admin_required
-    )
+    current_user=Depends(admin_required)
 ):
 
     team = db.query(Team).filter(
@@ -417,28 +320,13 @@ def delete_team(
 
 # =========================
 # UPLOAD LOGO
+# ADMIN ONLY
 # =========================
 @router.post("/teams/upload-logo")
 async def upload_logo(
     file: UploadFile = File(...),
-    current_user=Depends(
-        get_current_user
-    )
+    current_user=Depends(admin_required)
 ):
-
-    if current_user.role not in [
-
-        "Administrador",
-
-        "Director",
-
-        "Tecnico",
-    ]:
-
-        raise HTTPException(
-            status_code=403,
-            detail="Sin permisos"
-        )
 
     os.makedirs(
         "uploads",

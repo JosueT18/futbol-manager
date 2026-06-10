@@ -17,8 +17,6 @@ from schemas.player_schema import (
 
 from utils.dependencies import (
     get_current_user,
-    can_manage_player,
-    validate_same_team,
 )
 
 router = APIRouter()
@@ -26,41 +24,21 @@ router = APIRouter()
 
 # =========================
 # CREATE PLAYER
-# ADMIN + DIRECTOR + TECNICO
+# ADMIN ONLY
 # =========================
 @router.post("/players")
 def create_player(
     player: PlayerCreate,
     db: Session = Depends(get_db),
-    current_user=Depends(
-        get_current_user
-    )
+    current_user=Depends(get_current_user)
 ):
 
-    # =========================
-    # VALIDATE ROLE
-    # =========================
-    if current_user.role not in [
-
-        "Administrador",
-
-        "Director",
-
-        "Tecnico",
-    ]:
+    if current_user.role != "Administrador":
 
         raise HTTPException(
             status_code=403,
             detail="Sin permisos"
         )
-
-    # =========================
-    # SAME TEAM VALIDATION
-    # =========================
-    validate_same_team(
-        current_user,
-        player.team_id
-    )
 
     # =========================
     # VALIDATE POSITIVE
@@ -101,6 +79,8 @@ def create_player(
 
         name=player.name.strip(),
 
+        lastname=player.lastname.strip(),
+
         age=player.age,
 
         position=player.position.strip(),
@@ -133,68 +113,40 @@ def create_player(
 
 # =========================
 # GET PLAYERS
-# FILTER BY ROLE
+# TODOS PUEDEN VER
 # =========================
 @router.get("/players")
 def get_players(
     db: Session = Depends(get_db),
-    current_user=Depends(
-        get_current_user
-    )
+    current_user=Depends(get_current_user)
 ):
 
-    # =========================
-    # ADMIN + COMISION
-    # VE TODO
-    # =========================
-    if current_user.role in [
+    # Administrador ve todo
+    if current_user.role == "Administrador":
 
-        "Administrador",
+        return db.query(Player).all()
 
-        "Comision",
-    ]:
-
-        players = db.query(Player).all()
-
-        return players
-
-    # =========================
-    # RESTO
-    # SOLO SU EQUIPO
-    # =========================
-    players = db.query(Player).filter(
-        Player.team_id ==
-        current_user.team_id
-    ).all()
-
-    return players
+    # Director, Tecnico, Comision y Jugador
+    return db.query(Player).filter(
+        Player.team_id == current_user.team_id
+    ).all()    
 
 
 # =========================
 # APPROVE PLAYER
-# ADMIN + COMISION + DIRECTOR + TECNICO
+# ADMIN + COMISION + DIRECTOR
 # =========================
 @router.put("/players/{player_id}/approve")
 def approve_player(
     player_id: int,
     db: Session = Depends(get_db),
-    current_user=Depends(
-        get_current_user
-    )
+    current_user=Depends(get_current_user)
 ):
 
-    # =========================
-    # VALIDATE ROLE
-    # =========================
     if current_user.role not in [
 
-        "Administrador",
-
-        "Comision",
-
+        "Administrador",        
         "Director",
-
-        "Tecnico",
     ]:
 
         raise HTTPException(
@@ -202,31 +154,26 @@ def approve_player(
             detail="Sin permisos"
         )
 
-    # =========================
-    # PLAYER
-    # =========================
     player = db.query(Player).filter(
         Player.id == player_id
     ).first()
 
-    if not player:
+    if not player:        
 
         raise HTTPException(
             status_code=404,
             detail="Jugador no encontrado"
         )
+    
+    if current_user.role != "Administrador":
 
-    # =========================
-    # SAME TEAM VALIDATION
-    # =========================
-    validate_same_team(
-        current_user,
-        player.team_id
-    )
+        if player.team_id != current_user.team_id:
 
-    # =========================
-    # APPROVE
-    # =========================
+            raise HTTPException(
+                status_code=403,
+                detail="No puedes gestionar jugadores de otro equipo"
+        )
+
     player.status = "approved"
 
     player.rejection_reason = None
@@ -240,30 +187,20 @@ def approve_player(
 
 # =========================
 # REJECT PLAYER
-# ADMIN + COMISION + DIRECTOR + TECNICO
+# ADMIN + COMISION + DIRECTOR
 # =========================
 @router.put("/players/{player_id}/reject")
 def reject_player(
     player_id: int,
     data: dict = Body(...),
     db: Session = Depends(get_db),
-    current_user=Depends(
-        get_current_user
-    )
+    current_user=Depends(get_current_user)
 ):
 
-    # =========================
-    # VALIDATE ROLE
-    # =========================
     if current_user.role not in [
 
-        "Administrador",
-
-        "Comision",
-
+        "Administrador",       
         "Director",
-
-        "Tecnico",
     ]:
 
         raise HTTPException(
@@ -271,9 +208,6 @@ def reject_player(
             detail="Sin permisos"
         )
 
-    # =========================
-    # PLAYER
-    # =========================
     player = db.query(Player).filter(
         Player.id == player_id
     ).first()
@@ -284,18 +218,15 @@ def reject_player(
             status_code=404,
             detail="Jugador no encontrado"
         )
+    if current_user.role != "Administrador":
 
-    # =========================
-    # SAME TEAM VALIDATION
-    # =========================
-    validate_same_team(
-        current_user,
-        player.team_id
-    )
+        if player.team_id != current_user.team_id:
 
-    # =========================
-    # REJECT
-    # =========================
+            raise HTTPException(
+                status_code=403,
+                detail="No puedes gestionar jugadores de otro equipo"
+        )
+
     player.status = "rejected"
 
     player.rejection_reason = data.get(
@@ -312,50 +243,32 @@ def reject_player(
 
 # =========================
 # DELETE PLAYER
-# ADMIN + DIRECTOR + TECNICO
+# ADMIN ONLY
 # =========================
 @router.delete("/players/{player_id}")
 def delete_player(
     player_id: int,
     db: Session = Depends(get_db),
-    current_user=Depends(
-        get_current_user
-    )
+    current_user=Depends(get_current_user)
 ):
 
-    # =========================
-    # VALIDATE ROLE
-    # =========================
-    if current_user.role not in [
-
-        "Administrador",
-
-        "Director",
-
-        "Tecnico",
-    ]:
+    if current_user.role != "Administrador":
 
         raise HTTPException(
             status_code=403,
             detail="Sin permisos"
         )
 
-    # =========================
-    # PLAYER VALIDATION
-    # =========================
-    player = can_manage_player(
-        current_user,
-        player_id,
-        db
-    )
+    player = db.query(Player).filter(
+        Player.id == player_id
+    ).first()
 
-    # =========================
-    # SAME TEAM VALIDATION
-    # =========================
-    validate_same_team(
-        current_user,
-        player.team_id
-    )
+    if not player:
+
+        raise HTTPException(
+            status_code=404,
+            detail="Jugador no encontrado"
+        )
 
     db.delete(player)
 
@@ -368,48 +281,36 @@ def delete_player(
 
 # =========================
 # UPDATE PLAYER
-# ADMIN + DIRECTOR + TECNICO + COMISION
+# ADMIN ONLY
 # =========================
 @router.put("/players/{player_id}")
 def update_player(
     player_id: int,
     data: dict = Body(...),
     db: Session = Depends(get_db),
-    current_user=Depends(
-        get_current_user
-    )
+    current_user=Depends(get_current_user)
 ):
 
-    # =========================
-    # VALIDATE ROLE
-    # =========================
-    if current_user.role not in [
-
-        "Administrador",
-
-        "Director",
-
-        "Tecnico",
-
-        "Comision",
-    ]:
+    if current_user.role != "Administrador":
 
         raise HTTPException(
             status_code=403,
             detail="Sin permisos"
         )
 
-    # =========================
-    # PLAYER VALIDATION
-    # =========================
-    player = can_manage_player(
-        current_user,
-        player_id,
-        db
-    )
+    player = db.query(Player).filter(
+        Player.id == player_id
+    ).first()
+
+    if not player:
+
+        raise HTTPException(
+            status_code=404,
+            detail="Jugador no encontrado"
+        )
 
     # =========================
-    # NEW VALUES
+    # VALIDATE NUMBER
     # =========================
     new_number = data.get(
         "number",
@@ -421,17 +322,6 @@ def update_player(
         player.team_id
     )
 
-    # =========================
-    # SAME TEAM VALIDATION
-    # =========================
-    validate_same_team(
-        current_user,
-        new_team_id
-    )
-
-    # =========================
-    # VALIDATE NUMBER
-    # =========================
     existing_number = db.query(Player).filter(
         Player.id != player_id,
         Player.team_id == new_team_id,
@@ -446,40 +336,15 @@ def update_player(
         )
 
     # =========================
-    # VALIDATE POSITIVE
-    # =========================
-    if int(
-        data.get(
-            "age",
-            player.age
-        )
-    ) <= 0:
-
-        raise HTTPException(
-            status_code=400,
-            detail="La edad debe ser positiva"
-        )
-
-    if int(new_number) <= 0:
-
-        raise HTTPException(
-            status_code=400,
-            detail="El número debe ser positivo"
-        )
-
-    # =========================
-    # BASIC DATA
+    # UPDATE DATA
     # =========================
     if "name" in data:
 
-        if not data["name"].strip():
-
-            raise HTTPException(
-                status_code=400,
-                detail="El nombre es obligatorio"
-            )
-
         player.name = data["name"].strip()
+
+    if "lastname" in data:
+
+        player.lastname = data["lastname"].strip()
 
     if "age" in data:
 
@@ -487,22 +352,16 @@ def update_player(
 
     if "position" in data:
 
-        if not data["position"].strip():
-
-            raise HTTPException(
-                status_code=400,
-                detail="La posición es obligatoria"
-            )
-
         player.position = data["position"].strip()
 
-    player.number = int(new_number)
+    if "number" in data:
 
-    player.team_id = new_team_id
+        player.number = int(data["number"])
 
-    # =========================
-    # STATS
-    # =========================
+    if "team_id" in data:
+
+        player.team_id = int(data["team_id"])
+
     if "goals" in data:
 
         player.goals = int(data["goals"])
@@ -520,29 +379,6 @@ def update_player(
         player.matches_played = int(
             data["matches_played"]
         )
-
-    # =========================
-    # VALIDATE NEGATIVE STATS
-    # =========================
-    stats = [
-
-        player.goals,
-
-        player.yellow_cards,
-
-        player.red_cards,
-
-        player.matches_played,
-    ]
-
-    for stat in stats:
-
-        if stat < 0:
-
-            raise HTTPException(
-                status_code=400,
-                detail="Las estadísticas no pueden ser negativas"
-            )
 
     db.commit()
 

@@ -48,6 +48,23 @@ class Player(Base):
         nullable=False
     )
 
+    goals = Column(
+        Integer,
+        default=0
+    )
+    yellow_cards = Column(
+        Integer,
+        default=0
+    )
+    red_cards = Column(
+        Integer,
+        default=0
+    )
+    matches_played = Column(
+        Integer,
+        default=0
+    )
+
     # =========================
     # STATUS
     # pending

@@ -31,12 +31,23 @@ function Jugadores() {
   const isPlayer =
     role === "Jugador"
 
-  const canManagePlayers =
+  // =========================
+  // PERMISSIONS
+  // =========================
+  const canCreatePlayers =
     role === "Administrador"
     ||
-    role === "Director"
+    role === "Tecnico"
+
+  const canEditPlayers =
+    role === "Administrador"
+    ||
+    role === "Tecnico"
     ||
     role === "Comision"
+
+  const canDeletePlayers =
+    role === "Administrador"
     ||
     role === "Tecnico"
 
@@ -80,9 +91,6 @@ function Jugadores() {
   // EDIT STATES
   // =========================
   const [editName, setEditName] =
-    useState("")
-
-  const [editLastname, setEditLastname] =
     useState("")
 
   const [editAge, setEditAge] =
@@ -144,35 +152,50 @@ function Jugadores() {
   // =========================
   // FILTERED PLAYERS
   // =========================
+  const userTeamId =
+  Number(localStorage.getItem("team_id"))
+
   const filteredPlayers =
-    playersArray.filter(
-      (player: any) => {
+  playersArray.filter(
+    (player: any) => {
 
-        const fullName =
-          `${player.name || ""} ${player.lastname || ""}`
+      const fullName =
+        `${player.name || ""} ${player.lastname || ""}`
 
-        const matchesSearch =
-          fullName
-            .toLowerCase()
-            .includes(
-              search.toLowerCase()
+      const matchesSearch =
+        fullName
+          .toLowerCase()
+          .includes(
+            search.toLowerCase()
+          )
+
+      const matchesStatus =
+        isPlayer
+          ? player.status === "approved"
+          : (
+              statusFilter === "all"
+              ||
+              player.status === statusFilter
             )
 
-        const matchesStatus =
-          isPlayer
-            ? player.status === "approved"
-            : (
-                statusFilter === "all"
-                ||
-                player.status === statusFilter
-              )
+      // =========================
+      // DIRECTOR / JUGADOR
+      // SOLO SU EQUIPO
+      // =========================
+      const matchesTeam =
+        role === "Director"
+        ||
+        role === "Jugador"
+          ? player.team_id === userTeamId
+          : true
 
-        return (
-          matchesSearch &&
-          matchesStatus
-        )
-      }
-    )
+      return (
+        matchesSearch &&
+        matchesStatus &&
+        matchesTeam
+      )
+    }
+  )
 
   // =========================
   // LOAD TEAMS
@@ -205,13 +228,13 @@ function Jugadores() {
   // =========================
   async function createPlayer() {
 
-    if (!canManagePlayers) {
+    if (!canCreatePlayers) {
       return
     }
 
     if (
       !name ||
-      !lastname ||
+      !lastname||
       !age ||
       !position ||
       !number ||
@@ -220,18 +243,6 @@ function Jugadores() {
 
       setErrorMessage(
         "Todos los campos son obligatorios"
-      )
-
-      return
-    }
-
-    if (
-      Number(age) <= 0 ||
-      Number(number) <= 0
-    ) {
-
-      setErrorMessage(
-        "Edad y número deben ser positivos"
       )
 
       return
@@ -288,7 +299,7 @@ function Jugadores() {
   // =========================
   async function deletePlayer(id: number) {
 
-    if (!canManagePlayers) {
+    if (!canDeletePlayers) {
       return
     }
 
@@ -344,8 +355,6 @@ function Jugadores() {
 
     setEditName(player.name || "")
 
-    setEditLastname(player.lastname || "")
-
     setEditAge(
       player.age?.toString() || ""
     )
@@ -370,34 +379,6 @@ function Jugadores() {
   // =========================
   async function saveEditPlayer() {
 
-    if (
-      !editName ||
-      !editLastname ||
-      !editAge ||
-      !editPosition ||
-      !editNumber ||
-      !editTeamId
-    ) {
-
-      setErrorMessage(
-        "Completa todos los campos"
-      )
-
-      return
-    }
-
-    if (
-      Number(editAge) <= 0 ||
-      Number(editNumber) <= 0
-    ) {
-
-      setErrorMessage(
-        "Edad y número deben ser positivos"
-      )
-
-      return
-    }
-
     try {
 
       await updatePlayerApi(
@@ -405,8 +386,6 @@ function Jugadores() {
         {
 
           name: editName,
-
-          lastname: editLastname,
 
           age: Number(editAge),
 
@@ -503,19 +482,13 @@ function Jugadores() {
           </h1>
 
           <p className="text-gray-500 mt-1">
-
-            {
-              isPlayer
-                ? "Plantilla general"
-                : "Gestión de jugadores"
-            }
-
+            Gestión de jugadores
           </p>
 
         </div>
 
         {
-          canManagePlayers && (
+          canCreatePlayers && (
 
             <Button
               onClick={() =>
@@ -602,10 +575,10 @@ function Jugadores() {
 
       </div>
 
-      {/* CREATE FORM */}
+      {/* FORM */}
       {
         showForm &&
-        canManagePlayers && (
+        canCreatePlayers && (
 
           <Card>
 
@@ -615,187 +588,103 @@ function Jugadores() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-              {/* NOMBRE */}
-              <div>
+              <Input
+                placeholder="Nombre"
+                value={name}
+                onChange={(e) =>
+                  setName(e.target.value)
+                }
+              />
 
-                <label className="block text-sm font-semibold mb-2 text-gray-700">
-                  Nombre
-                </label>
+              <Input
+                type="text"
+                placeholder="Apellido"
+                value={lastname}
+                onChange={(e) =>
+                  setLastname(e.target.value)
+                }               
+                
+              />
 
-                <Input
-                  value={name}
-                  onChange={(e) =>
-                    setName(e.target.value)
-                  }
-                />
+              <Input
+                type="number"
+                placeholder="Edad"
+                value={age}
+                onChange={(e) =>
+                  setAge(e.target.value)
+                }
+              />
 
-              </div>
+              <select
+                value={position}
+                onChange={(e) =>
+                  setPosition(e.target.value)
+                }
+                className="border p-3 rounded-xl"
+              >
 
-              {/* APELLIDO */}
-              <div>
-
-                <label className="block text-sm font-semibold mb-2 text-gray-700">
-                  Apellido
-                </label>
-
-                <Input
-                  value={lastname}
-                  onChange={(e) =>
-                    setLastname(e.target.value)
-                  }
-                />
-
-              </div>
-
-              {/* EDAD */}
-              <div>
-
-                <label className="block text-sm font-semibold mb-2 text-gray-700">
-                  Edad
-                </label>
-
-                <Input
-                  type="number"
-                  min={1}
-                  value={age}
-                  onChange={(e) =>
-                    setAge(e.target.value)
-                  }
-                />
-
-              </div>
-
-              {/* POSICION */}
-              <div>
-
-                <label className="block text-sm font-semibold mb-2 text-gray-700">
+                <option value="">
                   Posición
-                </label>
+                </option>
 
-                <select
-                  value={position}
-                  onChange={(e) =>
-                    setPosition(e.target.value)
-                  }
-                  className="
-                    w-full
-                    border border-gray-300
-                    p-3
-                    rounded-xl
-                    bg-white
-                  "
-                >
+                <option value="Arquero">
+                  Arquero
+                </option>
 
-                  <option value="">
-                    Seleccionar posición
-                  </option>
+                <option value="Defensor">
+                  Defensor
+                </option>
 
-                  <option value="Arquero">
-                    Arquero
-                  </option>
+                <option value="Mediocampista">
+                  Mediocampista
+                </option>
 
-                  <option value="Defensor Central">
-                    Defensor Central
-                  </option>
+                <option value="Delantero">
+                  Delantero
+                </option>
 
-                  <option value="Lateral Derecho">
-                    Lateral Derecho
-                  </option>
+              </select>
 
-                  <option value="Lateral Izquierdo">
-                    Lateral Izquierdo
-                  </option>
+              <Input
+                type="number"
+                placeholder="Número"
+                value={number}
+                onChange={(e) =>
+                  setNumber(e.target.value)
+                }
+              />
 
-                  <option value="Volante Central">
-                    Volante Central
-                  </option>
+              <select
+                value={teamId}
+                onChange={(e) =>
+                  setTeamId(e.target.value)
+                }
+                className="
+                  w-full
+                  border
+                  p-3
+                  rounded-xl
+                  bg-white
+                "
+              >
 
-                  <option value="Volante Derecho">
-                    Volante Derecho
-                  </option>
+                <option value="">
+                  Seleccionar equipo
+                </option>
 
-                  <option value="Volante Izquierdo">
-                    Volante Izquierdo
-                  </option>
+                {
+                  teams.map((team: any) => (
 
-                  <option value="Enganche">
-                    Enganche
-                  </option>
+                    <option
+                      key={team.id}
+                      value={team.id}
+                    >
+                      {team.name}
+                    </option>
+                  ))
+                }
 
-                  <option value="Extremo Derecho">
-                    Extremo Derecho
-                  </option>
-
-                  <option value="Extremo Izquierdo">
-                    Extremo Izquierdo
-                  </option>
-
-                  <option value="Delantero">
-                    Delantero
-                  </option>
-
-                </select>
-
-              </div>
-
-              {/* NUMERO */}
-              <div>
-
-                <label className="block text-sm font-semibold mb-2 text-gray-700">
-                  Número
-                </label>
-
-                <Input
-                  type="number"
-                  min={1}
-                  value={number}
-                  onChange={(e) =>
-                    setNumber(e.target.value)
-                  }
-                />
-
-              </div>
-
-              {/* EQUIPO */}
-              <div>
-
-                <label className="block text-sm font-semibold mb-2 text-gray-700">
-                  Equipo
-                </label>
-
-                <select
-                  value={teamId}
-                  onChange={(e) =>
-                    setTeamId(e.target.value)
-                  }
-                  className="
-                    w-full
-                    border border-gray-300
-                    p-3
-                    rounded-xl
-                    bg-white
-                  "
-                >
-
-                  <option value="">
-                    Seleccionar equipo
-                  </option>
-
-                  {
-                    teams.map((team: any) => (
-
-                      <option
-                        key={team.id}
-                        value={team.id}
-                      >
-                        {team.name}
-                      </option>
-                    ))
-                  }
-
-                </select>
-
-              </div>
+              </select>
 
             </div>
 
@@ -816,123 +705,107 @@ function Jugadores() {
 
         <TableContainer>
 
-          {
-            isLoading ? (
+          <table className="w-full">
 
-              <div className="p-6">
-                Cargando jugadores...
-              </div>
+            <thead className="bg-gray-50">
 
-            ) : (
+              <tr>
 
-              <table className="w-full">
+                <th className="text-left p-4">
+                  Nombre
+                </th>
 
-                <thead className="bg-gray-50">
+                <th className="text-left p-4">
+                  Posición
+                </th>
 
-                  <tr>
+                <th className="text-left p-4">
+                  Número
+                </th>
 
-                    <th className="text-left p-4">
-                      Nombre
-                    </th>
+                <th className="text-left p-4">
+                  Equipo
+                </th>
 
-                    <th className="text-left p-4">
-                      Posición
-                    </th>
+                <th className="text-center p-4">
+                  Estado
+                </th>
 
-                    <th className="text-left p-4">
-                      Número
-                    </th>
-
-                    <th className="text-left p-4">
-                      Equipo
-                    </th>
+                {
+                  canEditPlayers && (
 
                     <th className="text-center p-4">
-                      ⚽
+                      Acciones
                     </th>
+                  )
+                }
 
-                    <th className="text-center p-4">
-                      Estado
-                    </th>
+              </tr>
 
-                    {
-                      canManagePlayers && (
+            </thead>
 
-                        <th className="text-center p-4">
-                          Acciones
-                        </th>
+            <tbody>
+
+              {
+                filteredPlayers.map(
+                  (player: any) => {
+
+                    const team =
+                      teams.find(
+                        (t: any) =>
+                          t.id === player.team_id
                       )
-                    }
 
-                  </tr>
+                    return (
 
-                </thead>
+                      <Fragment
+                        key={player.id}
+                      >
 
-                <tbody>
+                        <tr className="border-t">
 
-                  {
-                    filteredPlayers.map(
-                      (player: any) => {
+                          <td className="p-4">
+                            {player.name}
+                          </td>
 
-                        const team =
-                          teams.find(
-                            (t: any) =>
-                              t.id === player.team_id
-                          )
+                          <td className="p-4">
+                            {player.position}
+                          </td>
 
-                        return (
+                          <td className="p-4">
+                            {player.number}
+                          </td>
 
-                          <Fragment
-                            key={player.id}
-                          >
+                          <td className="p-4">
+                            {team?.name || "-"}
+                          </td>
 
-                            <tr className="border-t">
+                          <td className="p-4 text-center">
 
-                              <td className="p-4">
-                                {player.name}
-                                {" "}
-                                {player.lastname}
-                              </td>
+                            <Badge
+                              status={player.status}
+                            />
 
-                              <td className="p-4">
-                                {player.position}
-                              </td>
+                          </td>
 
-                              <td className="p-4">
-                                {player.number}
-                              </td>
+                          {
+                            canEditPlayers && (
 
                               <td className="p-4">
-                                {team?.name || "-"}
-                              </td>
 
-                              <td className="p-4 text-center">
-                                {player.goals || 0}
-                              </td>
+                                <div className="flex justify-center gap-2">
 
-                              <td className="p-4 text-center">
+                                  <Button
+                                    variant="secondary"
+                                    onClick={() =>
+                                      openEditModal(player)
+                                    }
+                                  >
+                                    Editar
+                                  </Button>
 
-                                <Badge
-                                  status={player.status}
-                                />
-
-                              </td>
-
-                              {
-                                canManagePlayers && (
-
-                                  <td className="p-4">
-
-                                    <div className="flex justify-center gap-2">
-
-                                      <Button
-                                        variant="secondary"
-                                        onClick={() =>
-                                          openEditModal(player)
-                                        }
-                                      >
-                                        Editar
-                                      </Button>
+                                  {
+                                    canDeletePlayers && (
 
                                       <Button
                                         variant="danger"
@@ -942,26 +815,26 @@ function Jugadores() {
                                       >
                                         Eliminar
                                       </Button>
+                                    )
+                                  }
 
-                                    </div>
+                                </div>
 
-                                  </td>
-                                )
-                              }
+                              </td>
+                            )
+                          }
 
-                            </tr>
+                        </tr>
 
-                          </Fragment>
-                        )
-                      }
+                      </Fragment>
                     )
                   }
+                )
+              }
 
-                </tbody>
+            </tbody>
 
-              </table>
-            )
-          }
+          </table>
 
         </TableContainer>
 
@@ -987,16 +860,7 @@ function Jugadores() {
           />
 
           <Input
-            placeholder="Apellido"
-            value={editLastname}
-            onChange={(e) =>
-              setEditLastname(e.target.value)
-            }
-          />
-
-          <Input
             type="number"
-            min={1}
             placeholder="Edad"
             value={editAge}
             onChange={(e) =>
@@ -1004,73 +868,16 @@ function Jugadores() {
             }
           />
 
-          <select
+          <Input
+            placeholder="Posición"
             value={editPosition}
             onChange={(e) =>
               setEditPosition(e.target.value)
             }
-            className="
-              w-full
-              border
-              p-3
-              rounded-xl
-              bg-white
-            "
-          >
-
-            <option value="">
-              Seleccionar posición
-            </option>
-
-            <option value="Arquero">
-              Arquero
-            </option>
-
-            <option value="Defensor Central">
-              Defensor Central
-            </option>
-
-            <option value="Lateral Derecho">
-              Lateral Derecho
-            </option>
-
-            <option value="Lateral Izquierdo">
-              Lateral Izquierdo
-            </option>
-
-            <option value="Volante Central">
-              Volante Central
-            </option>
-
-            <option value="Volante Derecho">
-              Volante Derecho
-            </option>
-
-            <option value="Volante Izquierdo">
-              Volante Izquierdo
-            </option>
-
-            <option value="Enganche">
-              Enganche
-            </option>
-
-            <option value="Extremo Derecho">
-              Extremo Derecho
-            </option>
-
-            <option value="Extremo Izquierdo">
-              Extremo Izquierdo
-            </option>
-
-            <option value="Delantero">
-              Delantero
-            </option>
-
-          </select>
+          />
 
           <Input
             type="number"
-            min={1}
             placeholder="Número"
             value={editNumber}
             onChange={(e) =>

@@ -47,7 +47,6 @@ class User(Base):
     # Administrador
     # Director
     # Comision
-    # Tecnico
     # Jugador
     #
     # =========================
@@ -101,13 +100,7 @@ class User(Base):
 
         return (
             self.role == "Comision"
-        )
-
-    def is_tecnico(self):
-
-        return (
-            self.role == "Tecnico"
-        )
+        )    
 
     def is_player(self):
 

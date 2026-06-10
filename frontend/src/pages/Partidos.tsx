@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 
 import Swal from "sweetalert2"
 
@@ -20,6 +20,29 @@ import {
 } from "../api/matchEvents"
 
 function Partidos() {
+
+  // =========================
+  // ROLE
+  // =========================
+  const role =
+    localStorage.getItem("role") || ""
+
+  const userTeamId =
+    Number(localStorage.getItem("team_id"))
+
+  const canCreateMatch =
+    role === "Administrador"
+    ||
+    role === "Comision"
+    ||
+    role === "Tecnico"
+
+  const canEditMatch =
+    role === "Administrador"
+    ||
+    role === "Comision"
+    ||
+    role === "Tecnico"
 
   // =========================
   // STATES
@@ -98,23 +121,29 @@ function Partidos() {
 
   }, [])
 
+  // =========================
+  // BLOCK BODY SCROLL
+  // =========================
   useEffect(() => {
 
-  if (showModal) {
+    if (showModal) {
 
-    document.body.style.overflow = "hidden"
+      document.body.style.overflow =
+        "hidden"
 
-  } else {
+    } else {
 
-    document.body.style.overflow = "auto"
-  }
+      document.body.style.overflow =
+        "auto"
+    }
 
-  return () => {
+    return () => {
 
-    document.body.style.overflow = "auto"
-  }
+      document.body.style.overflow =
+        "auto"
+    }
 
-}, [showModal])
+  }, [showModal])
 
   // =========================
   // LOAD TEAMS
@@ -157,7 +186,10 @@ function Partidos() {
 
         const sortedMatches =
           data.sort(
-            (a: any, b: any) => {
+            (
+              a: any,
+              b: any
+            ) => {
 
               if (
                 a.round_number !==
@@ -182,7 +214,9 @@ function Partidos() {
             }
           )
 
-        setMatches(sortedMatches)
+        setMatches(
+          sortedMatches
+        )
 
       } else {
 
@@ -207,7 +241,9 @@ function Partidos() {
     try {
 
       const data =
-        await getMatchEvents(matchId)
+        await getMatchEvents(
+          matchId
+        )
 
       if (Array.isArray(data)) {
 
@@ -231,6 +267,19 @@ function Partidos() {
   // =========================
   async function saveMatch() {
 
+    if (!canCreateMatch) {
+
+      Swal.fire({
+
+        icon: "error",
+
+        title:
+          "Sin permisos",
+      })
+
+      return
+    }
+
     if (
       !homeTeamId ||
       !awayTeamId ||
@@ -242,6 +291,22 @@ function Partidos() {
       setMessage(
         "Completa todos los campos"
       )
+
+      return
+    }
+
+    if (
+      homeTeamId ===
+      awayTeamId
+    ) {
+
+      Swal.fire({
+
+        icon: "warning",
+
+        title:
+          "Los equipos no pueden ser iguales",
+      })
 
       return
     }
@@ -264,8 +329,7 @@ function Partidos() {
         match_date:
           date,
 
-        stadium:
-          stadium,
+        stadium,
       })
 
       await loadMatches()
@@ -292,6 +356,14 @@ function Partidos() {
 
       console.error(error)
 
+      Swal.fire({
+
+        icon: "error",
+
+        title:
+          "Error al crear partido",
+      })
+
     } finally {
 
       setLoading(false)
@@ -305,6 +377,10 @@ function Partidos() {
     match: any
   ) {
 
+    if (!canEditMatch) {
+      return
+    }
+
     setSelectedMatch(match)
 
     setEditHomeScore(
@@ -316,10 +392,13 @@ function Partidos() {
     )
 
     setEditStatus(
-      match.status || "scheduled"
+      match.status ||
+      "scheduled"
     )
 
-    await loadEvents(match.id)
+    await loadEvents(
+      match.id
+    )
 
     setShowModal(true)
   }
@@ -329,7 +408,9 @@ function Partidos() {
   // =========================
   async function saveResult() {
 
-    if (!selectedMatch) return
+    if (!selectedMatch) {
+      return
+    }
 
     try {
 
@@ -369,6 +450,14 @@ function Partidos() {
     } catch (error) {
 
       console.error(error)
+
+      Swal.fire({
+
+        icon: "error",
+
+        title:
+          "Error al actualizar partido",
+      })
     }
   }
 
@@ -455,15 +544,28 @@ function Partidos() {
   // PLAYERS
   // =========================
   const availablePlayers =
-    teams
-      .filter(
-        (team: any) =>
-          team.id === Number(eventTeamId)
-      )
-      .flatMap(
-        (team: any) =>
-          team.players || []
-      )
+    useMemo(() => {
+
+      return teams
+        .filter(
+          (team: any) =>
+            team.id ===
+            Number(eventTeamId)
+        )
+        .flatMap(
+          (team: any) =>
+            team.players || []
+        )
+        .filter(
+          (player: any) =>
+            player.status ===
+            "approved"
+        )
+
+    }, [
+      teams,
+      eventTeamId,
+    ])
 
   // =========================
   // ICONS
@@ -476,11 +578,17 @@ function Partidos() {
       return "⚽"
     }
 
-    if (type === "yellow_card") {
+    if (
+      type ===
+      "yellow_card"
+    ) {
       return "🟨"
     }
 
-    if (type === "red_card") {
+    if (
+      type ===
+      "red_card"
+    ) {
       return "🟥"
     }
 
@@ -495,11 +603,17 @@ function Partidos() {
       return "Gol"
     }
 
-    if (type === "yellow_card") {
+    if (
+      type ===
+      "yellow_card"
+    ) {
       return "Amarilla"
     }
 
-    if (type === "red_card") {
+    if (
+      type ===
+      "red_card"
+    ) {
       return "Roja"
     }
 
@@ -542,630 +656,310 @@ function Partidos() {
       }
 
       {/* FORM */}
-      <Card>
+      {
+        canCreateMatch && (
 
-        <div
-          className="
-            grid
-            grid-cols-1
-            md:grid-cols-2
-            gap-4
-          "
-        >
+          <Card>
 
-          <select
-            value={homeTeamId}
-            onChange={(e) =>
-              setHomeTeamId(
-                e.target.value
-              )
-            }
-            className="
-              border
-              p-3
-              rounded-xl
-            "
-          >
+            <div
+              className="
+                grid
+                grid-cols-1
+                md:grid-cols-2
+                gap-4
+              "
+            >
 
-            <option value="">
-              Equipo local
-            </option>
+              <select
+                value={homeTeamId}
+                onChange={(e) =>
+                  setHomeTeamId(
+                    e.target.value
+                  )
+                }
+                className="
+                  border
+                  p-3
+                  rounded-xl
+                "
+              >
 
-            {
-              teams.map(
-                (team: any) => (
+                <option value="">
+                  Equipo local
+                </option>
 
-                  <option
-                    key={team.id}
-                    value={team.id}
-                  >
-                    {team.name}
-                  </option>
-                )
-              )
-            }
+                {
+                  teams.map(
+                    (team: any) => (
 
-          </select>
+                      <option
+                        key={team.id}
+                        value={team.id}
+                      >
+                        {team.name}
+                      </option>
+                    )
+                  )
+                }
 
-          <select
-            value={awayTeamId}
-            onChange={(e) =>
-              setAwayTeamId(
-                e.target.value
-              )
-            }
-            className="
-              border
-              p-3
-              rounded-xl
-            "
-          >
+              </select>
 
-            <option value="">
-              Equipo visitante
-            </option>
+              <select
+                value={awayTeamId}
+                onChange={(e) =>
+                  setAwayTeamId(
+                    e.target.value
+                  )
+                }
+                className="
+                  border
+                  p-3
+                  rounded-xl
+                "
+              >
 
-            {
-              teams.map(
-                (team: any) => (
+                <option value="">
+                  Equipo visitante
+                </option>
 
-                  <option
-                    key={team.id}
-                    value={team.id}
-                  >
-                    {team.name}
-                  </option>
-                )
-              )
-            }
+                {
+                  teams.map(
+                    (team: any) => (
 
-          </select>
+                      <option
+                        key={team.id}
+                        value={team.id}
+                      >
+                        {team.name}
+                      </option>
+                    )
+                  )
+                }
 
-          <input
-            type="datetime-local"
-            value={date}
-            onChange={(e) =>
-              setDate(
-                e.target.value
-              )
-            }
-            className="
-              border
-              p-3
-              rounded-xl
-            "
-          />
+              </select>
 
-          <input
-            type="text"
-            placeholder="Estadio"
-            value={stadium}
-            onChange={(e) =>
-              setStadium(
-                e.target.value
-              )
-            }
-            className="
-              border
-              p-3
-              rounded-xl
-            "
-          />
+              <input
+                type="datetime-local"
+                value={date}
+                onChange={(e) =>
+                  setDate(
+                    e.target.value
+                  )
+                }
+                className="
+                  border
+                  p-3
+                  rounded-xl
+                "
+              />
 
-        </div>
+              <input
+                type="text"
+                placeholder="Estadio"
+                value={stadium}
+                onChange={(e) =>
+                  setStadium(
+                    e.target.value
+                  )
+                }
+                className="
+                  border
+                  p-3
+                  rounded-xl
+                "
+              />
 
-        <button
-          onClick={saveMatch}
-          className="
-            mt-5
-            bg-black
-            text-white
-            px-6
-            py-3
-            rounded-xl
-          "
-        >
-          Guardar Partido
-        </button>
+              <input
+                type="number"
+                min={1}
+                value={round}
+                onChange={(e) =>
+                  setRound(
+                    e.target.value
+                  )
+                }
+                placeholder="Fecha"
+                className="
+                  border
+                  p-3
+                  rounded-xl
+                "
+              />
 
-      </Card>
+            </div>
+
+            <button
+              disabled={loading}
+              onClick={saveMatch}
+              className="
+                mt-5
+                bg-black
+                text-white
+                px-6
+                py-3
+                rounded-xl
+                disabled:opacity-50
+              "
+            >
+
+              {
+                loading
+                  ? "Guardando..."
+                  : "Guardar Partido"
+              }
+
+            </button>
+
+          </Card>
+        )
+      }
 
       {/* FIXTURE */}
       <div className="mt-8 space-y-5">
 
         {
-          matches.map(
-            (match: any) => (
+          matches
+            .filter((match: any) => {
 
-              <Card key={match.id}>
+              if (
+                role === "Administrador" ||
+                role === "Comision"
+              ) {
+                return true
+              }
 
-                <div className="flex justify-between">
+              if (
+                role === "Tecnico" ||
+                role === "Jugador"
+              ) {
 
-                  <div>
+                return (
+                  match.home_team_id === userTeamId ||
+                  match.away_team_id === userTeamId
+                )
+              }
 
-                    <p className="text-sm text-gray-500 mb-2">
+              return true
+            })
+            .map(
+              (match: any) => (
 
-                      Fecha
-                      {" "}
-                      {match.round_number}
+                <Card
+                  key={match.id}
+                >
 
-                    </p>
+                  <div className="flex justify-between gap-4">
 
-                    <h3 className="text-xl font-bold">
+                    {/* LEFT */}
+                    <div className="flex-1">
 
-                      {match.home_team}
-                      {" vs "}
-                      {match.away_team}
+                      <p className="text-sm text-gray-500 mb-2">
 
-                    </h3>
+                        Fecha
+                        {" "}
+                        {match.round_number}
 
-                    <p className="text-gray-500 mt-2">
-                      {match.stadium}
-                    </p>
+                      </p>
 
-                    <p className="text-gray-500">
-                      {
-                        match.match_date &&
-                        new Date(
-                          match.match_date
-                        ).toLocaleString()
-                      }
-                    </p>
+                      <h3 className="text-xl font-bold">
 
-                    {/* EVENTS */}
-                    {
-                      match.events &&
-                      match.events.length > 0 && (
+                        {match.home_team}
 
-                        <div className="mt-4 space-y-2">
+                        {" vs "}
 
-                          {
-                            match.events.map(
-                              (event: any) => (
+                        {match.away_team}
 
-                                <div
-                                  key={event.id}
-                                  className="
-                                    bg-gray-100
-                                    p-2
-                                    rounded-lg
-                                    text-sm
-                                  "
-                                >
+                      </h3>
 
-                                  <span className="font-semibold">
+                      <p className="text-gray-500 mt-2">
+                        {match.stadium}
+                      </p>
 
-                                    {
-                                      getEventIcon(
-                                        event.event_type
-                                      )
-                                    }
-
-                                  </span>
-
-                                  {" "}
-
-                                  {
-                                    event.player_name
-                                  }
-
-                                  {" · "}
-
-                                  {
-                                    getEventLabel(
-                                      event.event_type
-                                    )
-                                  }
-
-                                  {" · "}
-
-                                  {
-                                    event.minute
-                                  }'
-
-                                </div>
-                              )
-                            )
-                          }
-
-                        </div>
-                      )
-                    }
-
-                  </div>
-
-                  <div className="text-right">
-
-                    {/* STATUS */}
-                    <div
-                      className={`
-                        px-4
-                        py-2
-                        rounded-xl
-                        font-semibold
-
-                        ${
-                          match.status === "finished"
-                            ? "bg-green-100 text-green-700"
-                            : "bg-yellow-100 text-yellow-800"
+                      <p className="text-gray-500">
+                        {
+                          match.match_date &&
+                          new Date(
+                            match.match_date
+                          ).toLocaleString()
                         }
-                      `}
-                    >
+                      </p>
+
+                    </div>
+
+                    {/* RIGHT */}
+                    <div className="text-right">
+
+                      <div
+                        className={`
+                          px-4
+                          py-2
+                          rounded-xl
+                          font-semibold
+
+                          ${
+                            match.status === "finished"
+                              ? "bg-green-100 text-green-700"
+                              : "bg-yellow-100 text-yellow-800"
+                          }
+                        `}
+                      >
+
+                        {
+                          match.status === "finished"
+                            ? "Finalizado"
+                            : "Programado"
+                        }
+
+                      </div>
 
                       {
-                        match.status === "finished"
-                          ? "Finalizado"
-                          : "Programado"
+                        match.status === "finished" && (
+
+                          <div className="text-3xl font-bold mt-3">
+
+                            {match.home_score}
+
+                            {" - "}
+
+                            {match.away_score}
+
+                          </div>
+                        )
+                      }
+
+                      {
+                        canEditMatch && (
+
+                          <button
+                            onClick={() =>
+                              openEditModal(match)
+                            }
+                            className="
+                              mt-4
+                              bg-blue-600
+                              hover:bg-blue-700
+                              text-white
+                              px-4
+                              py-2
+                              rounded-xl
+                              transition
+                            "
+                          >
+                            Editar
+                          </button>
+                        )
                       }
 
                     </div>
 
-                    {/* SCORE */}
-                    {
-                      match.status === "finished" && (
-
-                        <div className="text-3xl font-bold mt-3">
-
-                          {match.home_score}
-                          {" - "}
-                          {match.away_score}
-
-                        </div>
-                      )
-                    }
-
-                    <button
-                      onClick={() =>
-                        openEditModal(match)
-                      }
-                      className="
-                        mt-4
-                        bg-blue-600
-                        text-white
-                        px-4
-                        py-2
-                        rounded-xl
-                      "
-                    >
-                      Editar
-                    </button>
-
                   </div>
 
-                </div>
-
-              </Card>
+                </Card>
+              )
             )
-          )
         }
 
       </div>
-
-      {/* MODAL */}
-      {
-        showModal && (
-
-          <div
-            className="
-              fixed
-              inset-0
-              bg-black/50
-              flex
-              justify-center
-              items-center
-              z-50
-            "
-          >
-
-            <div
-             className="
-               bg-white
-                rounded-2xl
-                w-full
-                max-w-2xl
-                max-h-[90vh]
-                flex
-                flex-col
-                  "
-                >
-
-              <div
-                className="
-                  overflow-y-auto
-                  p-6
-                  flex-1
-                "
-              >
-
-              <h2 className="text-2xl font-bold mb-5">
-                Editar Partido
-              </h2>
-
-              <div className="grid grid-cols-2 gap-4">
-
-                <input
-                  type="number"
-                  value={editHomeScore}
-                  onChange={(e) =>
-                    setEditHomeScore(
-                      Number(e.target.value)
-                    )
-                  }
-                  className="
-                    border
-                    p-3
-                    rounded-xl
-                  "
-                />
-
-                <input
-                  type="number"
-                  value={editAwayScore}
-                  onChange={(e) =>
-                    setEditAwayScore(
-                      Number(e.target.value)
-                    )
-                  }
-                  className="
-                    border
-                    p-3
-                    rounded-xl
-                  "
-                />
-
-              </div>
-
-              <select
-                value={editStatus}
-                onChange={(e) =>
-                  setEditStatus(
-                    e.target.value
-                  )
-                }
-                className="
-                  mt-4
-                  border
-                  p-3
-                  rounded-xl
-                  w-full
-                "
-              >
-
-                <option value="scheduled">
-                  Programado
-                </option>
-
-                <option value="finished">
-                  Finalizado
-                </option>
-
-              </select>
-
-              {/* EVENTS */}
-              <div className="mt-6 space-y-4">
-
-                <select
-                  value={eventTeamId}
-                  onChange={(e) =>
-                    setEventTeamId(
-                      e.target.value
-                    )
-                  }
-                  className="
-                    border
-                    p-3
-                    rounded-xl
-                    w-full
-                  "
-                >
-
-                  <option value="">
-                    Equipo
-                  </option>
-
-                  <option
-                    value={
-                      selectedMatch?.home_team_id
-                    }
-                  >
-                    Local
-                  </option>
-
-                  <option
-                    value={
-                      selectedMatch?.away_team_id
-                    }
-                  >
-                    Visitante
-                  </option>
-
-                </select>
-
-                <select
-                  value={eventPlayerId}
-                  onChange={(e) =>
-                    setEventPlayerId(
-                      e.target.value
-                    )
-                  }
-                  className="
-                    border
-                    p-3
-                    rounded-xl
-                    w-full
-                  "
-                >
-
-                  <option value="">
-                    Jugador
-                  </option>
-
-                  {
-                    availablePlayers.map(
-                      (player: any) => (
-
-                        <option
-                          key={player.id}
-                          value={player.id}
-                        >
-                          {player.name}
-                          {" "}
-                          {player.lastname}
-                        </option>
-                      )
-                    )
-                  }
-
-                </select>
-
-                <select
-                  value={eventType}
-                  onChange={(e) =>
-                    setEventType(
-                      e.target.value
-                    )
-                  }
-                  className="
-                    border
-                    p-3
-                    rounded-xl
-                    w-full
-                  "
-                >
-
-                  <option value="goal">
-                    Gol
-                  </option>
-
-                  <option value="yellow_card">
-                    Amarilla
-                  </option>
-
-                  <option value="red_card">
-                    Roja
-                  </option>
-
-                </select>
-
-                <input
-                  type="number"
-                  placeholder="Minuto"
-                  value={eventMinute}
-                  onChange={(e) =>
-                    setEventMinute(
-                      e.target.value
-                    )
-                  }
-                  className="
-                    border
-                    p-3
-                    rounded-xl
-                    w-full
-                  "
-                />
-
-                <button
-                  type="button"
-                  onClick={saveEvent}
-                  className="
-                    bg-purple-600
-                    hover:bg-purple-700
-                    text-white
-                    px-4
-                    py-3
-                    rounded-xl
-                  "
-                >
-                  Agregar evento
-                </button>
-
-              </div>
-
-              {/* EVENT LIST */}
-              <div className="mt-6 space-y-2">
-
-                {
-                  events.map(
-                    (event: any) => (
-
-                      <div
-                        key={event.id}
-                        className="
-                          bg-gray-100
-                          p-3
-                          rounded-xl
-                        "
-                      >
-
-                        {
-                          getEventIcon(
-                            event.event_type
-                          )
-                        }
-
-                        {" "}
-
-                        {
-                          event.player?.name
-                        }
-
-                        {" "}
-
-                        {
-                          event.player?.lastname
-                        }
-
-                        {" · "}
-
-                        {
-                          event.minute
-                        }'
-
-                      </div>
-                    )
-                  )
-                }
-
-              </div>
-
-            </div>
-
-              <div className="flex gap-3 mt-6">
-
-                <button
-                  onClick={saveResult}
-                  className="
-                    flex-1
-                    bg-green-600
-                    text-white
-                    py-3
-                    rounded-xl
-                  "
-                >
-                  Guardar
-                </button>
-
-                <button
-                  onClick={() =>
-                    setShowModal(false)
-                  }
-                  className="
-                    flex-1
-                    bg-gray-300
-                    py-3
-                    rounded-xl
-                  "
-                >
-                  Cancelar
-                </button>
-
-              </div>
-
-            </div>
-
-          </div>
-        )
-      }
 
     </div>
   )

@@ -112,6 +112,12 @@ function Solicitudes() {
   // =========================
   // APPROVE PLAYER
   // =========================
+const role =
+  localStorage.getItem("role") || ""
+const canApproveReject = 
+  role === "Administrador" ||
+  role === "Director"  
+
   async function approvePlayer(
     id: number
   ) {
@@ -394,7 +400,8 @@ function Solicitudes() {
                   ⏳ Pendiente
 
                 </p>
-
+            {
+              canApproveReject && (
                 <div
                   className="
                     flex
@@ -446,6 +453,8 @@ function Solicitudes() {
                   </button>
 
                 </div>
+              )
+            }
 
               </div>
             )

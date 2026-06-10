@@ -5,6 +5,8 @@ import {
   useDraggable,
 } from "@dnd-kit/core"
 
+import { Eye } from "lucide-react"
+
 import { getTeams } from "../api/teams"
 
 import { getPlayers } from "../api/players"
@@ -13,6 +15,7 @@ import {
   createFormation,
   getFormations,
   deleteFormation,
+  updateFormation,
 } from "../api/formations"
 
 import Card from "../components/ui/Card"
@@ -20,25 +23,30 @@ import Card from "../components/ui/Card"
 // =========================
 // AUTH
 // =========================
-const role =
-  localStorage.getItem("role") || ""
+function getUserRole() {
 
-const isPlayer =
-  role === "Jugador"
-
-const canManageFormation =
-  role === "Administrador"
-  ||
-  role === "Director"
-  ||
-  role === "Comision"
+  return (
+    localStorage.getItem("role")
+    ||
+    ""
+  ).trim()
+}
 
 // =========================
 // PLAYER TOKEN
 // =========================
 function PlayerToken({
   item,
+  canManageFormation
 }: any) {
+
+  if (
+    !item ||
+    !item.player ||
+    !item.player.id
+  ) {
+    return null
+  }
 
   const {
     attributes,
@@ -46,17 +54,24 @@ function PlayerToken({
     setNodeRef,
     transform,
   } = useDraggable({
-    id: item.player.id.toString(),
-    disabled: !canManageFormation,
+
+    id:
+      item.player.id.toString(),
+
+    disabled:
+      !canManageFormation,
   })
 
   const style = {
 
-    position: "absolute" as const,
+    position:
+      "absolute" as const,
 
-    left: item.x,
+    left:
+      item.x,
 
-    top: item.y,
+    top:
+      item.y,
 
     transform:
       transform
@@ -75,15 +90,13 @@ function PlayerToken({
     <div
       ref={setNodeRef}
       style={style}
-      {...(canManageFormation ? listeners : {})}
-      {...(canManageFormation ? attributes : {})}
-      className={`
+      {...attributes}
+      {...listeners}
+      className="
         w-12
         h-12
         rounded-full
-        bg-gradient-to-b
-        from-blue-500
-        to-blue-700
+        bg-blue-700
         border-2
         border-white
         shadow-xl
@@ -92,33 +105,16 @@ function PlayerToken({
         flex-col
         items-center
         justify-center
-        select-none
+        cursor-grab
         z-20
-        transition
-
-        ${
-          canManageFormation
-            ? "cursor-grab hover:scale-110"
-            : "cursor-default"
-        }
-      `}
+      "
     >
 
-      <span className="text-[10px] font-bold leading-none">
+      <span className="text-[10px] font-bold">
         {item.player.number}
       </span>
 
-      <span
-        className="
-          text-[8px]
-          leading-none
-          mt-[2px]
-          truncate
-          w-full
-          text-center
-          px-1
-        "
-      >
+      <span className="text-[8px] truncate px-1">
         {item.player.name}
       </span>
 
@@ -130,10 +126,21 @@ function PlayerToken({
 // MAIN
 // =========================
 function Formacion() {
+  const role = getUserRole()
 
-  // =========================
-  // STATES
-  // =========================
+  const isPlayer =
+    role === "Jugador"
+
+  const canManageFormation = [
+
+    "Administrador",
+
+    "Director",
+
+    "Comision",        
+
+  ].includes(role)
+
   const [teams, setTeams] =
     useState<any[]>([])
 
@@ -164,7 +171,19 @@ function Formacion() {
   const [editingId, setEditingId] =
     useState<number | null>(null)
 
-  const [selectedFormation, setSelectedFormation] =
+  //=============
+  //MODAL
+  //===========
+  const [modalOpen, setModalOpen] =
+    useState(false)
+
+  const [modalTitle, setModalTitle] =
+    useState("")
+
+  const [modalMessage, setModalMessage] =
+    useState("")
+
+  const[confirmAction, setConfirmAction] =
     useState<any>(null)
 
   // =========================
@@ -180,14 +199,18 @@ function Formacion() {
 
     try {
 
-      const teamsData =
-        await getTeams()
+      const [
+        teamsData,
+        playersData,
+        formationsData,
+      ] = await Promise.all([
 
-      const playersData =
-        await getPlayers()
+        getTeams(),
 
-      const formationsData =
-        await getFormations()
+        getPlayers(),
+
+        getFormations(),
+      ])
 
       setTeams(
         Array.isArray(teamsData)
@@ -203,50 +226,113 @@ function Formacion() {
             )
           : []
 
-      setPlayers(approvedPlayers)
-
-      setFormations(
-        Array.isArray(formationsData)
-          ? formationsData
-          : []
+      setPlayers(
+        approvedPlayers
       )
 
-      if (
-        isPlayer &&
-        Array.isArray(formationsData) &&
-        formationsData.length > 0
-      ) {
+      const safeFormations =
+        Array.isArray(formationsData)
+          ? formationsData.map(
+              (f: any) => ({
 
-        const formation =
-          formationsData[0]
+                ...f,
 
-        loadFormationData(
-          formation,
-          approvedPlayers
-        )
-      }
+                players:
+                  Array.isArray(f.players)
+                    ? f.players
+                    : [],
+              })
+            )
+          : []
+
+      setFormations(
+        safeFormations
+      )
 
     } catch (error) {
 
       console.error(error)
     }
   }
+  // =========================
+  // RESET
+  // =========================
+  function resetForm() {
 
+    setEditingId(null)
+
+    setFormationName("")
+
+    setTactic("4-3-3")
+
+    setMatchType(11)
+
+    setTeamId("")
+
+    setStarters([])
+
+    setSubstitutes([])
+  }
+
+    // =========================
+    // SHOW MODAL
+    // =========================
+    function showModal(
+      title: string,
+      message: string
+    ) {
+
+      setModalTitle(title)
+
+      setModalMessage(message)
+
+      setConfirmAction(null)
+
+      setModalOpen(true)
+    }
+
+    // =========================
+    // SHOW CONFIRM
+    // =========================
+    function showConfirm(
+      title: string,
+      message: string,
+      action: any
+    ) {
+
+      setModalTitle(title)
+
+      setModalMessage(message)
+
+      setConfirmAction(() => action)
+
+      setModalOpen(true)
+    }
   // =========================
-  // LOAD FORMATION
+  // VIEW / EDIT FORMATION
   // =========================
-  function loadFormationData(
+  function loadFormation(
     formation: any,
-    playersList = players
+    enableEdit = false
   ) {
 
-    setSelectedFormation(
-      formation
-    )
+    if (
+      enableEdit &&
+      !canManageFormation
+    ) {
+      return
+    }
 
-    setEditingId(
-      formation.id
-    )
+    if (enableEdit) {
+
+      setEditingId(
+        formation.id
+      )
+
+    } else {
+
+      setEditingId(null)
+    }
 
     setFormationName(
       formation.name
@@ -257,7 +343,9 @@ function Formacion() {
     )
 
     setMatchType(
-      formation.match_type
+      Number(
+        formation.match_type
+      )
     )
 
     setTeamId(
@@ -273,7 +361,7 @@ function Formacion() {
         .map((p: any) => {
 
           const player =
-            playersList.find(
+            players.find(
               (pl: any) =>
                 pl.id === p.player_id
             )
@@ -286,9 +374,11 @@ function Formacion() {
 
             player,
 
-            x: p.position_x,
+            x:
+              p.position_x,
 
-            y: p.position_y,
+            y:
+              p.position_y,
           }
         })
         .filter(Boolean)
@@ -301,7 +391,7 @@ function Formacion() {
         )
         .map((p: any) =>
 
-          playersList.find(
+          players.find(
             (pl: any) =>
               pl.id === p.player_id
           )
@@ -318,35 +408,44 @@ function Formacion() {
   }
 
   // =========================
-  // RESET
-  // =========================
-  function resetForm() {
-
-    setEditingId(null)
-
-    setSelectedFormation(null)
-
-    setFormationName("")
-
-    setTactic("4-3-3")
-
-    setMatchType(11)
-
-    setTeamId("")
-
-    setStarters([])
-
-    setSubstitutes([])
-  }
-
-  // =========================
-  // FILTER PLAYERS
+  // PLAYERS AVAILABLE
   // =========================
   const availablePlayers =
     players.filter(
-      (player: any) =>
-        player.team_id ===
-        Number(teamId)
+      (player: any) => {
+
+        if (
+          !player ||
+          !player.id
+        ) {
+          return false
+        }
+
+        const sameTeam =
+          Number(player.team_id)
+          ===
+          Number(teamId)
+
+        const isStarter =
+          starters.some(
+            (s: any) =>
+              s?.player?.id === player.id
+          )
+
+        const isSubstitute =
+          substitutes.some(
+            (s: any) =>
+              s?.id === player.id
+          )
+
+        return (
+          sameTeam
+          &&
+          !isStarter
+          &&
+          !isSubstitute
+        )
+      }
     )
 
   // =========================
@@ -356,14 +455,17 @@ function Formacion() {
     player: any
   ) {
 
-    if (!canManageFormation) {
+    if (
+      !player ||
+      !player.id
+    ) {
       return
     }
 
     const exists =
       starters.find(
         (p: any) =>
-          p.player.id === player.id
+          p?.player?.id === player.id
       )
 
     if (exists) {
@@ -373,13 +475,13 @@ function Formacion() {
     setSubstitutes((prev: any) =>
       prev.filter(
         (p: any) =>
-          p.id !== player.id
+          p?.id !== player.id
       )
     )
 
-    setStarters([
+    setStarters((prev: any) => [
 
-      ...starters,
+      ...prev,
 
       {
         player,
@@ -396,14 +498,17 @@ function Formacion() {
     player: any
   ) {
 
-    if (!canManageFormation) {
+    if (
+      !player ||
+      !player.id
+    ) {
       return
     }
 
     const exists =
       substitutes.find(
         (p: any) =>
-          p.id === player.id
+          p?.id === player.id
       )
 
     if (exists) {
@@ -413,14 +518,44 @@ function Formacion() {
     setStarters((prev: any) =>
       prev.filter(
         (p: any) =>
-          p.player.id !== player.id
+          p?.player?.id !== player.id
       )
     )
 
-    setSubstitutes([
-      ...substitutes,
+    setSubstitutes((prev: any) => [
+      ...prev,
       player,
     ])
+  }
+
+  // =========================
+  // REMOVE STARTER
+  // =========================
+  function removeStarter(
+    playerId: number
+  ) {
+
+    setStarters((prev: any) =>
+      prev.filter(
+        (p: any) =>
+          p.player.id !== playerId
+      )
+    )
+  }
+
+  // =========================
+  // REMOVE SUBSTITUTE
+  // =========================
+  function removeSubstitute(
+    playerId: number
+  ) {
+
+    setSubstitutes((prev: any) =>
+      prev.filter(
+        (p: any) =>
+          p.id !== playerId
+      )
+    )
   }
 
   // =========================
@@ -429,10 +564,6 @@ function Formacion() {
   function handleDragEnd(
     event: any
   ) {
-
-    if (!canManageFormation) {
-      return
-    }
 
     const {
       delta,
@@ -471,13 +602,9 @@ function Formacion() {
   // =========================
   async function saveFormation() {
 
-    if (!canManageFormation) {
-      return
-    }
-
     try {
 
-      await createFormation({
+      const payload = {
 
         name:
           formationName,
@@ -524,749 +651,877 @@ function Formacion() {
             })
           ),
         ],
-      })
+      }
 
-      alert(
-        editingId
-          ? "Formación actualizada"
-          : "Formación guardada"
-      )
+      if (editingId) {
+
+        await updateFormation(
+          editingId,
+          payload
+        )
+
+        showModal(
+          "Formación actualizada",
+          "La formación fue actualizada correctamente."
+        )
+
+      } else {
+
+        await createFormation(
+          payload
+        )
+
+        showModal(
+          "Formación guardada",
+          "La formación fue guardada correctamente."
+        )
+      }
+
+      await loadData()
 
       resetForm()
 
-      loadData()
-
     } catch (error) {
 
       console.error(error)
 
-      alert(
-        "Error al guardar"
+      showModal(
+        "Error",
+        "Ocurrió un error al guardar la formación."
       )
     }
   }
 
-  // =========================
-  // DELETE
-  // =========================
-  async function removeFormation(
-    id: number
-  ) {
+// =========================
+// DELETE
+// =========================
+function removeFormation(
+  id: number
+) {
 
-    if (!canManageFormation) {
-      return
-    }
+  showConfirm(
 
-    const confirmDelete =
-      confirm(
-        "¿Eliminar formación?"
-      )
+    "Eliminar formación",
 
-    if (!confirmDelete) {
-      return
-    }
+    "¿Seguro que deseas eliminar esta formación?",
 
-    try {
+    async () => {
 
-      await deleteFormation(id)
+      try {
 
-      if (
-        selectedFormation?.id === id
-      ) {
+        await deleteFormation(id)
+
+        await loadData()
 
         resetForm()
+
+        setModalOpen(false)
+
+        setTimeout(() => {
+
+          showModal(
+            "Formación eliminada",
+            "La formación fue eliminada correctamente."
+          )
+
+        }, 150)
+
+      } catch (error) {
+
+        console.error(error)
+
+        showModal(
+          "Error",
+          "No se pudo eliminar la formación."
+        )
       }
-
-      loadData()
-
-    } catch (error) {
-
-      console.error(error)
-
-      alert(
-        "Error al eliminar"
-      )
     }
-  }
-
-  // =========================
-  // EDIT
-  // =========================
-  function editFormation(
-    formation: any
-  ) {
-
-    if (!canManageFormation) {
-      return
-    }
-
-    loadFormationData(
-      formation
-    )
-  }
+  )
+}
 
   return (
 
-    <div className="p-6 space-y-6">
+<>
 
-      {/* HEADER */}
-      <div>
+<div className="p-6 space-y-6">
 
-        <h1 className="text-4xl font-bold">
-          Formación
-        </h1>
+  {/* HEADER */}
+  <div>
 
-        <p className="text-gray-500 mt-2">
+    <h1 className="text-4xl font-bold">
+      Formación
+    </h1>
 
-          {
-            isPlayer
-              ? "Visualización táctica del equipo"
-              : "Gestión táctica avanzada"
-          }
+    <p className="text-gray-500 mt-2">
+      Gestión táctica avanzada
+    </p>
 
-        </p>
+  </div>
 
-      </div>
+  {/* CONFIG */}
+  {
+    canManageFormation && (
 
-      {/* CONFIG */}
-      {
-        canManageFormation && (
+      <Card>
 
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+
+          <input
+            type="text"
+            placeholder="Nombre formación"
+            value={formationName}
+            onChange={(e) =>
+              setFormationName(
+                e.target.value
+              )
+            }
+            className="border p-3 rounded-xl"
+          />
+
+          <select
+            value={teamId}
+            onChange={(e) =>
+              setTeamId(
+                e.target.value
+              )
+            }
+            className="border p-3 rounded-xl"
+          >
+
+            <option value="">
+              Equipo
+            </option>
+
+            {
+              teams.map(
+                (team: any) => (
+
+                  <option
+                    key={team.id}
+                    value={team.id}
+                  >
+                    {team.name}
+                  </option>
+                )
+              )
+            }
+
+          </select>
+
+          <select
+            value={matchType}
+            onChange={(e) =>
+              setMatchType(
+                Number(
+                  e.target.value
+                )
+              )
+            }
+            className="border p-3 rounded-xl"
+          >
+
+            <option value={11}>
+              Fútbol 11
+            </option>
+
+            <option value={9}>
+              Fútbol 9
+            </option>
+
+            <option value={7}>
+              Fútbol 7
+            </option>
+
+            <option value={5}>
+              Fútbol 5
+            </option>
+
+          </select>
+
+          <input
+            type="text"
+            value={tactic}
+            onChange={(e) =>
+              setTactic(
+                e.target.value
+              )
+            }
+            placeholder="4-3-3"
+            className="border p-3 rounded-xl"
+          />
+
+        </div>
+
+      </Card>
+    )
+  }
+
+  {/* MAIN */}
+  <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+
+    {/* LEFT */}
+        <div className="space-y-4">
+
+      {canManageFormation && (
+
+        <>
+
+          {/* PLANTILLA */}
           <Card>
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <h2 className="text-lg font-bold mb-3">
+              Plantilla
+            </h2>
 
-              <input
-                type="text"
-                placeholder="Nombre formación"
-                value={formationName}
-                onChange={(e) =>
-                  setFormationName(
-                    e.target.value
-                  )
-                }
-                className="border p-3 rounded-xl"
-              />
+            <div className="space-y-2 max-h-[320px] overflow-auto">
 
-              <select
-                value={teamId}
-                onChange={(e) =>
-                  setTeamId(
-                    e.target.value
-                  )
-                }
-                className="border p-3 rounded-xl"
-              >
+              {availablePlayers.map((player: any) => (
 
-                <option value="">
-                  Equipo
-                </option>
+                <div
+                  key={player.id}
+                  className="
+                    bg-gray-50
+                    rounded-xl
+                    p-2
+                    flex
+                    items-center
+                    justify-between
+                  "
+                >
 
-                {
-                  teams.map(
-                    (team: any) => (
+                  <div>
 
-                      <option
-                        key={team.id}
-                        value={team.id}
-                      >
-                        {team.name}
-                      </option>
-                    )
-                  )
-                }
+                    <p className="text-sm font-semibold">
+                      {player.name}
+                    </p>
 
-              </select>
+                  </div>
 
-              <select
-                value={matchType}
-                onChange={(e) =>
-                  setMatchType(
-                    Number(
-                      e.target.value
-                    )
-                  )
-                }
-                className="border p-3 rounded-xl"
-              >
+                  <div className="flex gap-1">
 
-                <option value={11}>
-                  Fútbol 11
-                </option>
+                    <button
+                      onClick={() =>
+                        addStarter(player)
+                      }
+                      className="
+                        px-2
+                        py-1
+                        text-xs
+                        rounded-lg
+                        bg-blue-600
+                        text-white
+                      "
+                    >
+                      Titular
+                    </button>
 
-                <option value={9}>
-                  Fútbol 9
-                </option>
+                    <button
+                      onClick={() =>
+                        addSubstitute(player)
+                      }
+                      className="
+                        px-2
+                        py-1
+                        text-xs
+                        rounded-lg
+                        bg-yellow-500
+                        text-white
+                      "
+                    >
+                      Suplente
+                    </button>
 
-                <option value={7}>
-                  Fútbol 7
-                </option>
+                  </div>
 
-                <option value={5}>
-                  Fútbol 5
-                </option>
+                </div>
 
-              </select>
-
-              <input
-                type="text"
-                value={tactic}
-                onChange={(e) =>
-                  setTactic(
-                    e.target.value
-                  )
-                }
-                placeholder="4-3-3"
-                className="border p-3 rounded-xl"
-              />
+              ))}
 
             </div>
 
           </Card>
-        )
-      }
 
-      {/* MAIN */}
-      <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
-
-        {/* LEFT */}
-        {
-          canManageFormation && (
-
-            <div className="space-y-4">
-
-              <Card>
-
-                <h2 className="text-lg font-bold mb-3">
-                  Plantilla
-                </h2>
-
-                <div className="space-y-2 max-h-[320px] overflow-auto">
-
-                  {
-                    availablePlayers.map(
-                      (player: any) => (
-
-                        <div
-                          key={player.id}
-                          className="
-                            bg-gray-50
-                            rounded-xl
-                            p-2
-                            flex
-                            items-center
-                            justify-between
-                          "
-                        >
-
-                          <div>
-
-                            <p className="text-sm font-semibold">
-                              {player.name}
-                            </p>
-
-                            <p className="text-xs text-gray-500">
-                              {player.position}
-                            </p>
-
-                          </div>
-
-                          <div className="flex gap-1">
-
-                            <button
-                              onClick={() =>
-                                addStarter(player)
-                              }
-                              className="
-                                px-2
-                                py-1
-                                text-xs
-                                rounded-lg
-                                bg-blue-600
-                                text-white
-                              "
-                            >
-                              Titular
-                            </button>
-
-                            <button
-                              onClick={() =>
-                                addSubstitute(player)
-                              }
-                              className="
-                                px-2
-                                py-1
-                                text-xs
-                                rounded-lg
-                                bg-yellow-500
-                                text-white
-                              "
-                            >
-                              Suplente
-                            </button>
-
-                          </div>
-
-                        </div>
-                      )
-                    )
-                  }
-
-                </div>
-
-              </Card>
-
-              {/* TITULARES */}
-              <Card>
-
-                <h2 className="text-lg font-bold mb-3">
-                  Titulares
-                </h2>
-
-                <div className="space-y-2">
-
-                  {
-                    starters.length === 0 && (
-
-                      <p className="text-sm text-gray-500">
-                        No hay titulares
-                      </p>
-                    )
-                  }
-
-                  {
-                    starters.map(
-                      (item: any) => (
-
-                        <div
-                          key={item.player.id}
-                          className="
-                            bg-blue-50
-                            rounded-xl
-                            p-3
-                            flex
-                            items-center
-                            justify-between
-                          "
-                        >
-
-                          <div>
-
-                            <p className="text-sm font-semibold">
-                              #{item.player.number} {item.player.name}
-                            </p>
-
-                            <p className="text-xs text-gray-500">
-                              {item.player.position}
-                            </p>
-
-                          </div>
-
-                          <button
-                            onClick={() =>
-                              addSubstitute(
-                                item.player
-                              )
-                            }
-                            className="
-                              px-2
-                              py-1
-                              text-xs
-                              rounded-lg
-                              bg-yellow-500
-                              text-white
-                            "
-                          >
-                            Pasar a suplente
-                          </button>
-
-                        </div>
-                      )
-                    )
-                  }
-
-                </div>
-
-              </Card>
-
-              {/* SUPLENTES */}
-              <Card>
-
-                <h2 className="text-lg font-bold mb-3">
-                  Suplentes
-                </h2>
-
-                <div className="space-y-2">
-
-                  {
-                    substitutes.length === 0 && (
-
-                      <p className="text-sm text-gray-500">
-                        No hay suplentes
-                      </p>
-                    )
-                  }
-
-                  {
-                    substitutes.map(
-                      (player: any) => (
-
-                        <div
-                          key={player.id}
-                          className="
-                            bg-yellow-50
-                            rounded-xl
-                            p-3
-                            flex
-                            items-center
-                            justify-between
-                          "
-                        >
-
-                          <div>
-
-                            <p className="text-sm font-semibold">
-                              #{player.number} {player.name}
-                            </p>
-
-                            <p className="text-xs text-gray-500">
-                              {player.position}
-                            </p>
-
-                          </div>
-
-                          <button
-                            onClick={() =>
-                              addStarter(
-                                player
-                              )
-                            }
-                            className="
-                              px-2
-                              py-1
-                              text-xs
-                              rounded-lg
-                              bg-blue-600
-                              text-white
-                            "
-                          >
-                            Pasar a titular
-                          </button>
-
-                        </div>
-                      )
-                    )
-                  }
-
-                </div>
-
-              </Card>
-
-              {/* FORMATIONS */}
-              <Card>
-
-                <h2 className="text-lg font-bold mb-3">
-                  Formaciones
-                </h2>
-
-                <div className="space-y-2">
-
-                  {
-                    formations.map(
-                      (formation: any) => (
-
-                        <div
-                          key={formation.id}
-                          className="
-                            border
-                            rounded-xl
-                            p-3
-                            flex
-                            justify-between
-                            items-center
-                          "
-                        >
-
-                          <div>
-
-                            <p className="font-semibold">
-                              {formation.name}
-                            </p>
-
-                            <p className="text-xs text-gray-500">
-                              {formation.tactic}
-                            </p>
-
-                          </div>
-
-                          <div className="flex gap-2">
-
-                            <button
-                              onClick={() =>
-                                editFormation(formation)
-                              }
-                              className="
-                                text-xs
-                                bg-black
-                                text-white
-                                px-3
-                                py-1
-                                rounded-lg
-                              "
-                            >
-                              Editar
-                            </button>
-
-                            <button
-                              onClick={() =>
-                                removeFormation(
-                                  formation.id
-                                )
-                              }
-                              className="
-                                text-xs
-                                bg-red-600
-                                text-white
-                                px-3
-                                py-1
-                                rounded-lg
-                              "
-                            >
-                              Eliminar
-                            </button>
-
-                          </div>
-
-                        </div>
-                      )
-                    )
-                  }
-
-                </div>
-
-              </Card>
-
-            </div>
-          )
-        }
-
-        {/* RIGHT */}
-        <div
-          className={
-            canManageFormation
-              ? "xl:col-span-3"
-              : "xl:col-span-4"
-          }
-        >
-
-          <DndContext
-            onDragEnd={handleDragEnd}
-          >
-
-            <div
-              className="
-                relative
-                mx-auto
-                w-full
-                max-w-[950px]
-                h-[620px]
-                rounded-[30px]
-                overflow-hidden
-                border-[8px]
-                border-white
-                shadow-2xl
-                bg-gradient-to-r
-                from-green-700
-                via-green-600
-                to-green-700
-              "
-            >
-
-              {/* BORDER */}
-              <div
-                className="
-                  absolute
-                  inset-4
-                  border-4
-                  border-white
-                  rounded-2xl
-                "
-              />
-
-              {/* HALF */}
-              <div
-                className="
-                  absolute
-                  left-1/2
-                  top-0
-                  bottom-0
-                  w-1
-                  bg-white
-                  -translate-x-1/2
-                "
-              />
-
-              {/* CENTER */}
-              <div
-                className="
-                  absolute
-                  w-40
-                  h-40
-                  border-4
-                  border-white
-                  rounded-full
-                  left-1/2
-                  top-1/2
-                  -translate-x-1/2
-                  -translate-y-1/2
-                "
-              />
-
-              {/* LEFT AREA */}
-              <div
-                className="
-                  absolute
-                  left-4
-                  top-1/2
-                  -translate-y-1/2
-                  w-28
-                  h-72
-                  border-4
-                  border-white
-                  border-l-0
-                "
-              />
-
-              {/* RIGHT AREA */}
-              <div
-                className="
-                  absolute
-                  right-4
-                  top-1/2
-                  -translate-y-1/2
-                  w-28
-                  h-72
-                  border-4
-                  border-white
-                  border-r-0
-                "
-              />
-
-              {/* PLAYERS */}
-              {
-                starters.map(
-                  (item: any) => (
-
-                    <PlayerToken
-                      key={
+          {/* TITULARES */}
+          <Card>
+
+            <h2 className="text-lg font-bold mb-3">
+              Titulares
+            </h2>
+
+            <div className="space-y-2">
+
+              {starters.map((item: any) => (
+
+                <div
+                  key={item.player.id}
+                  className="
+                    bg-blue-50
+                    rounded-xl
+                    p-2
+                    flex
+                    items-center
+                    justify-between
+                  "
+                >
+
+                  <span className="text-sm font-semibold">
+                    #{item.player.number} {item.player.name}
+                  </span>
+
+                  <button
+                    onClick={() =>
+                      removeStarter(
                         item.player.id
-                      }
-                      item={item}
-                    />
-                  )
-                )
-              }
-
-            </div>
-
-          </DndContext>
-
-          {/* SUBSTITUTES */}
-          {
-            substitutes.length > 0 && (
-
-              <Card className="mt-6">
-
-                <h2 className="text-lg font-bold mb-4">
-                  Suplentes
-                </h2>
-
-                <div className="flex flex-wrap gap-3">
-
-                  {
-                    substitutes.map(
-                      (player: any) => (
-
-                        <div
-                          key={player.id}
-                          className="
-                            bg-yellow-100
-                            px-4
-                            py-2
-                            rounded-xl
-                            text-sm
-                            font-semibold
-                          "
-                        >
-                          #{player.number} {player.name}
-                        </div>
                       )
-                    )
-                  }
+                    }
+                    className="
+                      text-xs
+                      bg-red-500
+                      text-white
+                      px-2
+                      py-1
+                      rounded-lg
+                    "
+                  >
+                    Quitar
+                  </button>
 
                 </div>
 
-              </Card>
-            )
-          }
+              ))}
+
+            </div>
+
+          </Card>
+
+          {/* SUPLENTES */}
+          <Card>
+
+            <h2 className="text-lg font-bold mb-3">
+              Suplentes
+            </h2>
+
+            <div className="space-y-2">
+
+              {substitutes.map((player: any) => (
+
+                <div
+                  key={player.id}
+                  className="
+                    bg-yellow-50
+                    rounded-xl
+                    p-2
+                    flex
+                    items-center
+                    justify-between
+                  "
+                >
+
+                  <span className="text-sm font-semibold">
+                    #{player.number} {player.name}
+                  </span>
+
+                  <button
+                    onClick={() =>
+                      removeSubstitute(
+                        player.id
+                      )
+                    }
+                    className="
+                      text-xs
+                      bg-red-500
+                      text-white
+                      px-2
+                      py-1
+                      rounded-lg
+                    "
+                  >
+                    Quitar
+                  </button>
+
+                </div>
+
+              ))}
+
+            </div>
+
+          </Card>
 
           {/* ACTIONS */}
-          {
-            canManageFormation && (
+          <Card>
 
-              <div
+            <div className="flex flex-col gap-3">
+
+              <button
+                onClick={saveFormation}
                 className="
-                  flex
-                  flex-col
-                  items-center
-                  gap-3
-                  mt-6
+                  bg-black
+                  text-white
+                  py-3
+                  rounded-xl
+                  hover:bg-gray-800
+                  transition-all
                 "
               >
 
-                <button
-                  onClick={saveFormation}
-                  className="
-                    w-[190px]
-                    h-[44px]
-                    bg-black
-                    hover:bg-gray-800
-                    text-white
-                    rounded-xl
-                    text-sm
-                    font-semibold
-                    transition
-                  "
-                >
+                {
+                  editingId
+                    ? "Actualizar Formación"
+                    : "Guardar Formación"
+                }
 
-                  {
-                    editingId
-                      ? "Actualizar"
-                      : "Guardar"
+              </button>
+
+              <button
+                onClick={resetForm}
+                className="
+                  bg-gray-200
+                  py-3
+                  rounded-xl
+                  hover:bg-gray-300
+                  transition-all
+                "
+              >
+                Nueva Formación
+              </button>
+
+            </div>
+
+          </Card>
+
+        </>
+
+      )}
+
+      {/* FORMACIONES GUARDADAS */}
+      <Card>
+
+        <div className="flex items-center justify-between mb-4">
+
+          <h2 className="text-lg font-bold">
+            Formaciones Guardadas
+          </h2>
+
+          <span
+            className="
+              text-xs
+              bg-gray-100
+              text-gray-600
+              px-3
+              py-1
+              rounded-full
+              font-medium
+            "
+          >
+            {formations.length} formaciones
+          </span>
+
+        </div>
+
+        <div className="space-y-3 max-h-[500px] overflow-auto pr-1">
+
+          {formations.length === 0 && (
+
+            <div
+              className="
+                text-center
+                py-10
+                text-gray-400
+                text-sm
+              "
+            >
+              No hay formaciones guardadas
+            </div>
+
+          )}
+
+          {formations
+            .filter(
+              (formation: any) =>
+                formation &&
+                formation.id
+            )
+            .map((formation: any) => (
+
+              <div
+                key={formation.id}
+                className="
+                  border
+                  border-gray-200
+                  rounded-2xl
+                  p-4
+                  bg-white
+                  shadow-sm
+                  hover:shadow-md
+                  transition-all
+                "
+              >
+
+                <div className="flex items-start justify-between gap-3">
+
+                  <div className="flex-1 min-w-0">
+
+                    <h3
+                      className="
+                        font-bold
+                        text-base
+                        text-gray-800
+                        truncate
+                      "
+                    >
+                      {formation.name}
+                    </h3>
+
+                    <div className="flex flex-wrap gap-2 mt-2">
+
+                      <span
+                        className="
+                          bg-blue-100
+                          text-blue-700
+                          text-xs
+                          font-semibold
+                          px-2
+                          py-1
+                          rounded-lg
+                        "
+                      >
+                        {formation.tactic}
+                      </span>
+
+                      <span
+                        className="
+                          bg-green-100
+                          text-green-700
+                          text-xs
+                          font-semibold
+                          px-2
+                          py-1
+                          rounded-lg
+                        "
+                      >
+                        Fútbol {formation.match_type}
+                      </span>
+
+                    </div>
+
+                  </div>
+
+                </div>
+
+                <div
+                  className={
+                    canManageFormation
+                      ? "grid grid-cols-3 gap-2 mt-4"
+                      : "grid grid-cols-1 gap-2 mt-4"
                   }
-
-                </button>
-
-                <button
-                  onClick={resetForm}
-                  className="
-                    w-[190px]
-                    h-[44px]
-                    bg-gray-200
-                    hover:bg-gray-300
-                    text-black
-                    rounded-xl
-                    text-sm
-                    font-semibold
-                    transition
-                  "
                 >
-                  Nueva Formación
-                </button>
+
+                  <button
+                    onClick={() =>
+                      loadFormation(
+                        formation,
+                        false
+                      )
+                    }
+                    className="
+                      flex
+                      items-center
+                      justify-center
+                      gap-1
+                      bg-blue-600
+                      hover:bg-blue-700
+                      text-white
+                      text-xs
+                      font-semibold
+                      py-2
+                      rounded-xl
+                      transition-all
+                    "
+                  >
+
+                    <Eye size={14} />
+
+                    Ver
+
+                  </button>
+
+                  {canManageFormation && (
+
+                    <button
+                      onClick={() =>
+                        loadFormation(
+                          formation,
+                          true
+                        )
+                      }
+                      className="
+                        bg-black
+                        hover:bg-gray-800
+                        text-white
+                        text-xs
+                        font-semibold
+                        py-2
+                        rounded-xl
+                        transition-all
+                      "
+                    >
+                      Editar
+                    </button>
+
+                  )}
+
+                  {canManageFormation && (
+
+                    <button
+                      onClick={() =>
+                        removeFormation(
+                          formation.id
+                        )
+                      }
+                      className="
+                        bg-red-600
+                        hover:bg-red-700
+                        text-white
+                        text-xs
+                        font-semibold
+                        py-2
+                        rounded-xl
+                        transition-all
+                      "
+                    >
+                      Borrar
+                    </button>
+
+                  )}
+
+                </div>
 
               </div>
+
+            ))}
+
+        </div>
+
+      </Card>
+
+    </div>     
+    
+
+    {/* CANCHA */}
+    <div
+      className={
+        canManageFormation
+          ? "xl:col-span-3"
+          : "xl:col-span-4"
+      }
+    >
+
+      <DndContext
+        onDragEnd={handleDragEnd}
+      >
+
+        <div
+          className="
+            relative
+            mx-auto
+            w-full
+            max-w-[950px]
+            h-[620px]
+            rounded-[30px]
+            overflow-hidden
+            border-[8px]
+            border-white
+            shadow-2xl
+            bg-gradient-to-r
+            from-green-700
+            via-green-600
+            to-green-700
+          "
+        >
+
+          <div
+            className="
+              absolute
+              left-1/2
+              top-0
+              bottom-0
+              w-1
+              bg-white
+              -translate-x-1/2
+            "
+          />
+
+          <div
+            className="
+              absolute
+              w-40
+              h-40
+              border-4
+              border-white
+              rounded-full
+              left-1/2
+              top-1/2
+              -translate-x-1/2
+              -translate-y-1/2
+            "
+          />
+
+          {/* ARCO IZQUIERDO */}
+          <div
+            className="
+              absolute
+              left-0
+              top-1/2
+              -translate-y-1/2
+              w-6
+              h-24
+              border-4
+              border-white
+              border-l-0
+            "
+          />
+
+          {/* ARCO DERECHO */}
+          <div
+            className="
+              absolute
+              right-0
+              top-1/2
+              -translate-y-1/2
+              w-6
+              h-24
+              border-4
+              border-white
+              border-r-0
+            "
+          />
+
+          {
+            starters.map(
+              (item: any) => (
+
+                <PlayerToken
+                  key={
+                    item.player.id
+                  }
+                  item={item}
+                  canManageFormation={
+                    canManageFormation
+                  }
+                />
+              )
             )
           }
+
+        </div>
+
+      </DndContext>
+
+    </div>
+
+  </div>
+
+</div>
+
+{/* MODAL */}
+{
+  modalOpen && (
+
+    <div
+      className="
+        fixed
+        inset-0
+        bg-black/60
+        backdrop-blur-sm
+        flex
+        items-center
+        justify-center
+        z-[9999]
+        animate-[fadeIn_.25s_ease]
+      "
+    >
+
+      <div
+        className="
+          bg-white
+          w-[420px]
+          rounded-3xl
+          shadow-2xl
+          p-6
+          animate-[scaleIn_.25s_ease]
+        "
+      >
+
+        <h2
+          className="
+            text-2xl
+            font-bold
+            mb-3
+          "
+        >
+          {modalTitle}
+        </h2>
+
+        <p
+          className="
+            text-gray-600
+            mb-6
+          "
+        >
+          {modalMessage}
+        </p>
+
+        <div className="flex justify-end gap-3">
+
+          {
+            confirmAction && (
+
+              <button
+                onClick={() => {
+
+                  setModalOpen(false)
+
+                  confirmAction()
+                }}
+                className="
+                  px-5
+                  py-2
+                  rounded-xl
+                  bg-red-600
+                  text-white
+                  font-semibold
+                  hover:bg-red-700
+                  transition-all
+                "
+              >
+                Confirmar
+              </button>
+            )
+          }
+
+          <button
+            onClick={() =>
+              setModalOpen(false)
+            }
+            className="
+              px-5
+              py-2
+              rounded-xl
+              bg-black
+              text-white
+              font-semibold
+              hover:bg-gray-800
+              transition-all
+            "
+          >
+
+            {
+              confirmAction
+                ? "Cancelar"
+                : "Cerrar"
+            }
+
+          </button>
 
         </div>
 
@@ -1274,6 +1529,11 @@ function Formacion() {
 
     </div>
   )
+}
+
+
+</>
+)
 }
 
 export default Formacion

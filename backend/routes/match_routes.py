@@ -8,7 +8,6 @@ from database.connection import get_db
 
 from models.match_model import Match
 from models.team_model import Team
-from models.match_event_model import MatchEvent
 
 from schemas.match_schema import (
     MatchCreate,
@@ -24,14 +23,13 @@ router = APIRouter()
 
 # =========================
 # CREATE MATCH
+# ADMIN + COMISION
 # =========================
 @router.post("/matches")
 def create_match(
     match: MatchCreate,
     db: Session = Depends(get_db),
-    current_user=Depends(
-        get_current_user
-    )
+    current_user=Depends(get_current_user)
 ):
 
     # =========================
@@ -42,8 +40,6 @@ def create_match(
         "Administrador",
 
         "Comision",
-
-        "Tecnico",
     ]:
 
         raise HTTPException(
@@ -120,13 +116,12 @@ def create_match(
 
 # =========================
 # GET MATCHES
+# TODOS PUEDEN VER
 # =========================
 @router.get("/matches")
 def get_matches(
     db: Session = Depends(get_db),
-    current_user=Depends(
-        get_current_user
-    )
+    current_user=Depends(get_current_user)
 ):
 
     matches = db.query(Match).all()
@@ -221,9 +216,6 @@ def get_matches(
             "status":
                 match.status,
 
-            # =========================
-            # EVENTS
-            # =========================
             "events":
                 events,
         })
@@ -245,15 +237,14 @@ def get_matches(
 
 # =========================
 # UPDATE MATCH
+# ADMIN + COMISION
 # =========================
 @router.put("/matches/{match_id}")
 def update_match(
     match_id: int,
     data: MatchUpdate,
     db: Session = Depends(get_db),
-    current_user=Depends(
-        get_current_user
-    )
+    current_user=Depends(get_current_user)
 ):
 
     # =========================
@@ -262,10 +253,7 @@ def update_match(
     if current_user.role not in [
 
         "Administrador",
-
         "Comision",
-
-        "Tecnico",
     ]:
 
         raise HTTPException(
@@ -285,23 +273,6 @@ def update_match(
         )
 
     # =========================
-    # TECNICO ONLY OWN TEAM
-    # =========================
-    if current_user.role == "Tecnico":
-
-        if current_user.team_id not in [
-
-            match.home_team_id,
-
-            match.away_team_id,
-        ]:
-
-            raise HTTPException(
-                status_code=403,
-                detail="No puedes editar este partido"
-            )
-
-    # =========================
     # UPDATE
     # =========================
     match.home_score = data.home_score
@@ -315,3 +286,41 @@ def update_match(
     db.refresh(match)
 
     return match
+
+
+# =========================
+# DELETE MATCH
+# ADMIN ONLY
+# =========================
+@router.delete("/matches/{match_id}")
+def delete_match(
+    match_id: int,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+
+    if current_user.role != "Administrador":
+
+        raise HTTPException(
+            status_code=403,
+            detail="Sin permisos"
+        )
+
+    match = db.query(Match).filter(
+        Match.id == match_id
+    ).first()
+
+    if not match:
+
+        raise HTTPException(
+            status_code=404,
+            detail="Partido no encontrado"
+        )
+
+    db.delete(match)
+
+    db.commit()
+
+    return {
+        "message": "Partido eliminado"
+    }

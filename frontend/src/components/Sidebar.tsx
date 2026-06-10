@@ -31,6 +31,9 @@ function Sidebar() {
   const role =
     user?.role || ""
 
+  // =========================
+  // MENU
+  // =========================
   const menu = [
 
     {
@@ -40,9 +43,8 @@ function Sidebar() {
       roles: [
         "Administrador",
         "Director",
-        "Comision",
+        "Comision",        
         "Jugador",
-        "Tecnico",
       ],
     },
 
@@ -53,6 +55,7 @@ function Sidebar() {
       roles: [
         "Administrador",
         "Director",
+        "Comision",
       ],
     },
 
@@ -63,9 +66,8 @@ function Sidebar() {
       roles: [
         "Administrador",
         "Director",
-        "Comision",
+        "Comision",        
         "Jugador",
-        "Tecnico",
       ],
     },
 
@@ -87,9 +89,8 @@ function Sidebar() {
       roles: [
         "Administrador",
         "Director",
-        "Comision",
+        "Comision",        
         "Jugador",
-        "Tecnico",
       ],
     },
 
@@ -100,20 +101,19 @@ function Sidebar() {
       roles: [
         "Administrador",
         "Director",
-        "Comision",
-        "Tecnico",
+        "Comision",        
+        "Jugador",
       ],
     },
 
     {
       label: "Tabla",
       icon: Trophy,
-      path: "/TablaPosiciones",
+      path: "/tabla-posiciones",
       roles: [
         "Administrador",
         "Director",
-        "Comision",
-        "Tecnico",
+        "Comision",        
         "Jugador",
       ],
     },
@@ -125,9 +125,8 @@ function Sidebar() {
       roles: [
         "Administrador",
         "Director",
-        "Comision",
+        "Comision",        
         "Jugador",
-        "Tecnico",
       ],
     },
   ]
@@ -136,219 +135,296 @@ function Sidebar() {
 
     <div
       className="
-        w-[280px]
-        min-h-screen
-        bg-[#111827]
+        w-[290px]
+        h-screen
+        sticky
+        top-0
+        bg-gradient-to-b
+        from-[#0f1720]
+        via-[#131d2b]
+        to-[#0a1018]
         border-r
-        border-[#1f2937]
+        border-[#223043]
         text-white
         flex
         flex-col
-        justify-between
         px-5
         py-6
         shadow-2xl
       "
     >
 
-      {/* TOP */}
-      <div>
+      {/* ========================= */}
+      {/* LOGO */}
+      {/* ========================= */}
+      <div className="mb-8">
 
-        {/* LOGO */}
-        <div className="mb-10">
+        <div
+          className="
+            flex
+            items-center
+            gap-4
+          "
+        >
 
           <div
             className="
+              w-14
+              h-14
+              rounded-3xl
+              bg-gradient-to-br
+              from-emerald-400
+              to-emerald-600
               flex
               items-center
-              gap-3
+              justify-center
+              shadow-xl
+              shadow-emerald-500/40
+              text-2xl
             "
           >
-
-            <div
-              className="
-                w-12
-                h-12
-                rounded-2xl
-                bg-emerald-500
-                flex
-                items-center
-                justify-center
-                shadow-lg
-                shadow-emerald-500/40
-              "
-            >
-
-              ⚽
-
-            </div>
-
-            <div>
-
-              <h1 className="text-2xl font-black">
-                Futbol Manager
-              </h1>
-
-              <p className="text-xs text-zinc-400 mt-1">
-                Professional League
-              </p>
-
-            </div>
-
+            ⚽
           </div>
 
-        </div>
+          <div>
 
-        {/* MENU */}
-        <div className="space-y-2">
+            <h1
+              className="
+                text-2xl
+                font-black
+                tracking-tight
+              "
+            >
+              Futbol Manager
+            </h1>
 
-          {
-            menu
-              .filter((item) =>
+            <p
+              className="
+                text-sm
+                text-zinc-400
+                mt-1
+              "
+            >
+              League Professional Suite
+            </p>
 
-                item.roles.includes(role)
-              )
-              .map((item) => {
-
-                const Icon =
-                  item.icon
-
-                const active =
-                  location.pathname ===
-                  item.path
-
-                return (
-
-                  <Link
-                    key={item.path}
-                    to={item.path}
-                    className={`
-                      group
-                      relative
-                      flex
-                      items-center
-                      gap-4
-                      px-4
-                      py-4
-                      rounded-2xl
-                      transition-all
-                      duration-300
-
-                      ${
-                        active
-                          ? `
-                            bg-emerald-500
-                            text-white
-                            shadow-lg
-                            shadow-emerald-500/30
-                          `
-                          : `
-                            hover:bg-[#1f2937]
-                            text-zinc-300
-                          `
-                      }
-                    `}
-                  >
-
-                    {/* ACTIVE LINE */}
-                    {
-                      active && (
-
-                        <div
-                          className="
-                            absolute
-                            left-0
-                            top-2
-                            bottom-2
-                            w-1
-                            rounded-r-full
-                            bg-white
-                          "
-                        />
-                      )
-                    }
-
-                    <Icon
-                      size={20}
-                      className="
-                        transition-transform
-                        duration-300
-                        group-hover:scale-110
-                      "
-                    />
-
-                    <span className="font-semibold text-[15px]">
-                      {item.label}
-                    </span>
-
-                  </Link>
-                )
-              })
-          }
+          </div>
 
         </div>
 
       </div>
 
+      {/* ========================= */}
       {/* USER */}
-      <div className="space-y-4">
+      {/* ========================= */}
+      <div
+        className="
+          bg-[#18222f]
+          border
+          border-[#253041]
+          rounded-3xl
+          p-4
+          shadow-xl
+          mb-6
+        "
+      >
 
-        <div
-          className="
-            bg-[#18222f]
-            border
-            border-[#253041]
-            rounded-3xl
-            p-5
-          "
-        >
+        <div className="flex items-center gap-4">
 
-          <div className="flex items-center gap-4">
+          {/* AVATAR */}
+          <div
+            className="
+              w-14
+              h-14
+              rounded-2xl
+              bg-gradient-to-br
+              from-emerald-400
+              to-emerald-600
+              flex
+              items-center
+              justify-center
+              font-black
+              text-xl
+              shadow-lg
+              shadow-emerald-500/30
+            "
+          >
 
-            {/* AVATAR */}
-            <div
+            {
+              user?.name?.charAt(0)
+            }
+
+          </div>
+
+          {/* INFO */}
+          <div className="overflow-hidden flex-1">
+
+            <p
               className="
-                w-14
-                h-14
-                rounded-2xl
-                bg-emerald-500
-                flex
-                items-center
-                justify-center
-                font-black
-                text-xl
-                shadow-lg
-                shadow-emerald-500/30
+                font-bold
+                text-lg
+                truncate
               "
             >
+              {user?.name}
+            </p>
 
-              {
-                user?.name?.charAt(0)
-              }
+            <p
+              className="
+                text-sm
+                text-zinc-400
+                truncate
+              "
+            >
+              {user?.email}
+            </p>
 
-            </div>
-
-            <div>
-
-              <p className="font-bold text-lg">
-                {user?.name}
-              </p>
-
-              <p className="text-sm text-zinc-400">
-                {user?.email}
-              </p>
-
-              <p className="text-xs text-emerald-400 mt-1">
-                {role}
-              </p>
-
+            <div
+              className="
+                mt-2
+                inline-flex
+                items-center
+                px-3
+                py-1
+                rounded-full
+                bg-emerald-500/20
+                border
+                border-emerald-500/30
+                text-emerald-400
+                text-xs
+                font-bold
+              "
+            >
+              {role}
             </div>
 
           </div>
 
         </div>
 
-        {/* LOGOUT */}
+      </div>
+
+      {/* ========================= */}
+      {/* MENU */}
+      {/* ========================= */}
+      <div
+        className="
+          flex-1
+          overflow-y-auto
+          pr-2
+          space-y-2
+
+          scrollbar-thin
+          scrollbar-thumb-[#2d425d]
+          scrollbar-track-transparent
+
+          hover:scrollbar-thumb-[#3d5b80]
+        "
+      >
+
+        {
+          menu
+            .filter((item) =>
+
+              item.roles.includes(role)
+            )
+            .map((item) => {
+
+              const Icon =
+                item.icon
+
+              const active =
+                location.pathname ===
+                item.path
+
+              return (
+
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={`
+                    group
+                    relative
+                    flex
+                    items-center
+                    gap-4
+                    px-4
+                    py-4
+                    rounded-2xl
+                    transition-all
+                    duration-300
+                    overflow-hidden
+
+                    ${
+                      active
+                        ? `
+                          bg-gradient-to-r
+                          from-emerald-500
+                          to-emerald-600
+                          text-white
+                          shadow-lg
+                          shadow-emerald-500/30
+                          scale-[1.02]
+                        `
+                        : `
+                          hover:bg-[#1b2635]
+                          hover:text-white
+                          text-zinc-300
+                        `
+                    }
+                  `}
+                >
+
+                  {/* ACTIVE BAR */}
+                  {
+                    active && (
+
+                      <div
+                        className="
+                          absolute
+                          left-0
+                          top-2
+                          bottom-2
+                          w-1
+                          rounded-r-full
+                          bg-white
+                        "
+                      />
+                    )
+                  }
+
+                  {/* ICON */}
+                  <Icon
+                    size={21}
+                    className="
+                      transition-all
+                      duration-300
+                      group-hover:scale-110
+                    "
+                  />
+
+                  {/* LABEL */}
+                  <span
+                    className="
+                      font-semibold
+                      text-[15px]
+                    "
+                  >
+                    {item.label}
+                  </span>
+
+                </Link>
+              )
+            })
+        }
+
+      </div>
+
+      {/* ========================= */}
+      {/* LOGOUT */}
+      {/* ========================= */}
+      <div className="pt-5">
+
         <button
           onClick={logout}
           className="
@@ -360,13 +436,17 @@ function Sidebar() {
             px-4
             py-4
             rounded-2xl
-            bg-red-500
-            hover:bg-red-600
+            bg-gradient-to-r
+            from-red-500
+            to-red-600
+            hover:from-red-600
+            hover:to-red-700
             transition-all
             duration-300
             font-semibold
             shadow-lg
             shadow-red-500/20
+            hover:scale-[1.02]
           "
         >
 

@@ -55,14 +55,14 @@ async function handleResponse(
   // =========================
   // ERROR
   // =========================
-  if (!response.ok) {
+    if (!response.ok) {
 
     throw new Error(
       result.detail ||
       result.error ||
       "Error en la solicitud"
     )
-  }
+  } 
 
   return result
 }

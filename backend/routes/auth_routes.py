@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from database.connection import get_db
 
 from models.user_model import User
+from models.team_model import Team
 
 from schemas.user_schema import (
     UserCreate,
@@ -32,9 +33,17 @@ VALID_ROLES = [
 
     "Director",
 
-    "Comision",
+    "Comision",    
 
-    "Tecnico",
+    "Jugador",
+]
+
+# =========================
+# ROLES THAT REQUIRE TEAM
+# =========================
+ROLES_WITH_TEAM = [
+
+    "Director",    
 
     "Jugador",
 ]
@@ -83,6 +92,40 @@ def register(
         )
 
     # =========================
+    # TEAM VALIDATION
+    # =========================
+    team_id = None
+
+    # ROLES WITH TEAM
+    if user.role in ROLES_WITH_TEAM:
+
+        if not user.team_id:
+
+            raise HTTPException(
+                status_code=400,
+                detail="Este rol requiere un equipo"
+            )
+
+        # VERIFY TEAM EXISTS
+        team = db.query(Team).filter(
+            Team.id == user.team_id
+        ).first()
+
+        if not team:
+
+            raise HTTPException(
+                status_code=400,
+                detail="El equipo no existe"
+            )
+
+        team_id = user.team_id
+
+    # ROLES WITHOUT TEAM
+    else:
+
+        team_id = None
+
+    # =========================
     # CREATE USER
     # =========================
     new_user = User(
@@ -99,7 +142,7 @@ def register(
 
         active=True,
 
-        team_id=user.team_id,
+        team_id=team_id,
     )
 
     db.add(new_user)

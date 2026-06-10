@@ -11,6 +11,8 @@ type InputProps = {
   onChange: (
     e: React.ChangeEvent<HTMLInputElement>
   ) => void
+
+  className?: string
 }
 
 function Input({
@@ -19,6 +21,7 @@ function Input({
   value,
   min,
   onChange,
+  className="",
 }: InputProps) {
 
   function handleChange(
@@ -63,7 +66,10 @@ function Input({
         rounded-xl
         text-sm
         bg-white
+        text-black
+        placeholder:text-gray-500
         transition
+        ${className}
       "
     />
   )

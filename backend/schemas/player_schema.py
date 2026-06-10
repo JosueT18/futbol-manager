@@ -18,6 +18,11 @@ class PlayerCreate(BaseModel):
         min_length=2,
         max_length=100
     )
+    lastname: str = Field(
+        ...,
+        min_length=2,
+        max_length=100
+    )
 
     age: int = Field(
         ...,
@@ -72,6 +77,11 @@ class PlayerCreate(BaseModel):
 class PlayerUpdate(BaseModel):
 
     name: str | None = Field(
+        default=None,
+        min_length=2,
+        max_length=100
+    )
+    lastname: str | None = Field(
         default=None,
         min_length=2,
         max_length=100

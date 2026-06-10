@@ -55,7 +55,7 @@ function Login() {
       setError("")
 
       // =========================
-      // API
+      // API LOGIN
       // =========================
       const data =
         await loginUser({
@@ -65,36 +65,55 @@ function Login() {
         })
 
       // =========================
-      // SAVE AUTH
+      // USER
+      // =========================
+      const user =
+        data.user || {}
+
+      // =========================
+      // SAVE AUTH CONTEXT
       // =========================
       login(data)
 
       // =========================
-      // SAVE LOCAL STORAGE
+      // LOCAL STORAGE
       // =========================
       localStorage.setItem(
         "token",
-        data.access_token
+        data.access_token || ""
       )
 
       localStorage.setItem(
         "role",
-        data.user.role
+        data.user.role?.trim()
       )
 
+      // =========================
+      // TEAM ID
+      // FUNDAMENTAL PARA ROLES
+      // =========================
       localStorage.setItem(
         "team_id",
-        data.user.team_id || ""
+        String(
+          user.team_id || ""
+        )
       )
 
       localStorage.setItem(
         "user_name",
-        data.user.name
+        user.name || ""
       )
 
       localStorage.setItem(
         "user_email",
-        data.user.email
+        user.email || ""
+      )
+
+      localStorage.setItem(
+        "user_id",
+        String(
+          user.id || ""
+        )
       )
 
       // =========================
@@ -107,7 +126,10 @@ function Login() {
       console.error(error)
 
       setError(
+
         error?.response?.data?.detail
+        ||
+        error?.message
         ||
         "Credenciales inválidas"
       )
@@ -140,8 +162,9 @@ function Login() {
         items-center
         justify-center
         bg-gradient-to-br
-        from-gray-100
-        to-gray-300
+        from-[#f3f4f6]
+        via-[#e5e7eb]
+        to-[#d1d5db]
         px-4
       "
     >
@@ -159,8 +182,33 @@ function Login() {
         "
       >
 
+        {/* ========================= */}
         {/* LOGO */}
+        {/* ========================= */}
         <div className="text-center mb-8">
+
+          <div
+            className="
+              w-20
+              h-20
+              mx-auto
+              rounded-3xl
+              bg-gradient-to-br
+              from-emerald-400
+              to-emerald-600
+              flex
+              items-center
+              justify-center
+              text-4xl
+              shadow-xl
+              shadow-emerald-500/30
+              mb-5
+            "
+          >
+
+            ⚽
+
+          </div>
 
           <h1
             className="
@@ -178,12 +226,14 @@ function Login() {
               mt-2
             "
           >
-            Sistema de gestión deportiva
+            Sistema profesional de gestión deportiva
           </p>
 
         </div>
 
+        {/* ========================= */}
         {/* ERROR */}
+        {/* ========================= */}
         {
           error && (
 
@@ -204,7 +254,9 @@ function Login() {
           )
         }
 
+        {/* ========================= */}
         {/* FORM */}
+        {/* ========================= */}
         <div className="space-y-5">
 
           {/* EMAIL */}
@@ -240,8 +292,8 @@ function Login() {
                 rounded-xl
                 outline-none
                 focus:ring-2
-                focus:ring-black
-                focus:border-black
+                focus:ring-emerald-500
+                focus:border-emerald-500
                 transition
               "
             />
@@ -281,8 +333,8 @@ function Login() {
                 rounded-xl
                 outline-none
                 focus:ring-2
-                focus:ring-black
-                focus:border-black
+                focus:ring-emerald-500
+                focus:border-emerald-500
                 transition
               "
             />
@@ -291,15 +343,20 @@ function Login() {
 
         </div>
 
+        {/* ========================= */}
         {/* BUTTON */}
+        {/* ========================= */}
         <button
           onClick={handleLogin}
           disabled={loading}
           className="
             w-full
             mt-8
-            bg-black
-            hover:bg-gray-800
+            bg-gradient-to-r
+            from-black
+            to-gray-900
+            hover:from-gray-900
+            hover:to-black
             disabled:bg-gray-400
             disabled:cursor-not-allowed
             text-white
@@ -320,7 +377,9 @@ function Login() {
 
         </button>
 
+        {/* ========================= */}
         {/* FOOTER */}
+        {/* ========================= */}
         <div className="mt-8 text-center">
 
           <p className="text-xs text-gray-400">
