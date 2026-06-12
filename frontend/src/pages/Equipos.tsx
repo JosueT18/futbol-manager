@@ -26,6 +26,7 @@ import Button from "../components/ui/Button"
 import Input from "../components/ui/Input"
 import Card from "../components/ui/Card"
 import TableContainer from "../components/ui/TableContainer"
+import { API_URL } from "../api/api"
 
 function Equipos() {
 
@@ -83,7 +84,7 @@ function Equipos() {
 
       const response =
         await fetch(
-          "http://localhost:8000/teams/upload-logo",
+          '${API_URL}/teams/upload-logo',
           {
             method: "POST",
 
@@ -615,7 +616,7 @@ const teams =
                 <div className="mt-8 flex justify-center">
 
                   <img
-                    src={`http://localhost:8000${logo}`}
+                    src={`${API_URL}${logo}`}
                     alt="logo"
                     className="
                       w-32
@@ -765,7 +766,7 @@ const teams =
                               team.logo ? (
 
                                 <img
-                                  src={`http://localhost:8000${team.logo}`}
+                                  src={`${API_URL}${team.logo}`}
                                   alt={team.name}
                                   className="
                                     w-full
@@ -1025,7 +1026,7 @@ const teams =
                                               "
                                             >
 
-                                              #{player.number}
+                                              {player.number}
 
                                             </div>
 

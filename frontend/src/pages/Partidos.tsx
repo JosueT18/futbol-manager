@@ -32,8 +32,8 @@ function Partidos() {
 
   const canCreateMatch =
     role === "Administrador"
-    ||
-    role === "Comision"
+    //||
+    //role === "Comision"
     ||
     role === "Tecnico"
 

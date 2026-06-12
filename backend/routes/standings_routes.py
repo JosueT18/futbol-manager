@@ -98,7 +98,7 @@ db: Session = Depends(get_db)
 
                 "team_name": team.name,
 
-                "logo": team.logo,
+                "logo": team.logo if team.logo else None,
 
                 "played": played,
 

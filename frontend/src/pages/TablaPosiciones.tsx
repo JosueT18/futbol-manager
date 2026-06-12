@@ -5,6 +5,7 @@ import Card from "../components/ui/Card"
 import {
   getStandings,
 } from "../api/standings"
+import { API_URL } from "../api/api"
 
 function TablaPosiciones() {
 
@@ -19,6 +20,7 @@ function TablaPosiciones() {
         await getStandings()
 
       setTable(data)
+      
 
     } catch (error) {
 
@@ -52,6 +54,10 @@ function TablaPosiciones() {
 
         <div className="overflow-x-auto">
 
+          {/* <pre>
+            {JSON.stringify(table,null,2)}
+          </pre> */}
+
           <table className="w-full">
 
             <thead>
@@ -59,7 +65,7 @@ function TablaPosiciones() {
               <tr className="border-b bg-gray-50">
 
                 <th className="p-4 text-left">
-                  #
+                  
                 </th>
 
                 <th className="p-4 text-left">
@@ -131,14 +137,26 @@ function TablaPosiciones() {
                             team.logo && (
 
                               <img
-                                src={team.logo}
-                                alt=""
+                                src={`${API_URL}${team.logo}`}
+                                alt={team.team_name}
                                 className="
                                   w-8
                                   h-8
                                   rounded-full
                                   object-cover
+                                  border
+                                  border-gray-300
                                 "
+                                onError={(e) => {
+
+                                  console.log(
+                                    "Error cargando logo:",
+                                    team.logo
+                                  )
+
+                                  e.currentTarget.style.display =
+                                    "none"
+                                }}
                               />
                             )
                           }

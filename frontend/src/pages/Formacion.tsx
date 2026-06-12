@@ -130,6 +130,7 @@ function Formacion() {
 
   const isPlayer =
     role === "Jugador"
+    role === "Comision"
 
   const canManageFormation = [
 
@@ -137,7 +138,7 @@ function Formacion() {
 
     "Director",
 
-    "Comision",        
+    //"Comision",        
 
   ].includes(role)
 
