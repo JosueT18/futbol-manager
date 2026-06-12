@@ -5,32 +5,17 @@ from sqlalchemy.orm import (
     declarative_base,
 )
 
+import os
+from dotenv import load_dotenv
 from urllib.parse import quote_plus
 
 
-# =========================
-# DATABASE CONFIG
-# =========================
-USER = "postgres"
+load_dotenv()
 
-PASSWORD = quote_plus(
-    "JoVa1820"
+DATABASE_URL = os.getenv(
+    "DATABASE_URL"
 )
 
-HOST = "localhost"
-
-DB_NAME = "futbol_manager"
-
-DATABASE_URL = (
-    f"postgresql://"
-    f"{USER}:{PASSWORD}"
-    f"@{HOST}/{DB_NAME}"
-)
-
-
-# =========================
-# ENGINE
-# =========================
 engine = create_engine(
 
     DATABASE_URL,
@@ -42,29 +27,18 @@ engine = create_engine(
     pool_pre_ping=True,
 )
 
-
-# =========================
-# SESSION
-# =========================
 SessionLocal = sessionmaker(
 
     autocommit=False,
 
     autoflush=False,
 
-    bind=engine
+    bind=engine,
 )
 
-
-# =========================
-# BASE
-# =========================
 Base = declarative_base()
 
 
-# =========================
-# DATABASE DEPENDENCY
-# =========================
 def get_db():
 
     db = SessionLocal()

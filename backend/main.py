@@ -48,12 +48,6 @@ from routes.formation_routes import (
     router as formation_router
 )
 
-from routes.auth_routes import (
-    router as auth_router
-)
-
-from routes.match_routes import router as match_router
-
 from routes.match_event_routes import (
     router as match_event_router
 )
@@ -126,13 +120,9 @@ app.include_router(team_router)
 
 app.include_router(player_router)
 
-app.include_router(auth_router)
-
 app.include_router(match_router)
 
 app.include_router(formation_router)
-
-app.include_router(match_router)
 
 app.include_router(match_event_router)
 
