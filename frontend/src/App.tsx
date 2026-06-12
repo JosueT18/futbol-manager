@@ -6,7 +6,6 @@ import {
 
 import Sidebar from "./components/Sidebar"
 
-import Home from "./pages/Home"
 import Equipos from "./pages/Equipos"
 import Jugadores from "./pages/Jugadores"
 import Solicitudes from "./pages/Solicitudes"

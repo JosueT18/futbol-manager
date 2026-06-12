@@ -135,7 +135,6 @@ function Jugadores() {
   const {
     data: players = [],
     refetch,
-    isLoading,
   } = useQuery({
     queryKey: ["players"],
     queryFn: getPlayers,

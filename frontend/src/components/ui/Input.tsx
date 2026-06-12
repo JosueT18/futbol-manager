@@ -11,8 +11,7 @@ type InputProps = {
   onChange: (
     e: React.ChangeEvent<HTMLInputElement>
   ) => void
-
-  className?: string
+  
 }
 
 function Input({
@@ -20,8 +19,7 @@ function Input({
   placeholder,
   value,
   min,
-  onChange,
-  className="",
+  onChange,  
 }: InputProps) {
 
   function handleChange(
