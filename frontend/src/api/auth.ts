@@ -1,5 +1,4 @@
-const API =
-  "http://127.0.0.1:8000"
+import { API_URL } from "./api"
 
 export async function loginUser(
   data: any
@@ -7,7 +6,7 @@ export async function loginUser(
 
   const response =
     await fetch(
-      `${API}/login`,
+      `${API_URL}/login`,
       {
 
         method: "POST",
@@ -19,7 +18,7 @@ export async function loginUser(
 
         body: JSON.stringify(data),
       }
-    )
+    )  
 
   // =========================
   // ERROR

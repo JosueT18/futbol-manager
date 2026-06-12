@@ -8,6 +8,7 @@ import {
 } from "@tanstack/react-query"
 
 import { getHeaders } from "../api/api"
+import { API_URL } from "../api/api"
 
 function Solicitudes() {
 
@@ -26,7 +27,7 @@ function Solicitudes() {
     queryFn: async () => {
 
       const response = await fetch(
-        "http://127.0.0.1:8000/players",
+        '${API_URL}/players',
         {
           headers: getHeaders(),
         }
@@ -68,7 +69,7 @@ function Solicitudes() {
     try {
 
       const response = await fetch(
-        "http://127.0.0.1:8000/teams",
+        '${API_URL}/teams',
         {
           headers: getHeaders(),
         }
@@ -125,7 +126,7 @@ const canApproveReject =
     try {
 
       const response = await fetch(
-        `http://127.0.0.1:8000/players/${id}/approve`,
+        `${API_URL}/players/${id}/approve`,
         {
           method: "PUT",
 
@@ -218,7 +219,7 @@ const canApproveReject =
     try {
 
       const response = await fetch(
-        `http://127.0.0.1:8000/players/${id}/reject`,
+        `${API_URL}/players/${id}/reject`,
         {
           method: "PUT",
 
