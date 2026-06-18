@@ -16,6 +16,14 @@ class MatchEventCreate(BaseModel):
 
     minute: int
 
+#===============
+# UPDATE EVENT
+#===============
+class MatchEventUpdate(BaseModel):
+
+    event_type: str
+
+    minute: int
 
 # =========================
 # RESPONSE EVENT
@@ -27,6 +35,8 @@ class MatchEventResponse(BaseModel):
     match_id: int
 
     player_id: int
+
+    team_id: int
 
     event_type: str
 

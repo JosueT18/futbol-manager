@@ -27,7 +27,7 @@ function Solicitudes() {
     queryFn: async () => {
 
       const response = await fetch(
-        '${API_URL}/players',
+        `${API_URL}/players`,
         {
           headers: getHeaders(),
         }
@@ -69,7 +69,7 @@ function Solicitudes() {
     try {
 
       const response = await fetch(
-        '${API_URL}/teams',
+        `${API_URL}/teams`,
         {
           headers: getHeaders(),
         }

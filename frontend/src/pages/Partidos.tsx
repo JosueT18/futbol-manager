@@ -17,7 +17,10 @@ import {
 import {
   getMatchEvents,
   createMatchEvent,
+  updateMatchEvent,
+  deleteMatchEvent,
 } from "../api/matchEvents"
+import { div } from "framer-motion/client"
 
 function Partidos() {
 
@@ -110,6 +113,15 @@ function Partidos() {
   const [showModal, setShowModal] =
     useState(false)
 
+  console.log(
+    "CANTIDAD EVENTOS:",
+    events.length
+  )
+  console.log(
+    "EVENTOS:",
+    events
+  )
+
   // =========================
   // INITIAL LOAD
   // =========================
@@ -182,6 +194,8 @@ function Partidos() {
       const data =
         await getMatches()
 
+        console.log("MATCHES:", data)
+
       if (Array.isArray(data)) {
 
         const sortedMatches =
@@ -235,33 +249,53 @@ function Partidos() {
   // LOAD EVENTS
   // =========================
   async function loadEvents(
-    matchId: number
-  ) {
+      matchId: number
+    ) {
 
-    try {
+      try {
 
-      const data =
-        await getMatchEvents(
-          matchId
+        const data =
+          await getMatchEvents(
+            matchId
+          )
+
+        console.log(
+          "EVENTOS RECIBIDOS:",
+          data
         )
 
-      if (Array.isArray(data)) {
+        if (
+          Array.isArray(data) &&
+          data.length > 0
+        ) {
 
-        setEvents(data)
+          console.log(
+            "PRIMER EVENTO:",
+            data[0]
+          )
 
-      } else {
+          console.log(
+            "PLAYER:",
+            data[0].player
+          )
+        }
+
+        if (Array.isArray(data)) {
+
+          setEvents(data)
+
+        } else {
+
+          setEvents([])
+        }
+
+      } catch (error) {
+
+        console.error(error)
 
         setEvents([])
       }
-
-    } catch (error) {
-
-      console.error(error)
-
-      setEvents([])
     }
-  }
-
   // =========================
   // CREATE MATCH
   // =========================
@@ -539,6 +573,137 @@ function Partidos() {
       })
     }
   }
+
+  async function editEvent(
+    event: any
+    ) {
+
+    const result =
+    await Swal.fire({
+
+      title: "Editar evento",
+
+      html: `
+        <input
+          id="minute"
+          class="swal2-input"
+          type="number"
+          value="${event.minute}"
+          placeholder="Minuto"
+        >
+      `,
+
+      showCancelButton: true,
+
+      confirmButtonText: "Guardar",
+
+      preConfirm: () => {
+
+        const minute =
+          (
+            document.getElementById(
+              "minute"
+            ) as HTMLInputElement
+          ).value
+
+        return {
+          minute: Number(minute)
+        }
+      }
+    })
+
+    if (!result.isConfirmed) {
+    return
+    }
+
+    try {
+
+    await updateMatchEvent(
+
+      event.id,
+
+      {
+        event_type:
+          event.event_type,
+
+        minute:
+          result.value.minute
+      }
+    )
+
+    await loadEvents(
+      selectedMatch.id
+    )
+
+    Swal.fire(
+      "Actualizado",
+      "",
+      "success"
+    )
+
+    } catch (error) {
+
+    console.error(error)
+
+    Swal.fire(
+      "Error",
+      "No se pudo actualizar",
+      "error"
+    )
+
+    }
+}
+
+async function removeEvent(
+  eventId: number
+  ) {
+
+  const confirm =
+  await Swal.fire({
+
+    title:
+      "¿Eliminar evento?",
+
+    icon:
+      "warning",
+
+    showCancelButton: true
+  })
+
+  if (!confirm.isConfirmed) {
+  return
+  }
+
+  try {
+
+  await deleteMatchEvent(
+    eventId
+  )
+
+  await loadEvents(
+    selectedMatch.id
+  )
+
+  await loadMatches()
+
+  Swal.fire(
+    "Eliminado",
+    "",
+    "success"
+  )
+
+  } catch (error) {
+
+  console.error(error)
+
+  Swal.fire(
+    "Error",
+    "No se pudo eliminar",
+    "error"
+  )
+
+  }
+}
 
   // =========================
   // PLAYERS
@@ -913,19 +1078,73 @@ function Partidos() {
                       </div>
 
                       {
-                        match.status === "finished" && (
+                          match.status === "finished" && (
 
-                          <div className="text-3xl font-bold mt-3">
+                            <>
 
-                            {match.home_score}
+                              <div className="text-3xl font-bold mt-3">
 
-                            {" - "}
+                                {match.home_score}
 
-                            {match.away_score}
+                                {" - "}
 
-                          </div>
-                        )
-                      }
+                                {match.away_score}
+
+                              </div>
+
+                              {
+                                match.events &&
+                                match.events.length > 0 && (
+
+                                  <div
+                                    className="
+                                      mt-4
+                                      text-left
+                                      border-t
+                                      pt-3
+                                      space-y-1
+                                    "
+                                  >
+
+                                    {
+                                      match.events.map(
+                                        (event: any) => (                                          
+
+                                            <div
+                                              key={event.id}
+                                              className="text-sm text-gray-700"
+                                            >
+
+                                              {event.event_type === "goal" && "⚽"}
+                                              {event.event_type === "yellow_card" && "🟨"}
+                                              {event.event_type === "red_card" && "🟥"}
+
+                                              {" "}
+
+                                              {
+                                                event.player_name
+                                                  ? event.player_name
+                                                  : "Jugador"
+                                              }
+
+                                              {" - "}
+
+                                              {event.minute}'
+
+                                            </div>
+                                          )
+                                        
+                                      )
+                                    }
+
+                                  </div>
+                                )
+                              }
+
+                            </>
+
+                          )
+                        }
 
                       {
                         canEditMatch && (
@@ -960,9 +1179,405 @@ function Partidos() {
         }
 
       </div>
+          {/* MODAL EDICION */}
+          {
+            showModal &&
+            selectedMatch && (
 
-    </div>
-  )
-}
+              <div
+                className="
+                  fixed
+                  inset-0
+                  bg-black/60
+                  flex
+                  items-center
+                  justify-center
+                  z-50
+                  p-4
+                "
+              >
+
+                <div
+                  className="
+                    bg-white
+                    rounded-2xl
+                    w-full
+                    max-w-4xl
+                    max-h-[90vh]
+                    overflow-y-auto
+                    p-6
+                  "
+                >
+
+                  <div className="flex justify-between items-center mb-6">
+
+                    <h2 className="text-2xl font-bold">
+                      Editar Partido
+                    </h2>
+
+                    <button
+                      onClick={() =>
+                        setShowModal(false)
+                      }
+                      className="
+                        bg-gray-200
+                        px-4
+                        py-2
+                        rounded-xl
+                      "
+                    >
+                      Cerrar
+                    </button>
+
+                  </div>
+
+                  <div className="grid md:grid-cols-3 gap-4 mb-6">
+
+                    <div>
+
+                      <label className="block mb-2 font-semibold">
+                        Goles Local
+                      </label>
+
+                      <input
+                        type="number"
+                        value={editHomeScore}
+                        onChange={(e) =>
+                          setEditHomeScore(
+                            Number(e.target.value)
+                          )
+                        }
+                        className="
+                          border
+                          p-3
+                          rounded-xl
+                          w-full
+                        "
+                      />
+
+                    </div>
+
+                    <div>
+
+                      <label className="block mb-2 font-semibold">
+                        Goles Visitante
+                      </label>
+
+                      <input
+                        type="number"
+                        value={editAwayScore}
+                        onChange={(e) =>
+                          setEditAwayScore(
+                            Number(e.target.value)
+                          )
+                        }
+                        className="
+                          border
+                          p-3
+                          rounded-xl
+                          w-full
+                        "
+                      />
+
+                    </div>
+
+                    <div>
+
+                      <label className="block mb-2 font-semibold">
+                        Estado
+                      </label>
+
+                      <select
+                        value={editStatus}
+                        onChange={(e) =>
+                          setEditStatus(
+                            e.target.value
+                          )
+                        }
+                        className="
+                          border
+                          p-3
+                          rounded-xl
+                          w-full
+                        "
+                      >
+
+                        <option value="scheduled">
+                          Programado
+                        </option>
+
+                        <option value="finished">
+                          Finalizado
+                        </option>
+
+                      </select>
+
+                    </div>
+
+                  </div>
+
+                  <button
+                    onClick={saveResult}
+                    className="
+                      bg-green-600
+                      text-white
+                      px-6
+                      py-3
+                      rounded-xl
+                      mb-8
+                    "
+                  >
+                    Guardar Resultado
+                  </button>
+
+                  <hr className="my-6" />
+
+                  <h3 className="text-xl font-bold mb-4">
+                    Eventos
+                  </h3>
+
+                  <div className="grid md:grid-cols-4 gap-4">
+
+                    <select
+                      value={eventTeamId}
+                      onChange={(e) =>
+                        setEventTeamId(
+                          e.target.value
+                        )
+                      }
+                      className="
+                        border
+                        p-3
+                        rounded-xl
+                      "
+                    >
+
+                      <option value="">
+                        Equipo
+                      </option>
+
+                      {
+                        teams.map(
+                          (team: any) => (
+
+                            <option
+                              key={team.id}
+                              value={team.id}
+                            >
+                              {team.name}
+                            </option>
+                          )
+                        )
+                      }
+
+                    </select>
+
+                    <select
+                      value={eventPlayerId}
+                      onChange={(e) =>
+                        setEventPlayerId(
+                          e.target.value
+                        )
+                      }
+                      className="
+                        border
+                        p-3
+                        rounded-xl
+                      "
+                    >
+
+                      <option value="">
+                        Jugador
+                      </option>
+
+                      {
+                        availablePlayers.map(
+                          (player: any) => (
+
+                            <option
+                              key={player.id}
+                              value={player.id}
+                            >
+                              {player.name}
+                            </option>
+                          )
+                        )
+                      }
+
+                    </select>
+
+                    <select
+                      value={eventType}
+                      onChange={(e) =>
+                        setEventType(
+                          e.target.value
+                        )
+                      }
+                      className="
+                        border
+                        p-3
+                        rounded-xl
+                      "
+                    >
+
+                      <option value="goal">
+                        Gol
+                      </option>
+
+                      <option value="yellow_card">
+                        Amarilla
+                      </option>
+
+                      <option value="red_card">
+                        Roja
+                      </option>
+
+                    </select>
+
+                    <input
+                      type="number"
+                      placeholder="Minuto"
+                      value={eventMinute}
+                      onChange={(e) =>
+                        setEventMinute(
+                          e.target.value
+                        )
+                      }
+                      className="
+                        border
+                        p-3
+                        rounded-xl
+                      "
+                    />
+
+                  </div>
+
+                  <button
+                    onClick={saveEvent}
+                    className="
+                      mt-4
+                      bg-blue-600
+                      text-white
+                      px-6
+                      py-3
+                      rounded-xl
+                    "
+                  >
+                    Agregar Evento
+                  </button>
+
+                  <div className="mt-6 space-y-2">
+
+                        {events.length === 0 && (
+
+                          <div
+                            className="
+                              bg-gray-100
+                              p-4
+                              rounded-xl
+                            "
+                          >
+                            No hay eventos cargados
+                          </div>
+
+                        )}
+
+                        {events.map(
+                          (event: any) => (
+
+                            <div
+                              key={event.id}
+                              className="
+                                border
+                                rounded-xl
+                                p-3
+                                flex
+                                justify-between
+                                items-center
+                              "
+                            >
+
+                              <div>
+
+                                {getEventIcon(
+                                  event.event_type
+                                )}
+
+                                {" "}
+
+                                {
+                                  event.player
+                                    ? `${event.player.name} ${event.player.lastname}`
+                                    : event.player_name
+                                }
+
+                                {" - "}
+
+                                {
+                                  getEventLabel(
+                                    event.event_type
+                                  )
+                                }
+
+                                {" "}
+
+                                ({event.minute}')
+
+                              </div>
+
+                              <div className="flex gap-2">
+
+                                <button
+                                  onClick={() =>
+                                    editEvent(event)
+                                  }
+                                  className="
+                                    bg-yellow-500
+                                    text-white
+                                    px-3
+                                    py-1
+                                    rounded-lg
+                                  "
+                                >
+                                  ✏️
+                                </button>
+
+                                <button
+                                  onClick={() =>
+                                    removeEvent(
+                                      event.id
+                                    )
+                                  }
+                                  className="
+                                    bg-red-600
+                                    text-white
+                                    px-3
+                                    py-1
+                                    rounded-lg
+                                  "
+                                >
+                                  🗑️
+                                </button>
+
+                              </div>
+
+                            </div>
+
+                          )
+                        )}
+
+                      </div>
+
+                                    </div>
+                                  </div>
+                                
+                              )
+                            }
+
+                          </div>
+
+                        
+                      )
+                    }
 
 export default Partidos

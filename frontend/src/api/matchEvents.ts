@@ -1,14 +1,10 @@
 import api from "./axios"
-
 import { API_URL } from "./api"
-
 
 function getHeaders() {
 
   const token =
-    localStorage.getItem(
-      "token"
-    )
+    localStorage.getItem("token")
 
   return {
 
@@ -23,7 +19,6 @@ function getHeaders() {
   }
 }
 
-
 // =========================
 // GET EVENTS
 // =========================
@@ -31,26 +26,14 @@ export async function getMatchEvents(
   matchId: number
 ) {
 
-  try {
+  const response =
+    await api.get(
+      `${API_URL}/match-events/${matchId}`,
+      getHeaders()
+    )
 
-    const response =
-      await api.get(
-
-        `${API_URL}/match-events/${matchId}`,
-
-        getHeaders()
-      )
-
-    return response.data
-
-  } catch (error) {
-
-    console.error(error)
-
-    return []
-  }
+  return response.data
 }
-
 
 // =========================
 // CREATE EVENT
@@ -59,24 +42,56 @@ export async function createMatchEvent(
   data: any
 ) {
 
-  try {
+  const response =
+    await api.post(
+      `${API_URL}/match-events`,
+      data,
+      getHeaders()
+    )
 
-    const response =
-      await api.post(
+  return response.data
+}
 
-        `${API_URL}/match-events`,
+// =========================
+// UPDATE EVENT
+// =========================
+export async function updateMatchEvent(
+  eventId: number,
+  data: any
+) {
 
-        data,
+  console.log(
+    "UPDATE EVENT URL:",
+    `${API_URL}/match-events/${eventId}`
+  )
 
-        getHeaders()
-      )
+  const response =
+    await api.put(
+      `${API_URL}/match-events/${eventId}`,
+      data,
+      getHeaders()
+    )
 
-    return response.data
+  return response.data
+}
 
-  } catch (error) {
+// =========================
+// DELETE EVENT
+// =========================
+export async function deleteMatchEvent(
+  eventId: number
+) {
 
-    console.error(error)
+  console.log(
+    "DELETE EVENT URL:",
+    `${API_URL}/match-events/${eventId}`
+  )
 
-    throw error
-  }
+  const response =
+    await api.delete(
+      `${API_URL}/match-events/${eventId}`,
+      getHeaders()
+    )
+
+  return response.data
 }

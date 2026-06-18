@@ -11,7 +11,8 @@ from models.match_model import Match
 from models.player_model import Player
 
 from schemas.match_event_schema import (
-    MatchEventCreate
+    MatchEventCreate,
+    MatchEventUpdate
 )
 
 from utils.dependencies import (
@@ -166,6 +167,110 @@ def get_match_events(
                     event.player.lastname,
             }
             if event.player else None
-        })
+        })        
 
     return result
+
+#=========================
+#UPDATE EVENT
+#=========================
+@router.put("/match-events/{event_id}")
+def update_match_event(
+        event_id: int,
+        data: MatchEventUpdate,
+        db: Session = Depends(get_db),
+        current_user=Depends(get_current_user)
+        ):
+
+        if current_user.role not in [
+            "Administrador",
+            "Comision",
+            "Tecnico",
+        ]:
+
+            raise HTTPException(
+                status_code=403,
+                detail="Sin permisos"
+            )
+
+        event = db.query(MatchEvent).filter(
+            MatchEvent.id == event_id
+        ).first()
+
+        if not event:
+
+            raise HTTPException(
+                status_code=404,
+                detail="Evento no encontrado"
+            )
+
+        event.event_type = data.event_type
+        event.minute = data.minute
+
+        db.commit()
+        db.refresh(event)
+
+        return event
+
+#=========================
+#DELETE EVENT
+#=========================
+@router.delete("/match-events/{event_id}")
+def delete_match_event(
+        event_id: int,
+        db: Session = Depends(get_db),
+        current_user=Depends(get_current_user)
+        ):
+
+        if current_user.role not in [
+            "Administrador",
+            "Comision",
+            "Tecnico",
+        ]:
+
+            raise HTTPException(
+                status_code=403,
+                detail="Sin permisos"
+            )
+
+        event = db.query(MatchEvent).filter(
+            MatchEvent.id == event_id
+        ).first()
+
+        if not event:
+
+            raise HTTPException(
+                status_code=404,
+                detail="Evento no encontrado"
+            )
+
+        match = db.query(Match).filter(
+            Match.id == event.match_id
+        ).first()
+
+        if (
+            event.event_type == "goal"
+            and match
+        ):
+
+            if event.team_id == match.home_team_id:
+
+                match.home_score = max(
+                    0,
+                    (match.home_score or 0) - 1
+                )
+
+            elif event.team_id == match.away_team_id:
+
+                match.away_score = max(
+                    0,
+                    (match.away_score or 0) - 1
+                )
+
+        db.delete(event)
+
+        db.commit()
+
+        return {
+            "message": "Evento eliminado"
+        }
