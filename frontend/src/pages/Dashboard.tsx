@@ -159,19 +159,19 @@ function Dashboard() {
         min-h-screen
         bg-[#0f1720]
         text-white
-        p-6
+        p-3 md:p-6
       "
     >
 
       {/* HEADER */}
       <div className="mb-10">
 
-        <h1 className="text-5xl font-black">
-          Futbol Manager
+        <h1 className="text-3xl md:text-5xl font-black">
+          TORNEO FUTBOL
         </h1>
 
         <p className="text-zinc-400 mt-3">
-          Dashboard profesional del torneo
+          Torneo
         </p>
 
       </div>
@@ -184,6 +184,7 @@ function Dashboard() {
           md:grid-cols-2
           xl:grid-cols-4
           gap-5
+          w-full
         "
       >
 
@@ -192,9 +193,9 @@ function Dashboard() {
           whileHover={{ scale: 1.03 }}
         >
 
-          <Card className="bg-[#18222f] border border-[#253041]">
+          <Card className="bg-[#18222f] border border-[#253041] min-w-0 overflow-hidden">
 
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col md:flex-row justify-between md:items-center">
 
               <div>
 
@@ -224,9 +225,9 @@ function Dashboard() {
           whileHover={{ scale: 1.03 }}
         >
 
-          <Card className="bg-[#18222f] border border-[#253041]">
+          <Card className="bg-[#18222f] border border-[#253041] min-w-0 overflow-hidden">
 
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col md:flex-row justify-between md:items-center">
 
               <div>
 
@@ -256,9 +257,9 @@ function Dashboard() {
           whileHover={{ scale: 1.03 }}
         >
 
-          <Card className="bg-[#18222f] border border-[#253041]">
+          <Card className="bg-[#18222f] border border-[#253041] min-w-0 overflow-hidden">
 
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col md:flex-row justify-between md:items-center">
 
               <div>
 
@@ -288,9 +289,9 @@ function Dashboard() {
           whileHover={{ scale: 1.03 }}
         >
 
-          <Card className="bg-[#18222f] border border-[#253041]">
+          <Card className="bg-[#18222f] border border-[#253041] min-w-0 overflow-hidden">
 
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col md:flex-row justify-between md:items-center">
 
               <div>
 
@@ -325,13 +326,14 @@ function Dashboard() {
           xl:grid-cols-3
           gap-6
           mt-8
+          w-full
         "
       >
 
         {/* FEATURED MATCH */}
-        <div className="xl:col-span-2">
+        <div className="xl:col-span-2 min-w-0">
 
-          <Card className="bg-gradient-to-br from-[#18222f] to-[#243244] border border-[#253041]">
+          <Card className="bg-gradient-to-br from-[#18222f] to-[#243244] border border-[#253041] min-w-0 overflow-hidden">
 
             <div className="flex items-center gap-3 mb-6">
 
@@ -348,11 +350,11 @@ function Dashboard() {
 
                 <div className="text-center py-10">
 
-                  <div className="grid grid-cols-3 items-center">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
 
                     <div>
 
-                      <h3 className="text-3xl font-bold">
+                      <h3 className="text-xl md:text-3xl font-bold break-words">
                         {featuredMatch.home_team}
                       </h3>
 
@@ -360,7 +362,7 @@ function Dashboard() {
 
                     <div>
 
-                      <div className="text-6xl font-black text-green-400">
+                      <div className="text-4xl md:text-6xl font-black text-green-400">
 
                         {featuredMatch.home_score}
 
@@ -374,7 +376,7 @@ function Dashboard() {
 
                     <div>
 
-                      <h3 className="text-3xl font-bold">
+                      <h3 className="text-xl md:text-3xl font-bold break-words">
                         {featuredMatch.away_team}
                       </h3>
 
@@ -399,7 +401,7 @@ function Dashboard() {
         {/* TOP SCORERS */}
         <div>
 
-          <Card className="bg-[#18222f] border border-[#253041]">
+          <Card className="bg-[#18222f] border border-[#253041] min-w-0 overflow-hidden">
 
             <div className="flex items-center gap-3 mb-6">
 
@@ -503,11 +505,12 @@ function Dashboard() {
           xl:grid-cols-2
           gap-6
           mt-8
+          w-full
         "
       >
 
         {/* STANDINGS */}
-        <Card className="bg-[#18222f] border border-[#253041]">
+        <Card className="bg-[#18222f] border border-[#253041] min-w-0 overflow-hidden">
 
           <div className="flex items-center gap-3 mb-6">
 
@@ -548,7 +551,13 @@ function Dashboard() {
                           #{index + 1}
                         </span>
 
-                        <span className="font-semibold">
+                        <span className="
+                        font-semibold
+                        truncate
+                        max-w-[150px]
+                        md:max-w-none
+
+                        ">
                           {team.team_name}
                         </span>
 
@@ -568,7 +577,7 @@ function Dashboard() {
         </Card>
 
         {/* NEXT MATCHES */}
-        <Card className="bg-[#18222f] border border-[#253041]">
+        <Card className="bg-[#18222f] border border-[#253041] min-w-0 overflow-hidden">
 
           <div className="flex items-center gap-3 mb-6">
 
@@ -643,17 +652,23 @@ function Dashboard() {
       >
 
         {/* GOALS BY TEAM */}
-        <Card className="bg-[#18222f] border border-[#253041]">
+        <Card className="bg-[#18222f] border border-[#253041] min-w-0 overflow-hidden">
 
           <h2 className="text-2xl font-black mb-6">
             Goles por Equipo
           </h2>
 
-          <div className="h-[350px]">
+          <div className="
+           w-full 
+           min-h-[300px]
+           h-[300px]
+           md:h-[350px]
+           
+           ">
 
             <ResponsiveContainer
-              width="100%"
-              height="100%"
+              width="99%"
+              height={300}
             >
 
               <BarChart
@@ -691,17 +706,23 @@ function Dashboard() {
         </Card>
 
         {/* TOP SCORERS CHART */}
-        <Card className="bg-[#18222f] border border-[#253041]">
+        <Card className="bg-[#18222f] border border-[#253041] min-w-0 overflow-hidden">
 
           <h2 className="text-2xl font-black mb-6">
             Top Goleadores
           </h2>
 
-          <div className="h-[350px]">
+          <div className="
+          w-full 
+          min-h-[300px]
+          h-[350px]
+          md:h-[350px]
+          
+          ">
 
             <ResponsiveContainer
-              width="100%"
-              height="100%"
+              width="99%"
+              height={300}
             >
 
               <BarChart

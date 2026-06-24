@@ -87,13 +87,13 @@ function App() {
   // =========================
   return (
 
-    <div className="flex">
+    <div className="flex flex-col md:flex-row min-h-screen">
 
       {/* SIDEBAR */}
       <Sidebar />
 
       {/* CONTENT */}
-      <div className="flex-1">
+      <div className="flex-1 min-w-0">
 
         <Routes>
 

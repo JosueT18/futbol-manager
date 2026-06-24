@@ -2,6 +2,12 @@ import api from "./axios"
 
 import { API_URL } from "./api"
 
+// =========================
+// ENDPOINT
+// =========================
+const FORMATIONS_URL = 
+`${API_URL}/formations`
+
 
 // =========================
 // PLAYER
@@ -41,7 +47,9 @@ export interface FormationData {
 export async function getFormations() {
 
   const response =
-    await api.get(API_URL)
+    await api.get(
+      FORMATIONS_URL
+    )
 
   return response.data
 }
@@ -56,7 +64,7 @@ export async function getFormation(
 
   const response =
     await api.get(
-      `${API_URL}/${id}`
+      `${FORMATIONS_URL}/${id}`
     )
 
   return response.data
@@ -70,9 +78,14 @@ export async function createFormation(
   data: FormationData
 ) {
 
+  console.log(
+    "POST:",
+    FORMATIONS_URL
+  )
+
   const response =
     await api.post(
-      API_URL,
+      FORMATIONS_URL,
       data
     )
 
@@ -90,7 +103,7 @@ export async function updateFormation(
 
   const response =
     await api.put(
-      `${API_URL}/${id}`,
+      `${FORMATIONS_URL}/${id}`,
       data
     )
 
@@ -107,7 +120,7 @@ export async function deleteFormation(
 
   const response =
     await api.delete(
-      `${API_URL}/${id}`
+      `${FORMATIONS_URL}/${id}`
     )
 
   return response.data

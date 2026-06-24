@@ -135,25 +135,36 @@ function Sidebar() {
 
     <div
       className="
-        w-[290px]
-        h-screen
-        sticky
-        top-0
+        w-full
+        md:w-[290px]
+
+        md:h-screen
+
+        md:sticky
+        md:top-0
+
         bg-gradient-to-b
         from-[#0f1720]
         via-[#131d2b]
         to-[#0a1018]
-        border-r
+
+        border-b
+        md:border-b-0
+        md:border-r
+
         border-[#223043]
+
         text-white
+
         flex
         flex-col
+
         px-5
         py-6
+
         shadow-2xl
       "
     >
-
       {/* ========================= */}
       {/* LOGO */}
       {/* ========================= */}
@@ -195,7 +206,7 @@ function Sidebar() {
                 tracking-tight
               "
             >
-              Futbol Manager
+              FUTBOL 
             </h1>
 
             <p
@@ -205,7 +216,7 @@ function Sidebar() {
                 mt-1
               "
             >
-              League Professional Suite
+              Torneo Amateurs
             </p>
 
           </div>
@@ -310,8 +321,11 @@ function Sidebar() {
       <div
         className="
           flex-1
-          overflow-y-auto
+
+          md:overflow-y-auto
+
           pr-2
+          
           space-y-2
 
           scrollbar-thin

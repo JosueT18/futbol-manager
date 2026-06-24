@@ -217,7 +217,7 @@ function Login() {
               text-black
             "
           >
-            Futbol Manager
+            Torneo de Futbol
           </h1>
 
           <p
